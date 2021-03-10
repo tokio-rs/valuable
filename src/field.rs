@@ -3,23 +3,41 @@ use crate::Type;
 use std::any::TypeId;
 use std::cmp::PartialEq;
 
+// TODO: Don't make all these fields public
+
 pub struct Fields {
-    type_id: TypeId,
+    pub type_id: TypeId,
+    pub definitions: &'static [FieldDefinition],
 }
 
 pub struct Field {
-    type_id: TypeId,
-    defintion: &'static FieldDefinition,
+    pub type_id: TypeId,
+    pub definition: &'static FieldDefinition,
 }
 
-struct FieldDefinition {
-    name: &'static str,
-    ty: Type,
+pub struct FieldDefinition {
+    pub name: &'static str,
+    pub ty: Type,
+}
+
+impl Fields {
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Field> + 'a {
+        self.definitions.into_iter().map(move |definition| Field {
+            type_id: self.type_id,
+            definition,
+        })
+    }
+}
+
+impl Field {
+    pub fn name(&self) -> &str {
+        self.definition.name
+    }
 }
 
 impl PartialEq for &'static FieldDefinition {
     fn eq(&self, other: &&'static FieldDefinition) -> bool {
-        unimplemented!()
+        std::ptr::eq(*self, *other)
     }
 }
 

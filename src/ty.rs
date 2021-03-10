@@ -10,6 +10,7 @@ pub enum Type {
     I64,
     I128,
     Isize,
+    String,
     U8,
     U16,
     U32,

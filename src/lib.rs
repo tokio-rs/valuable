@@ -1,6 +1,9 @@
 mod field;
 pub use field::{Field, Fields};
 
+#[doc(hidden)]
+pub use field::{FieldDefinition};
+
 mod listable;
 pub use listable::Listable;
 
