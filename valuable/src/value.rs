@@ -19,6 +19,10 @@ pub enum Value<'a> {
     Valuable(&'a dyn Valuable),
 }
 
+pub trait AsValue {
+    fn as_value(&self) -> Value<'_>;
+}
+
 impl fmt::Debug for Value<'_> {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         use Value::*;

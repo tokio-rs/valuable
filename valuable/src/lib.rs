@@ -17,4 +17,4 @@ mod valuable;
 pub use valuable::Valuable;
 
 mod value;
-pub use value::Value;
+pub use value::{AsValue, Value};

@@ -1,8 +1,8 @@
-use crate::{Fields, Field, Value};
+use crate::{AsValue, Fields, Field, Value};
 
 use std::fmt;
 
-pub trait Valuable {
+pub trait Valuable: AsValue {
     fn fields(&self) -> Fields;
 
     // fn field_by_name(&self, name: &str) -> Option<Field>;
