@@ -1,5 +1,5 @@
-use crate::{Listable, Valuable};
-use crate::valuable;
+use crate::{Listable, Structable};
+use crate::structable;
 
 use std::fmt;
 
@@ -15,7 +15,7 @@ pub enum Value<'a> {
     Unit,
     // More here
     Listable(&'a dyn Listable),
-    Valuable(&'a dyn Valuable),
+    Structable(&'a dyn Structable),
 }
 
 pub trait AsValue {
@@ -36,7 +36,7 @@ impl fmt::Debug for Value<'_> {
             Usize(v) => v.fmt(fmt),
             Unit => ().fmt(fmt),
             Listable(v) => unimplemented!(),
-            Valuable(v) => valuable::debug(v, fmt),
+            Structable(v) => structable::debug(v, fmt),
         }
     }
 }

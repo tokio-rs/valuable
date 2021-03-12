@@ -1,27 +1,27 @@
-use crate::{AsValue, Value};
+use crate::{Valuable, Value};
 
-pub trait Listable /* : AsValue */ {
+pub trait Listable {
     fn len(&self) -> usize;
 
-    fn get(&self, index: usize) -> Option<Value<'_>>;
+    fn iter(&self, f: &mut dyn FnMut(&mut dyn Iterator<Item = Value<'_>>));
 }
 
-impl<T: AsValue> Listable for [T] {
+impl<T: Valuable> Listable for [T] {
     fn len(&self) -> usize {
         <[T]>::len(self)
     }
 
-    fn get(&self, index: usize) -> Option<Value<'_>> {
-        <[T]>::get(self, index).map(AsValue::as_value)
+    fn iter(&self, f: &mut dyn FnMut(&mut dyn Iterator<Item = Value<'_>>)) {
+        f(&mut <[T]>::iter(self).map(Valuable::as_value));
     }
 }
 
-impl<T: AsValue> Listable for Vec<T> {
+impl<T: Valuable> Listable for Vec<T> {
     fn len(&self) -> usize {
         Vec::len(self)
     }
 
-    fn get(&self, index: usize) -> Option<Value<'_>> {
-        <[T]>::get(self, index).map(AsValue::as_value)
+    fn iter(&self, f: &mut dyn FnMut(&mut dyn Iterator<Item = Value<'_>>)) {
+        f(&mut <[T]>::iter(self).map(Valuable::as_value));
     }
 }
