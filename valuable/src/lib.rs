@@ -7,9 +7,6 @@ pub use field::{FieldDefinition};
 mod listable;
 pub use listable::Listable;
 
-mod mappable;
-pub use mappable::Mappable;
-
 mod ty;
 pub use ty::Type;
 

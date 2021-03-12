@@ -1,4 +1,4 @@
-use crate::{Listable, Mappable, Valuable};
+use crate::{Listable, Valuable};
 use crate::valuable;
 
 use std::fmt;
@@ -15,7 +15,6 @@ pub enum Value<'a> {
     Unit,
     // More here
     Listable(&'a dyn Listable),
-    Mappable(&'a dyn Mappable),
     Valuable(&'a dyn Valuable),
 }
 
@@ -37,7 +36,6 @@ impl fmt::Debug for Value<'_> {
             Usize(v) => v.fmt(fmt),
             Unit => ().fmt(fmt),
             Listable(v) => unimplemented!(),
-            Mappable(v) => unimplemented!(),
             Valuable(v) => valuable::debug(v, fmt),
         }
     }
