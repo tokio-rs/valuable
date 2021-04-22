@@ -80,7 +80,8 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let hello_world = HelloWorld::default();
     let structable = &hello_world as &dyn Structable;
-    let f = &structable.definition().static_fields()[5];
+    let f_front = &structable.definition().static_fields[0];
+    let f_back = &structable.definition().static_fields()[5];
 
     struct Sum(usize);
 
@@ -104,11 +105,28 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
 
-    c.bench_function("structable", |b| {
+    c.bench_function("structable_front", |b| {
         b.iter(|| {
             let mut num = 0;
 
-            let f = black_box(Field::Static(f));
+            let f = black_box(Field::Static(f_front));
+
+            for _ in 0..NUM {
+                match structable.get(&f) {
+                    Some(Value::Usize(n)) => num += n,
+                    _ => panic!(),
+                }
+            }
+
+            black_box(num);
+        })
+    });
+
+    c.bench_function("structable_back", |b| {
+        b.iter(|| {
+            let mut num = 0;
+
+            let f = black_box(Field::Static(f_back));
 
             for _ in 0..NUM {
                 match structable.get(&f) {
