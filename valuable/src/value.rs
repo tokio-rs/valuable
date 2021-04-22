@@ -1,4 +1,4 @@
-use crate::{Listable, Structable};
+use crate::{Listable, Structable, Valuable};
 use crate::structable;
 
 use std::fmt;
@@ -12,14 +12,35 @@ pub enum Value<'a> {
     U64(u64),
     U128(u128),
     Usize(usize),
-    Unit,
+    Unit, // TODO: None?
     // More here
     Listable(&'a dyn Listable),
     Structable(&'a dyn Structable),
 }
 
-pub trait AsValue {
-    fn as_value(&self) -> Value<'_>;
+impl Valuable for Value<'_> {
+    fn as_value(&self) -> Value<'_> {
+        use Value::*;
+
+        match *self {
+            String(v) => String(v),
+            U8(v) => U8(v),
+            U16(v) => U16(v),
+            U32(v) => U32(v),
+            U64(v) => U64(v),
+            U128(v) => U128(v),
+            Usize(v) => Usize(v),
+            Unit => Unit,
+            Listable(v) => Listable(v),
+            Structable(v) => Structable(v),
+        }
+    }
+}
+
+impl PartialEq<Value<'_>> for Value<'_> {
+    fn eq(&self, value: &Value<'_>) -> bool {
+        todo!()
+    }
 }
 
 impl fmt::Debug for Value<'_> {
