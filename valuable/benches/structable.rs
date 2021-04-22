@@ -33,6 +33,24 @@ impl Structable for HelloWorld {
     }
 
     fn get(&self, field: &Field<'_>) -> Option<Value<'_>> {
+        match *field {
+            Field::Static(field) => {
+                let base = &FIELDS[0] as *const _ as usize;
+                let f = field as *const _ as usize;
+
+                match (f - base) / std::mem::size_of::<StaticField>() {
+                    0 => Some(Value::Usize(self.one)),
+                    1 => Some(Value::Usize(self.two)),
+                    2 => Some(Value::Usize(self.three)),
+                    3 => Some(Value::Usize(self.four)),
+                    4 => Some(Value::Usize(self.five)),
+                    5 => Some(Value::Usize(self.six)),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+        /*
         match field {
             Field::Static(field) => {
                 if *field == &FIELDS[0] {
@@ -53,6 +71,7 @@ impl Structable for HelloWorld {
             }
             _ => None,
         }
+        */
     }
 
     fn with_iter_fn_mut(&self, f: &mut dyn FnMut(Iter<'_>)) {
