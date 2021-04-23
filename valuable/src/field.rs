@@ -1,8 +1,3 @@
-use core::any::TypeId;
-use core::cmp::PartialEq;
-
-// TODO: Don't make all these fields public
-
 pub struct Definition<'a> {
     /// Type name
     pub name: &'a str,

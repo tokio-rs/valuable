@@ -37,6 +37,12 @@ impl Valuable for Value<'_> {
     }
 }
 
+impl Default for Value<'_> {
+    fn default() -> Self {
+        Value::Unit
+    }
+}
+
 impl PartialEq<Value<'_>> for Value<'_> {
     fn eq(&self, value: &Value<'_>) -> bool {
         todo!()

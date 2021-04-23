@@ -1,4 +1,5 @@
-use crate::{Definition, Field, StaticField, Value};
+use crate::{Value};
+use crate::field::*;
 
 /// Access values for a struct's static fields
 pub struct Record<'a> {

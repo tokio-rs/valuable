@@ -1,6 +1,4 @@
-mod field;
-// pub use field::{Fields, Type};
-pub use field::*;
+pub mod field;
 
 mod listable;
 pub use listable::Listable;
