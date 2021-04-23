@@ -80,17 +80,32 @@ impl Structable for HelloWorld {
 }
 
 trait Visitor {
-    fn visit(&mut self, field: usize, val: usize);
+    fn visit(&mut self, field: usize, val: Value<'_>);
+}
+
+trait Visitor2 {
+    fn visit(&mut self, fields: &[Value<'_>]);
 }
 
 impl HelloWorld {
     fn visit(&self, v: &mut dyn Visitor) {
-        v.visit(0, self.one);
-        v.visit(1, self.two);
-        v.visit(2, self.three);
-        v.visit(3, self.four);
-        v.visit(4, self.five);
-        v.visit(5, self.six);
+        v.visit(0, Value::Usize(self.one));
+        v.visit(1, Value::Usize(self.two));
+        v.visit(2, Value::Usize(self.three));
+        v.visit(3, Value::Usize(self.four));
+        v.visit(4, Value::Usize(self.five));
+        v.visit(5, Value::Usize(self.six));
+    }
+
+    fn visit2(&self, v: &mut dyn Visitor2) {
+        v.visit(&[
+            Value::Usize(self.one),
+            Value::Usize(self.two),
+            Value::Usize(self.three),
+            Value::Usize(self.four),
+            Value::Usize(self.five),
+            Value::Usize(self.six),
+        ]);
     }
 }
 
@@ -105,9 +120,21 @@ fn criterion_benchmark(c: &mut Criterion) {
     struct Sum(usize);
 
     impl Visitor for Sum {
-        fn visit(&mut self, field: usize, val: usize) {
+        fn visit(&mut self, field: usize, val: Value<'_>) {
             if field == 5 {
-                self.0 += val;
+                match val {
+                    Value::Usize(v) => self.0 += v,
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    impl Visitor2 for Sum {
+        fn visit(&mut self, values: &[Value<'_>]) {
+            match values[5] {
+                Value::Usize(v) => self.0 += v,
+                _ => {}
             }
         }
     }
@@ -166,6 +193,20 @@ fn criterion_benchmark(c: &mut Criterion) {
 
             for _ in 0..NUM {
                 hello_world.visit(&mut v);
+            }
+
+            black_box(num);
+        })
+    });
+
+    c.bench_function("visit2", |b| {
+        b.iter(|| {
+            let mut num = 0;
+
+            let mut v = Sum(black_box(0));
+
+            for _ in 0..NUM {
+                hello_world.visit2(&mut v);
             }
 
             black_box(num);
