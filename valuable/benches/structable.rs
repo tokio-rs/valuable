@@ -199,29 +199,45 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     c.bench_function("visit", |b| {
         b.iter(|| {
-            let mut num = 0;
-
             let mut v = Sum(black_box(0));
 
             for _ in 0..NUM {
                 hello_world.visit(&mut v);
             }
 
-            black_box(num);
+            black_box(v.0);
         })
     });
 
     c.bench_function("visit2", |b| {
         b.iter(|| {
-            let mut num = 0;
-
             let mut v = Sum(black_box(0));
 
             for _ in 0..NUM {
                 hello_world.visit2(&mut v);
             }
 
-            black_box(num);
+            black_box(v.0);
+        })
+    });
+
+    c.bench_function("visit2_prime", |b| {
+        b.iter(|| {
+            let mut v = Sum(black_box(0));
+
+            for _ in 0..NUM {
+                let v = &mut v as &mut dyn Visitor2;
+                v.visit(&[
+                    Value::Usize(black_box(0)),
+                    Value::Usize(black_box(0)),
+                    Value::Usize(black_box(0)),
+                    Value::Usize(black_box(0)),
+                    Value::Usize(black_box(0)),
+                    Value::Usize(black_box(0)),
+                ]);
+            }
+
+            black_box(v.0);
         })
     });
 }
