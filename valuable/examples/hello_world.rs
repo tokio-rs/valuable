@@ -1,4 +1,3 @@
-
 use valuable::*;
 
 struct HelloWorld {
@@ -10,12 +9,8 @@ struct World {
     answer: usize,
 }
 
-static HELLO_WORLD_FIELDS: &[StaticField] = &[
-    StaticField::new("hello"),
-    StaticField::new("world"),
-];
-
-type Iter<'a> = &'a mut dyn Iterator<Item = (Field<'a>, Value<'a>)>;
+static HELLO_WORLD_FIELDS: &[StaticField] =
+    &[StaticField::new(0, "hello"), StaticField::new(1, "world")];
 
 impl Structable for HelloWorld {
     fn definition(&self) -> Definition<'_> {
@@ -26,32 +21,16 @@ impl Structable for HelloWorld {
         }
     }
 
-    fn get(&self, field: &Field<'_>) -> Option<Value<'_>> {
-        match field {
-            Field::Static(field) => {
-                if *field == &HELLO_WORLD_FIELDS[0] {
-                    Some(Value::String(self.hello))
-                } else if *field == &HELLO_WORLD_FIELDS[1] {
-                    Some(Value::Structable(&self.world))
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        }
-    }
-
-    fn with_iter_fn_mut(&self, f: &mut dyn FnMut(Iter<'_>)) {
-        f(&mut [
-            (Field::Static(&HELLO_WORLD_FIELDS[0]), Value::String(self.hello)),
-            (Field::Static(&HELLO_WORLD_FIELDS[1]), Value::Structable(&self.world))
-        ].iter().map(|(f, v)| (*f, v.as_value())));
+    fn visit(&self, v: &mut dyn Visit) {
+        let definition = self.definition();
+        v.visit_struct(&Record::new(
+            &definition,
+            &[Value::String(self.hello), Value::Structable(&self.world)],
+        ));
     }
 }
 
-static WORLD_FIELDS: &'static [StaticField] = &[
-    StaticField::new("answer"),
-];
+static WORLD_FIELDS: &'static [StaticField] = &[StaticField::new(0, "answer")];
 
 impl Structable for World {
     fn definition(&self) -> Definition<'_> {
@@ -62,32 +41,16 @@ impl Structable for World {
         }
     }
 
-    fn get(&self, field: &Field<'_>) -> Option<Value<'_>> {
-        match field {
-            Field::Static(field) => {
-                if *field == &WORLD_FIELDS[0] {
-                    Some(Value::Usize(self.answer))
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        }
-    }
-
-    fn with_iter_fn_mut(&self, f: &mut dyn FnMut(Iter<'_>)) {
-        f(&mut [
-            (Field::Static(&WORLD_FIELDS[0]), Value::Usize(self.answer)),
-        ].iter().map(|(f, v)| (*f, v.as_value())));
+    fn visit(&self, v: &mut dyn Visit) {
+        let definition = self.definition();
+        v.visit_struct(&Record::new(&definition, &[Value::Usize(self.answer)]));
     }
 }
 
 fn main() {
     let hello_world = HelloWorld {
         hello: "wut",
-        world: World {
-            answer: 42,
-        },
+        world: World { answer: 42 },
     };
 
     let value = Value::Structable(&hello_world);

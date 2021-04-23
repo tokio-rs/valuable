@@ -22,6 +22,10 @@ pub enum Field<'a> {
 }
 
 pub struct StaticField {
+    /// Index in the struct's record
+    index: usize,
+
+    /// Field name
     name: &'static str,
 }
 
@@ -38,6 +42,13 @@ impl Definition<'_> {
     pub fn static_fields(&self) -> &'static [StaticField] {
         self.static_fields
     }
+
+    pub(crate) fn is_member(&self, field: &StaticField) -> bool {
+        std::ptr::eq(
+            &self.static_fields[field.index] as *const _,
+            field as *const _,
+        )
+    }
 }
 
 impl Field<'_> {
@@ -50,24 +61,18 @@ impl Field<'_> {
 }
 
 impl StaticField {
-    pub const fn new(name: &'static str) -> StaticField {
-        StaticField {
-            name,
-        }
+    pub const fn new(index: usize, name: &'static str) -> StaticField {
+        StaticField { index, name }
+    }
+
+    pub(crate) fn index(&self) -> usize {
+        self.index
     }
 
     pub fn name(&self) -> &str {
         self.name
     }
 }
-
-impl PartialEq for &'static StaticField {
-    fn eq(&self, other: &&'static StaticField) -> bool {
-        core::ptr::eq(*self, *other)
-    }
-}
-
-impl Eq for &'static StaticField {}
 
 impl DynamicField<'_> {
     pub fn name(&self) -> &str {

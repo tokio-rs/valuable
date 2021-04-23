@@ -1,27 +1,27 @@
-use crate::{Valuable, Value};
+use crate::{Valuable, Value, Visit};
 
 pub trait Listable {
-    fn len(&self) -> usize;
+    fn size_hint(&self) -> (usize, Option<usize>);
 
-    fn iter(&self, f: &mut dyn FnMut(&mut dyn Iterator<Item = Value<'_>>));
+    fn visit(&self, visitor: &mut dyn Visit);
 }
 
 impl<T: Valuable> Listable for [T] {
-    fn len(&self) -> usize {
-        <[T]>::len(self)
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
     }
 
-    fn iter(&self, f: &mut dyn FnMut(&mut dyn Iterator<Item = Value<'_>>)) {
-        f(&mut <[T]>::iter(self).map(Valuable::as_value));
+    fn visit(&self, visitor: &mut dyn Visit) {
+        unimplemented!()
     }
 }
 
 impl<T: Valuable> Listable for Vec<T> {
-    fn len(&self) -> usize {
-        Vec::len(self)
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
     }
 
-    fn iter(&self, f: &mut dyn FnMut(&mut dyn Iterator<Item = Value<'_>>)) {
-        f(&mut <[T]>::iter(self).map(Valuable::as_value));
+    fn visit(&self, visitor: &mut dyn Visit) {
+        unimplemented!()
     }
 }

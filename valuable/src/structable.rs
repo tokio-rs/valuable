@@ -1,43 +1,28 @@
-use crate::{Definition, Field, Value};
+use crate::{Definition, Field, Record, Value, Visit};
 
 use core::fmt;
 
 pub trait Structable {
     fn definition(&self) -> Definition<'_>;
 
-    fn get(&self, field: &Field<'_>) -> Option<Value<'_>>;
-
-    fn with_iter_fn_mut(&self, f: &mut dyn FnMut(Iter<'_>));
-}
-
-type Iter<'a> = &'a mut dyn Iterator<Item = (Field<'a>, Value<'a>)>;
-
-impl<'a> dyn Structable + 'a {
-    fn with_iter<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(Iter<'_>) -> R
-    {
-        let mut out = None;
-        let mut f = Some(f);
-
-        self.with_iter_fn_mut(&mut |iter| {
-            out = Some(f.take().unwrap()(iter));
-        });
-
-        out.take().unwrap()
-    }
+    fn visit(&self, visitor: &mut dyn Visit);
 }
 
 pub(crate) fn debug(value: &dyn Structable, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let def = value.definition();
+    struct Debug<'a, 'b>(fmt::DebugStruct<'a, 'b>);
 
-    let mut f = fmt.debug_struct(def.name());
-
-    value.with_iter(|iter| {
-        for (field, value) in iter {
-            f.field(field.name(), &value);
+    impl Visit for Debug<'_, '_> {
+        fn visit_struct(&mut self, record: &Record<'_>) {
+            for (field, value) in record.entries() {
+                self.0.field(field.name(), value);
+            }
         }
-    });
+    }
 
-    f.finish()
+    let def = value.definition();
+    let mut debug = Debug(fmt.debug_struct(def.name()));
+
+    value.visit(&mut debug);
+
+    debug.0.finish()
 }

@@ -1,5 +1,5 @@
-use crate::{Listable, Structable, Valuable};
 use crate::structable;
+use crate::{Listable, Structable, Valuable};
 
 use std::fmt;
 
