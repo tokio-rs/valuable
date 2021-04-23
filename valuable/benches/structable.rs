@@ -151,6 +151,18 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
 
+    c.bench_function("struct2", |b| {
+        b.iter(|| {
+            let mut num = 0;
+            for _ in 0..NUM {
+                let hello_world = black_box(HelloWorld::default());
+                num += hello_world.six;
+            }
+
+            black_box(num);
+        })
+    });
+
     c.bench_function("structable_front", |b| {
         b.iter(|| {
             let mut num = 0;
