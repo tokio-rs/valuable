@@ -14,8 +14,8 @@ static HELLO_WORLD_FIELDS: &[StaticField] =
     &[StaticField::new(0, "hello"), StaticField::new(1, "world")];
 
 impl Structable for HelloWorld {
-    fn definition(&self) -> Definition<'_> {
-        Definition {
+    fn definition(&self) -> StructDef<'_> {
+        StructDef {
             name: "HelloWorld",
             static_fields: HELLO_WORLD_FIELDS,
             is_dynamic: false,
@@ -34,8 +34,8 @@ impl Structable for HelloWorld {
 static WORLD_FIELDS: &'static [StaticField] = &[StaticField::new(0, "answer")];
 
 impl Structable for World {
-    fn definition(&self) -> Definition<'_> {
-        Definition {
+    fn definition(&self) -> StructDef<'_> {
+        StructDef {
             name: "World",
             static_fields: WORLD_FIELDS,
             is_dynamic: false,

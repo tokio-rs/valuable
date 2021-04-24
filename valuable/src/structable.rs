@@ -4,9 +4,19 @@ use crate::field::*;
 use core::fmt;
 
 pub trait Structable {
-    fn definition(&self) -> Definition<'_>;
+    fn definition(&self) -> StructDef<'_>;
 
     fn visit(&self, visitor: &mut dyn Visit);
+}
+pub struct StructDef<'a> {
+    /// Type name
+    pub name: &'a str,
+
+    /// Static fields
+    pub static_fields: &'static [StaticField],
+
+    /// If not all fields are statically known, then true
+    pub is_dynamic: bool,
 }
 
 impl fmt::Debug for dyn Structable + '_ {
@@ -27,5 +37,22 @@ impl fmt::Debug for dyn Structable + '_ {
         self.visit(&mut debug);
     
         debug.0.finish()
+    }
+}
+
+impl StructDef<'_> {
+    pub fn name(&self) -> &str {
+        self.name
+    }
+
+    pub fn static_fields(&self) -> &'static [StaticField] {
+        self.static_fields
+    }
+
+    pub(crate) fn is_member(&self, field: &StaticField) -> bool {
+        std::ptr::eq(
+            &self.static_fields[field.index()] as *const _,
+            field as *const _,
+        )
     }
 }

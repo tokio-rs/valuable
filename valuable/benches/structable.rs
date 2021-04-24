@@ -23,8 +23,8 @@ static FIELDS: &[StaticField] = &[
 ];
 
 impl Structable for HelloWorld {
-    fn definition(&self) -> Definition<'_> {
-        Definition {
+    fn definition(&self) -> StructDef<'_> {
+        StructDef {
             name: "HelloWorld",
             static_fields: FIELDS,
             is_dynamic: false,

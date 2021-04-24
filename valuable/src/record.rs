@@ -1,18 +1,18 @@
-use crate::{Value};
+use crate::*;
 use crate::field::*;
 
 /// Access values for a struct's static fields
 pub struct NamedValues<'a> {
-    definition: &'a Definition<'a>,
+    definition: &'a StructDef<'a>,
     values: &'a [Value<'a>],
 }
 
 impl<'a> NamedValues<'a> {
-    pub fn new(definition: &'a Definition<'a>, values: &'a [Value<'a>]) -> NamedValues<'a> {
+    pub fn new(definition: &'a StructDef<'a>, values: &'a [Value<'a>]) -> NamedValues<'a> {
         NamedValues { definition, values }
     }
 
-    pub fn definition(&self) -> &Definition<'_> {
+    pub fn definition(&self) -> &StructDef<'_> {
         self.definition
     }
 

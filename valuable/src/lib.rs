@@ -1,3 +1,6 @@
+mod enumerable;
+pub use enumerable::{Enumerable, EnumDef, VariantDef};
+
 pub mod field;
 
 mod listable;
@@ -12,7 +15,7 @@ mod record;
 pub use record::NamedValues;
 
 mod structable;
-pub use structable::Structable;
+pub use structable::{Structable, StructDef};
 
 mod valuable;
 pub use valuable::Valuable;
