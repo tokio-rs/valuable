@@ -33,6 +33,16 @@ impl Valuable for Value<'_> {
 
         match *self {
             String(v) => String(v),
+            Char(v) => Char(v),
+            Bool(v) => Bool(v),
+            F32(v) => F32(v),
+            F64(v) => F64(v),
+            I8(v) => I8(v),
+            I16(v) => I16(v),
+            I32(v) => I32(v),
+            I64(v) => I64(v),
+            I128(v) => I128(v),
+            Isize(v) => Isize(v),
             U8(v) => U8(v),
             U16(v) => U16(v),
             U32(v) => U32(v),
