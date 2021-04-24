@@ -8,6 +8,26 @@ pub trait Listable {
     fn visit(&self, visitor: &mut dyn Visit);
 }
 
+impl<L: ?Sized + Listable> Listable for &L {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        L::size_hint(*self)
+    }
+
+    fn visit(&self, visitor: &mut dyn Visit) {
+        L::visit(*self, visitor)
+    }
+}
+
+impl<L: ?Sized + Listable> Listable for Box<L> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        L::size_hint(&**self)
+    }
+
+    fn visit(&self, visitor: &mut dyn Visit) {
+        L::visit(&**self, visitor)
+    }
+}
+
 impl<T: Valuable> Listable for [T] {
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
@@ -54,10 +74,10 @@ impl fmt::Debug for dyn Listable + '_ {
                 self.0.entry(&value);
             }
         }
-    
+
         let mut debug = Debug(fmt.debug_list());
         self.visit(&mut debug);
-    
+
         debug.0.finish()
     }
 }
