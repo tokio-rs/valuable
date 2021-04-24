@@ -1,9 +1,14 @@
 use crate::*;
 
 pub trait Visit {
-    /// Visits a struct's static components
-    fn visit_struct(&mut self, record: &Record<'_>) {
+    /// Visits a struct's named fields
+    fn visit_named_fields(&mut self, record: &NamedValues<'_>) {
         drop(record);
+    }
+
+    /// Visits a struct's unnamed fields (tuple struct).
+    fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
+        drop(values);
     }
 
     /// Visit a list item

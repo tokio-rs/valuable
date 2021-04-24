@@ -57,7 +57,7 @@ impl Field<'_> {
 
 impl StaticField {
     pub const fn new(index: usize, name: &'static str) -> StaticField {
-        StaticField { index, name }
+        StaticField { index, name: name }
     }
 
     pub(crate) fn index(&self) -> usize {

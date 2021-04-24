@@ -1,10 +1,19 @@
-use crate::structable;
 use crate::{Listable, Structable, Valuable};
 
 use std::fmt;
 
 #[non_exhaustive]
 pub enum Value<'a> {
+    Bool(bool),
+    Char(char),
+    F32(f32),
+    F64(f64),
+    I8(i8),
+    I16(i16),
+    I32(i32),
+    I64(i64),
+    I128(i128),
+    Isize(isize),
     String(&'a str),
     U8(u8),
     U16(u16),
@@ -13,7 +22,7 @@ pub enum Value<'a> {
     U128(u128),
     Usize(usize),
     Unit, // TODO: None?
-    // More here
+    Error(&'a dyn std::error::Error),
     Listable(&'a dyn Listable),
     Structable(&'a dyn Structable),
 }
@@ -33,6 +42,7 @@ impl Valuable for Value<'_> {
             Unit => Unit,
             Listable(v) => Listable(v),
             Structable(v) => Structable(v),
+            _ => unimplemented!(),
         }
     }
 }
@@ -40,12 +50,6 @@ impl Valuable for Value<'_> {
 impl Default for Value<'_> {
     fn default() -> Self {
         Value::Unit
-    }
-}
-
-impl PartialEq<Value<'_>> for Value<'_> {
-    fn eq(&self, value: &Value<'_>) -> bool {
-        todo!()
     }
 }
 
@@ -62,8 +66,11 @@ impl fmt::Debug for Value<'_> {
             U128(v) => v.fmt(fmt),
             Usize(v) => v.fmt(fmt),
             Unit => ().fmt(fmt),
-            Listable(v) => unimplemented!(),
-            Structable(v) => structable::debug(v, fmt),
+            Error(v) => fmt::Debug::fmt(v, fmt),
+            Listable(v) => v.fmt(fmt),
+            Structable(v) => v.fmt(fmt),
+            // Structable(v) => structable::debug(v, fmt),
+            _ => unimplemented!(),
         }
     }
 }

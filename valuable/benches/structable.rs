@@ -1,4 +1,5 @@
 use valuable::*;
+use valuable::field::*;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
@@ -32,7 +33,7 @@ impl Structable for HelloWorld {
 
     fn visit(&self, v: &mut dyn Visit) {
         let definition = self.definition();
-        v.visit_struct(&Record::new(
+        v.visit_named_fields(&NamedValues::new(
             &definition,
             &[
                 Value::Usize(self.one),
@@ -57,7 +58,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     struct Sum(usize, &'static StaticField);
 
     impl Visit for Sum {
-        fn visit_struct(&mut self, record: &Record<'_>) {
+        fn visit_named_fields(&mut self, record: &NamedValues<'_>) {
             self.0 += match record.get_static_unchecked(self.1) {
                 Value::Usize(v) => v,
                 _ => return,
@@ -82,7 +83,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             let mut v = Sum(black_box(0), f);
 
             for _ in 0..NUM {
-                v.visit_struct(&Record::new(
+                v.visit_named_fields(&NamedValues::new(
                     &definition,
                     &[
                         Value::Usize(0),

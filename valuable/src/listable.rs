@@ -1,4 +1,6 @@
-use crate::{Valuable, Visit};
+use crate::*;
+
+use core::fmt;
 
 pub trait Listable {
     fn size_hint(&self) -> (usize, Option<usize>);
@@ -40,5 +42,22 @@ impl<T: Valuable> Listable for Vec<T> {
 
     fn visit(&self, visitor: &mut dyn Visit) {
         <[T]>::visit(&self, visitor)
+    }
+}
+
+impl fmt::Debug for dyn Listable + '_ {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        struct Debug<'a, 'b>(fmt::DebugList<'a, 'b>);
+
+        impl Visit for Debug<'_, '_> {
+            fn visit_item(&mut self, value: Value<'_>) {
+                self.0.entry(&value);
+            }
+        }
+    
+        let mut debug = Debug(fmt.debug_list());
+        self.visit(&mut debug);
+    
+        debug.0.finish()
     }
 }

@@ -9,21 +9,23 @@ pub trait Structable {
     fn visit(&self, visitor: &mut dyn Visit);
 }
 
-pub(crate) fn debug(value: &dyn Structable, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-    struct Debug<'a, 'b>(fmt::DebugStruct<'a, 'b>);
+impl fmt::Debug for dyn Structable + '_ {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        struct Debug<'a, 'b>(fmt::DebugStruct<'a, 'b>);
 
-    impl Visit for Debug<'_, '_> {
-        fn visit_struct(&mut self, record: &Record<'_>) {
-            for (field, value) in record.entries() {
-                self.0.field(field.name(), value);
+        impl Visit for Debug<'_, '_> {
+            fn visit_named_fields(&mut self, record: &NamedValues<'_>) {
+                for (field, value) in record.entries() {
+                    self.0.field(field.name(), value);
+                }
             }
         }
+    
+        let def = self.definition();
+        let mut debug = Debug(fmt.debug_struct(def.name()));
+    
+        self.visit(&mut debug);
+    
+        debug.0.finish()
     }
-
-    let def = value.definition();
-    let mut debug = Debug(fmt.debug_struct(def.name()));
-
-    value.visit(&mut debug);
-
-    debug.0.finish()
 }

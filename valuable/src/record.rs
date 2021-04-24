@@ -2,14 +2,14 @@ use crate::{Value};
 use crate::field::*;
 
 /// Access values for a struct's static fields
-pub struct Record<'a> {
+pub struct NamedValues<'a> {
     definition: &'a Definition<'a>,
     values: &'a [Value<'a>],
 }
 
-impl<'a> Record<'a> {
-    pub fn new(definition: &'a Definition<'a>, values: &'a [Value<'a>]) -> Record<'a> {
-        Record { definition, values }
+impl<'a> NamedValues<'a> {
+    pub fn new(definition: &'a Definition<'a>, values: &'a [Value<'a>]) -> NamedValues<'a> {
+        NamedValues { definition, values }
     }
 
     pub fn definition(&self) -> &Definition<'_> {

@@ -1,4 +1,5 @@
 use valuable::*;
+use valuable::field::*;
 
 struct HelloWorld {
     hello: &'static str,
@@ -23,7 +24,7 @@ impl Structable for HelloWorld {
 
     fn visit(&self, v: &mut dyn Visit) {
         let definition = self.definition();
-        v.visit_struct(&Record::new(
+        v.visit_named_fields(&NamedValues::new(
             &definition,
             &[Value::String(self.hello), Value::Structable(&self.world)],
         ));
@@ -43,7 +44,7 @@ impl Structable for World {
 
     fn visit(&self, v: &mut dyn Visit) {
         let definition = self.definition();
-        v.visit_struct(&Record::new(&definition, &[Value::Usize(self.answer)]));
+        v.visit_named_fields(&NamedValues::new(&definition, &[Value::Usize(self.answer)]));
     }
 }
 

@@ -9,7 +9,7 @@ pub use mappable::Mappable;
 */
 
 mod record;
-pub use record::Record;
+pub use record::NamedValues;
 
 mod structable;
 pub use structable::Structable;
