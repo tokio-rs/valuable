@@ -41,8 +41,8 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
     });
     let structable_impl = quote! {
         impl #impl_generics ::valuable::Structable for #ident #ty_generics #where_clause {
-            fn definition(&self) -> ::valuable::field::Definition<'_> {
-                ::valuable::field::Definition {
+            fn definition(&self) -> ::valuable::StructDef<'_> {
+                ::valuable::StructDef {
                     name: #ident_str,
                     static_fields: #static_fields_static_name,
                     is_dynamic: false,
