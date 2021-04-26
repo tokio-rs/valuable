@@ -43,7 +43,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
             fn definition(&self) -> ::valuable::StructDef<'_> {
                 ::valuable::StructDef {
                     name: #ident_str,
-                    static_fields: #static_fields_static_name,
+                    fields: ::valuable::field::Fields::NamedStatic(#static_fields_static_name),
                     is_dynamic: false,
                 }
             }
