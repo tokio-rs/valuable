@@ -27,9 +27,4 @@ mod visit;
 pub use visit::Visit;
 
 #[cfg(feature = "derive")]
-#[allow(unused_imports)]
-#[macro_use]
-extern crate valuable_derive;
-#[cfg(feature = "derive")]
-#[doc(hidden)]
 pub use valuable_derive::*;
