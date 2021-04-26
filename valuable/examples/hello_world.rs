@@ -17,7 +17,7 @@ impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
         StructDef {
             name: "HelloWorld",
-            static_fields: HELLO_WORLD_FIELDS,
+            fields: Fields::NamedStatic(HELLO_WORLD_FIELDS),
             is_dynamic: false,
         }
     }
@@ -36,7 +36,7 @@ impl Structable for World {
     fn definition(&self) -> StructDef<'_> {
         StructDef {
             name: "World",
-            static_fields: WORLD_FIELDS,
+            fields: Fields::NamedStatic(WORLD_FIELDS),
             is_dynamic: false,
         }
     }

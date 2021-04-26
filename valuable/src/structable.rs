@@ -12,10 +12,10 @@ pub struct StructDef<'a> {
     /// Type name
     pub name: &'a str,
 
-    /// Static fields
-    pub static_fields: &'static [NamedField<'static>],
+    /// Fields
+    pub fields: Fields<'a>,
 
-    /// If not all fields are statically known, then true
+    /// Is this a dynamic struct?
     pub is_dynamic: bool,
 }
 
@@ -45,7 +45,11 @@ impl StructDef<'_> {
         self.name
     }
 
-    pub fn static_fields(&self) -> &'static [NamedField<'static>] {
-        self.static_fields
+    pub fn fields(&self) -> &Fields<'_> {
+        &self.fields
+    }
+
+    pub fn is_dynamic(&self) -> bool {
+        self.is_dynamic
     }
 }
