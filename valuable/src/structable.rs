@@ -13,7 +13,7 @@ pub struct StructDef<'a> {
     pub name: &'a str,
 
     /// Static fields
-    pub static_fields: &'static [StaticField],
+    pub static_fields: &'static [NamedField<'static>],
 
     /// If not all fields are statically known, then true
     pub is_dynamic: bool,
@@ -45,14 +45,7 @@ impl StructDef<'_> {
         self.name
     }
 
-    pub fn static_fields(&self) -> &'static [StaticField] {
+    pub fn static_fields(&self) -> &'static [NamedField<'static>] {
         self.static_fields
-    }
-
-    pub(crate) fn is_member(&self, field: &StaticField) -> bool {
-        std::ptr::eq(
-            &self.static_fields[field.index()] as *const _,
-            field as *const _,
-        )
     }
 }

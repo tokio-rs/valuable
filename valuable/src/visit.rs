@@ -2,8 +2,8 @@ use crate::*;
 
 pub trait Visit {
     /// Visits a struct's named fields
-    fn visit_named_fields(&mut self, record: &NamedValues<'_>) {
-        drop(record);
+    fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
+        drop(named_values);
     }
 
     /// Visits a struct's unnamed fields (tuple struct).

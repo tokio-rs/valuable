@@ -10,8 +10,8 @@ struct World {
     answer: usize,
 }
 
-static HELLO_WORLD_FIELDS: &[StaticField] =
-    &[StaticField::new(0, "hello"), StaticField::new(1, "world")];
+static HELLO_WORLD_FIELDS: &[NamedField<'static>] =
+    &[NamedField::new("hello"), NamedField::new("world")];
 
 impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
@@ -23,15 +23,14 @@ impl Structable for HelloWorld {
     }
 
     fn visit(&self, v: &mut dyn Visit) {
-        let definition = self.definition();
         v.visit_named_fields(&NamedValues::new(
-            &definition,
+            HELLO_WORLD_FIELDS,
             &[Value::String(self.hello), Value::Structable(&self.world)],
         ));
     }
 }
 
-static WORLD_FIELDS: &'static [StaticField] = &[StaticField::new(0, "answer")];
+static WORLD_FIELDS: &'static [NamedField<'static>] = &[NamedField::new("answer")];
 
 impl Structable for World {
     fn definition(&self) -> StructDef<'_> {
@@ -43,8 +42,7 @@ impl Structable for World {
     }
 
     fn visit(&self, v: &mut dyn Visit) {
-        let definition = self.definition();
-        v.visit_named_fields(&NamedValues::new(&definition, &[Value::Usize(self.answer)]));
+        v.visit_named_fields(&NamedValues::new(WORLD_FIELDS, &[Value::Usize(self.answer)]));
     }
 }
 

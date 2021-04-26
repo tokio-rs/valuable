@@ -13,13 +13,13 @@ struct HelloWorld {
     six: usize,
 }
 
-static FIELDS: &[StaticField] = &[
-    StaticField::new(0, "one"),
-    StaticField::new(1, "two"),
-    StaticField::new(2, "three"),
-    StaticField::new(3, "four"),
-    StaticField::new(4, "five"),
-    StaticField::new(5, "six"),
+static FIELDS: &[NamedField<'static>] = &[
+    NamedField::new("one"),
+    NamedField::new("two"),
+    NamedField::new("three"),
+    NamedField::new("four"),
+    NamedField::new( "five"),
+    NamedField::new( "six"),
 ];
 
 impl Structable for HelloWorld {
@@ -34,7 +34,7 @@ impl Structable for HelloWorld {
     fn visit(&self, v: &mut dyn Visit) {
         let definition = self.definition();
         v.visit_named_fields(&NamedValues::new(
-            &definition,
+            FIELDS,
             &[
                 Value::Usize(self.one),
                 Value::Usize(self.two),
@@ -52,15 +52,14 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let hello_world = black_box(HelloWorld::default());
     let structable = &hello_world as &dyn Structable;
-    let definition = structable.definition();
     let f = &structable.definition().static_fields()[5];
 
-    struct Sum(usize, &'static StaticField);
+    struct Sum(usize, &'static NamedField<'static>);
 
     impl Visit for Sum {
         fn visit_named_fields(&mut self, record: &NamedValues<'_>) {
-            self.0 += match record.get_static_unchecked(self.1) {
-                Value::Usize(v) => v,
+            self.0 += match record.get(self.1) {
+                Some(Value::Usize(v)) => v,
                 _ => return,
             }
         }
@@ -84,7 +83,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
             for _ in 0..NUM {
                 v.visit_named_fields(&NamedValues::new(
-                    &definition,
+                    FIELDS,
                     &[
                         Value::Usize(0),
                         Value::Usize(0),

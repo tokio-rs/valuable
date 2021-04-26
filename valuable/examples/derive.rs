@@ -1,6 +1,8 @@
 use valuable::Valuable;
 
-#[derive(Debug, Valuable)]
+// `Debug` not implemented for struct, the debug implementation is going via
+// valuable.
+#[derive(Valuable)]
 struct Person {
     name: String,
     age: u8,
@@ -14,5 +16,5 @@ fn main() {
         phones: vec!["876-5309".to_string()],
     };
 
-    println!("{:?}", p);
+    println!("{:?}", p.as_value());
 }

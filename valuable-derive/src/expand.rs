@@ -17,15 +17,14 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
     }
 
     let static_fields_static_name = format_ident!("{}_FIELDS", input.ident);
-    let static_fields = data.fields.iter().enumerate().map(|(i, f)| {
-        let index = syn::Index::from(i);
+    let static_fields = data.fields.iter().map(|f| {
         let name = f.ident.as_ref().unwrap().to_string();
         quote! {
-            ::valuable::field::StaticField::new(#index, #name),
+            ::valuable::field::NamedField::new(#name),
         }
     });
     let static_fields_static = quote! {
-        static #static_fields_static_name: &[::valuable::field::StaticField] = &[
+        static #static_fields_static_name: &[::valuable::field::NamedField<'static>] = &[
             #(#static_fields)*
         ];
     };
@@ -50,9 +49,8 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
             }
 
             fn visit(&self, v: &mut dyn ::valuable::Visit) {
-                let definition = self.definition();
                 v.visit_named_fields(&::valuable::NamedValues::new(
-                    &definition,
+                    #static_fields_static_name,
                     &[
                         #(#as_values)*
                     ],

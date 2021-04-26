@@ -3,43 +3,26 @@ use crate::field::*;
 
 /// Access values for a struct's static fields
 pub struct NamedValues<'a> {
-    definition: &'a StructDef<'a>,
+    fields: &'a [NamedField<'a>],
     values: &'a [Value<'a>],
 }
 
 impl<'a> NamedValues<'a> {
-    pub fn new(definition: &'a StructDef<'a>, values: &'a [Value<'a>]) -> NamedValues<'a> {
-        NamedValues { definition, values }
+    pub fn new(fields: &'a [NamedField<'a>], values: &'a [Value<'a>]) -> NamedValues<'a> {
+        NamedValues { fields, values }
     }
 
-    pub fn definition(&self) -> &StructDef<'_> {
-        self.definition
+    pub fn get(&self, field: &NamedField<'_>) -> Option<&Value<'_>> {
+        use std::mem;
+
+        let idx = (field as *const _ as usize - &self.fields[0] as *const _ as usize) / mem::size_of::<NamedField>();
+        self.values.get(idx)
     }
 
-    /// TODO: micro optimizations
-    pub fn get_static_unchecked(&self, field: &'static StaticField) -> &Value<'_> {
-        &self.values[field.index()]
-    }
-
-    pub fn get(&self, field: &Field<'_>) -> Option<&Value<'_>> {
-        match *field {
-            Field::Static(f) => {
-                let i = f.index();
-                assert!(
-                    self.definition.is_member(f),
-                    "field member of different struct"
-                );
-
-                self.values.get(i)
-            }
-            _ => unimplemented!(),
-        }
-    }
-
-    pub fn entries<'b>(&'b self) -> impl Iterator<Item = (&'static StaticField, &Value<'a>)> + 'b {
-        self.definition
-            .static_fields()
+    pub fn entries<'b>(&'b self) -> impl Iterator<Item = (&'b NamedField, &'b Value<'a>)> + 'b {
+        self.fields
             .iter()
-            .map(move |field| (field, &self.values[field.index()]))
+            .enumerate()
+            .map(move |(i, field)| (field, &self.values[i]))
     }
 }

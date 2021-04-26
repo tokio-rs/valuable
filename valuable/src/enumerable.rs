@@ -21,6 +21,6 @@ pub struct VariantDef<'a> {
     name: &'a str,
 
     /// Static named fields
-    pub static_fields: &'static [StaticField],
+    pub static_fields: &'static [NamedField<'static>],
 
 }
