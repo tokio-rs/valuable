@@ -1,5 +1,5 @@
-use crate::*;
 use crate::field::*;
+use crate::*;
 
 /// Access values for a struct's static fields
 pub struct NamedValues<'a> {
@@ -15,7 +15,8 @@ impl<'a> NamedValues<'a> {
     pub fn get(&self, field: &NamedField<'_>) -> Option<&Value<'_>> {
         use std::mem;
 
-        let idx = (field as *const _ as usize - &self.fields[0] as *const _ as usize) / mem::size_of::<NamedField>();
+        let idx = (field as *const _ as usize - &self.fields[0] as *const _ as usize)
+            / mem::size_of::<NamedField>();
         self.values.get(idx)
     }
 

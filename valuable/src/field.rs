@@ -1,4 +1,3 @@
-
 pub enum Fields<'a> {
     /// Named fields
     Named(&'a [NamedField<'a>]),
@@ -6,16 +5,29 @@ pub enum Fields<'a> {
     /// Static named fields
     NamedStatic(&'static [NamedField<'static>]),
 
-    /// Unnamed (positional) fields
+    /// Unnamed (positional) fields or unit
     Unnamed,
-
-    /// No fields
-    Unit,
 }
 
 pub struct NamedField<'a> {
     /// Field name
     name: &'a str,
+}
+
+impl Fields<'_> {
+    pub fn is_named(&self) -> bool {
+        match self {
+            Fields::Named(..) | Fields::NamedStatic(..) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_unnamed(&self) -> bool {
+        match self {
+            Fields::Unnamed => true,
+            _ => false,
+        }
+    }
 }
 
 impl<'a> NamedField<'a> {

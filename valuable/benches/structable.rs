@@ -1,5 +1,5 @@
-use valuable::*;
 use valuable::field::*;
+use valuable::*;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
@@ -18,8 +18,8 @@ static FIELDS: &[NamedField<'static>] = &[
     NamedField::new("two"),
     NamedField::new("three"),
     NamedField::new("four"),
-    NamedField::new( "five"),
-    NamedField::new( "six"),
+    NamedField::new("five"),
+    NamedField::new("six"),
 ];
 
 impl Structable for HelloWorld {

@@ -1,5 +1,5 @@
-use valuable::*;
 use valuable::field::*;
+use valuable::*;
 
 struct HelloWorld {
     hello: &'static str,
@@ -42,7 +42,10 @@ impl Structable for World {
     }
 
     fn visit(&self, v: &mut dyn Visit) {
-        v.visit_named_fields(&NamedValues::new(WORLD_FIELDS, &[Value::Usize(self.answer)]));
+        v.visit_named_fields(&NamedValues::new(
+            WORLD_FIELDS,
+            &[Value::Usize(self.answer)],
+        ));
     }
 }
 

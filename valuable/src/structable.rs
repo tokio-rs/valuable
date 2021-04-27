@@ -1,5 +1,5 @@
-use crate::*;
 use crate::field::*;
+use crate::*;
 
 use core::fmt;
 
@@ -21,22 +21,43 @@ pub struct StructDef<'a> {
 
 impl fmt::Debug for dyn Structable + '_ {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        struct Debug<'a, 'b>(fmt::DebugStruct<'a, 'b>);
+        struct DebugStruct<'a, 'b> {
+            name: &'b str,
+            fmt: &'b mut fmt::Formatter<'a>,
+            res: fmt::Result,
+        }
 
-        impl Visit for Debug<'_, '_> {
+        impl Visit for DebugStruct<'_, '_> {
             fn visit_named_fields(&mut self, record: &NamedValues<'_>) {
+                let mut d = self.fmt.debug_struct(self.name);
+
                 for (field, value) in record.entries() {
-                    self.0.field(field.name(), value);
+                    d.field(field.name(), value);
                 }
+
+                self.res = d.finish();
+            }
+
+            fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
+                let mut d = self.fmt.debug_tuple(self.name);
+
+                for value in values {
+                    d.field(value);
+                }
+
+                self.res = d.finish();
             }
         }
-    
+
         let def = self.definition();
-        let mut debug = Debug(fmt.debug_struct(def.name()));
-    
-        self.visit(&mut debug);
-    
-        debug.0.finish()
+        let mut visit = DebugStruct {
+            name: def.name(),
+            fmt,
+            res: Ok(()),
+        };
+
+        self.visit(&mut visit);
+        visit.res
     }
 }
 
