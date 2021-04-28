@@ -30,6 +30,12 @@ impl Structable for HelloWorld {
     }
 }
 
+impl Valuable for HelloWorld {
+    fn as_value(&self) -> Value<'_> {
+        Value::Structable(self)
+    }
+}
+
 static WORLD_FIELDS: &'static [NamedField<'static>] = &[NamedField::new("answer")];
 
 impl Structable for World {
@@ -57,4 +63,9 @@ fn main() {
 
     let value = Value::Structable(&hello_world);
     println!("{:#?}", value);
+
+    let slice = &[1, 2, 3][..];
+
+    let value: Value = Valuable::as_value(&slice);
+    println!("{:?}", value);
 }

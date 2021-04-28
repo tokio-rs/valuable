@@ -14,6 +14,9 @@ pub use mappable::Mappable;
 mod record;
 pub use record::NamedValues;
 
+mod slice;
+pub use slice::Slice;
+
 mod structable;
 pub use structable::{StructDef, Structable};
 

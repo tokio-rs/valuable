@@ -23,6 +23,12 @@ pub trait Visit {
         drop((variant, values));
     }
 
+    /// Visit a slice
+    fn visit_slice(&mut self, slice: Slice<'_>) {
+        drop(slice);
+    }
+
+    /*
     /// Visit a list item
     fn visit_item(&mut self, value: Value<'_>) {
         drop(value);
@@ -32,10 +38,5 @@ pub trait Visit {
     fn visit_items(&mut self, values: &[Value<'_>]) {
         visit_items(self, values);
     }
-}
-
-fn visit_items<T: Visit + ?Sized>(v: &mut T, values: &[Value<'_>]) {
-    for value in values {
-        v.visit_item(value.as_value());
-    }
+    */
 }

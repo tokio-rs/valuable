@@ -1,7 +1,14 @@
-use crate::Value;
+use crate::{Value, Slice, Visit};
 
 pub trait Valuable {
     fn as_value(&self) -> Value<'_>;
+
+    fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
+    where
+        Self: Sized,
+    {
+        unimplemented!()
+    }
 }
 
 impl<V: ?Sized + Valuable> Valuable for &V {
@@ -21,6 +28,13 @@ macro_rules! impl_valuable {
         impl Valuable for $ty {
             fn as_value(&self) -> Value<'_> {
                 Value::$variant(*self)
+            }
+
+            fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
+            where
+                Self: Sized,
+            {
+                visit.visit_slice(Slice::$variant(slice));
             }
         }
     };
