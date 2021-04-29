@@ -1,6 +1,6 @@
-use crate::{Listable, Structable, Valuable};
+use crate::{Enumerable, Listable, Structable, Valuable};
 
-use std::fmt;
+use std::fmt::{self, Debug};
 
 #[non_exhaustive]
 pub enum Value<'a> {
@@ -25,6 +25,7 @@ pub enum Value<'a> {
     Error(&'a dyn std::error::Error),
     Listable(&'a dyn Listable),
     Structable(&'a dyn Structable),
+    Enumerable(&'a dyn Enumerable),
 }
 
 impl Valuable for Value<'_> {
@@ -52,6 +53,7 @@ impl Valuable for Value<'_> {
             Unit => Unit,
             Listable(v) => Listable(v),
             Structable(v) => Structable(v),
+            Enumerable(v) => Enumerable(v),
             _ => unimplemented!(),
         }
     }
@@ -69,6 +71,16 @@ impl fmt::Debug for Value<'_> {
 
         match *self {
             String(v) => v.fmt(fmt),
+            Char(v) => v.fmt(fmt),
+            Bool(v) => v.fmt(fmt),
+            F32(v) => v.fmt(fmt),
+            F64(v) => v.fmt(fmt),
+            I8(v) => v.fmt(fmt),
+            I16(v) => v.fmt(fmt),
+            I32(v) => v.fmt(fmt),
+            I64(v) => v.fmt(fmt),
+            I128(v) => v.fmt(fmt),
+            Isize(v) => v.fmt(fmt),
             U8(v) => v.fmt(fmt),
             U16(v) => v.fmt(fmt),
             U32(v) => v.fmt(fmt),
@@ -79,8 +91,8 @@ impl fmt::Debug for Value<'_> {
             Error(v) => fmt::Debug::fmt(v, fmt),
             Listable(v) => v.fmt(fmt),
             Structable(v) => v.fmt(fmt),
+            Enumerable(v) => v.fmt(fmt),
             // Structable(v) => structable::debug(v, fmt),
-            _ => unimplemented!(),
         }
     }
 }
