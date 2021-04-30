@@ -25,6 +25,7 @@ pub enum Value<'a> {
     Unit, // TODO: None?
     Error(&'a dyn std::error::Error),
     Listable(&'a dyn Listable),
+    Mappable(&'a dyn Mappable),
     Structable(&'a dyn Structable),
 }
 

@@ -26,7 +26,6 @@ pub enum Slice<'a> {
     Value(&'a [Value<'a>]),
     Unit(&'a [()]),
     /*
-    Unit(&'a [()]), // TODO: None?
     Error(&'a dyn std::error::Error),
     Listable(&'a dyn Listable),
     Structable(&'a dyn Structable),

@@ -1,28 +1,26 @@
 
-use crate::{Valuable, Value};
+use crate::*;
 
 use std::{collections::HashMap};
 
-pub trait Mappable {
-    fn len(&self) -> usize;
+pub trait Mappable: Valuable {
+    fn size_hint(&self) -> (usize, Option<usize>);
+}
 
-    fn get(&self, key: &Value<'_>) -> Option<Value<'_>>;
+impl<K: Valuable, V: Valuable> Valuable for HashMap<K, V> {
+    fn as_value(&self) -> Value<'_> {
+        Value::Mappable(self)
+    }
 
-    fn iter(&self, f: &mut dyn FnMut(&mut dyn Iterator<Item = (Value<'_>, Value<'_>)>));
+    fn visit(&self, visit: &mut dyn Visit) {
+        for (key, value) in self.iter() {
+            visit.visit_entry(key.as_value(), value.as_value());
+        }
+    }
 }
 
 impl<K: Valuable, V: Valuable> Mappable for HashMap<K, V> {
-    fn len(&self) -> usize {
-        HashMap::len(self)
-    }
-
-    fn get(&self, key: &Value<'_>) -> Option<Value<'_>> {
-        HashMap::iter(self)
-            .find(|(k, _)| k.as_value() == *key)
-            .map(|(_, v)| v.as_value())
-    }
-
-    fn iter(&self, f: &mut dyn FnMut(&mut dyn Iterator<Item = (Value<'_>, Value<'_>)>)) {
-        f(&mut HashMap::iter(self).map(|(k, v)| (k.as_value(), v.as_value())));
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter().size_hint()
     }
 }

@@ -6,10 +6,8 @@ pub mod field;
 mod listable;
 pub use listable::Listable;
 
-/*
 mod mappable;
 pub use mappable::Mappable;
-*/
 
 mod record;
 pub use record::NamedValues;

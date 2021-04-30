@@ -33,15 +33,8 @@ pub trait Visit {
         drop(slice);
     }
 
-    /*
-    /// Visit a list item
-    fn visit_item(&mut self, value: Value<'_>) {
-        drop(value);
+    // TODO: should we batch visit entries?
+    fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
+        drop((key, value));
     }
-
-    /// Visit multiple list items at a time
-    fn visit_items(&mut self, values: &[Value<'_>]) {
-        visit_items(self, values);
-    }
-    */
 }
