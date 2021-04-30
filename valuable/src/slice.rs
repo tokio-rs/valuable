@@ -49,13 +49,16 @@ impl fmt::Debug for Slice<'_> {
             I64(v) => d.entries(v),
             I128(v) => d.entries(v),
             Isize(v) => d.entries(v),
+            Str(v) => d.entries(v),
+            String(v) => d.entries(v),
             U8(v) => d.entries(v),
             U16(v) => d.entries(v),
             U32(v) => d.entries(v),
             U64(v) => d.entries(v),
             U128(v) => d.entries(v),
             Usize(v) => d.entries(v),
-            _ => unimplemented!(),
+            Value(v) => d.entries(v),
+            Unit(v) => d.entries(v),
         };
 
         d.finish()

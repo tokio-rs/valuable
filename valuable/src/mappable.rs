@@ -1,7 +1,6 @@
-
 use crate::*;
 
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 pub trait Mappable: Valuable {
     fn size_hint(&self) -> (usize, Option<usize>);

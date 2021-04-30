@@ -47,6 +47,14 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                     is_dynamic: false,
                 }
             }
+        }
+    };
+
+    let valuable_impl = quote! {
+        impl #impl_generics ::valuable::Valuable for #ident #ty_generics #where_clause {
+            fn as_value(&self) -> ::valuable::Value<'_> {
+                ::valuable::Value::Structable(self)
+            }
 
             fn visit(&self, v: &mut dyn ::valuable::Visit) {
                 v.visit_named_fields(&::valuable::NamedValues::new(
@@ -55,14 +63,6 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                         #(#as_values)*
                     ],
                 ));
-            }
-        }
-    };
-
-    let valuable_impl = quote! {
-        impl #impl_generics ::valuable::Valuable for #ident #ty_generics #where_clause {
-            fn as_value(&self) -> ::valuable::Value<'_> {
-                ::valuable::Value::Structable(self)
             }
         }
     };
