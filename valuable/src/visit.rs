@@ -1,6 +1,11 @@
 use crate::*;
 
 pub trait Visit {
+    /// Visit a single value
+    fn visit_value(&mut self, value: Value<'_>) {
+        drop(value);
+    }
+
     /// Visits a struct's named fields
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
         drop(named_values);

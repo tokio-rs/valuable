@@ -1,25 +1,54 @@
-use crate::{Value, Slice, Visit};
+use crate::{Listable, Slice, Value, Visit};
+
+use core::fmt;
 
 pub trait Valuable {
     fn as_value(&self) -> Value<'_>;
+
+    fn visit(&self, visit: &mut dyn Visit);
 
     fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
     where
         Self: Sized,
     {
-        unimplemented!()
+        const N: usize = 8;
+
+        let mut batch: [_; N] = Default::default();
+        let mut curr = 0;
+
+        for v in slice {
+            if curr == N {
+                visit.visit_slice(Slice::Value(&batch[..]));
+                curr = 0;
+            }
+
+            batch[curr] = v.as_value();
+            curr += 1;
+        }
+
+        if curr > 0 {
+            visit.visit_slice(Slice::Value(&batch[..curr]));
+        }
     }
 }
 
 impl<V: ?Sized + Valuable> Valuable for &V {
     fn as_value(&self) -> Value<'_> {
-        V::as_value(*self)
+        (*self).as_value()
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        V::visit(*self, visit);
     }
 }
 
 impl<V: ?Sized + Valuable> Valuable for Box<V> {
     fn as_value(&self) -> Value<'_> {
-        V::as_value(&**self)
+        (&**self).as_value()
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        V::visit(&**self, visit);
     }
 }
 
@@ -28,6 +57,10 @@ macro_rules! impl_valuable {
         impl Valuable for $ty {
             fn as_value(&self) -> Value<'_> {
                 Value::$variant(*self)
+            }
+
+            fn visit(&self, visit: &mut dyn Visit) {
+                visit.visit_value(self.as_value());
             }
 
             fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
@@ -59,29 +92,76 @@ impl Valuable for () {
     fn as_value(&self) -> Value<'_> {
         Value::Unit
     }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(Value::Unit);
+    }
+
+    fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
+    where
+        Self: Sized,
+    {
+        visit.visit_slice(Slice::Unit(slice));
+    }
 }
 
-impl Valuable for str {
+impl Valuable for &'_ str {
     fn as_value(&self) -> Value<'_> {
         Value::String(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(Value::String(self));
+    }
+
+    fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
+    where
+        Self: Sized,
+    {
+        visit.visit_slice(Slice::Str(slice));
     }
 }
 
 impl Valuable for String {
     fn as_value(&self) -> Value<'_> {
-        Value::String(self)
+        Value::String(&self[..])
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(Value::String(self));
+    }
+
+    fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
+    where
+        Self: Sized,
+    {
+        visit.visit_slice(Slice::String(slice));
     }
 }
 
-// This is not `Valuable for [T]` because we cannot cast &[T] to &dyn Trait.
-impl<T: Valuable> Valuable for &[T] {
+impl<T: Valuable> Valuable for &'_ [T] {
     fn as_value(&self) -> Value<'_> {
-        Value::Listable(self)
+        Value::Listable(self as &dyn Listable)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        T::visit_slice(self, visit);
     }
 }
 
 impl<T: Valuable> Valuable for Vec<T> {
     fn as_value(&self) -> Value<'_> {
         Value::Listable(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        T::visit_slice(self, visit);
+    }
+}
+
+impl fmt::Debug for dyn Valuable + '_ {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let value = self.as_value();
+        value.fmt(fmt)
     }
 }

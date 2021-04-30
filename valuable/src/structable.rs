@@ -3,10 +3,8 @@ use crate::*;
 
 use core::fmt;
 
-pub trait Structable {
+pub trait Structable: Valuable {
     fn definition(&self) -> StructDef<'_>;
-
-    fn visit(&self, visitor: &mut dyn Visit);
 }
 pub struct StructDef<'a> {
     /// Type name

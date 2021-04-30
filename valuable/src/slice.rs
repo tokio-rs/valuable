@@ -1,3 +1,5 @@
+use crate::*;
+
 use core::fmt;
 
 #[non_exhaustive]
@@ -12,13 +14,17 @@ pub enum Slice<'a> {
     I64(&'a [i64]),
     I128(&'a [i128]),
     Isize(&'a [isize]),
-    // String(&'a [&'a str]), // TODO: yick
+    // TODO: Should we keep separate string and str?
+    Str(&'a [&'a str]),
+    String(&'a [String]),
     U8(&'a [u8]),
     U16(&'a [u16]),
     U32(&'a [u32]),
     U64(&'a [u64]),
     U128(&'a [u128]),
     Usize(&'a [usize]),
+    Value(&'a [Value<'a>]),
+    Unit(&'a [()]),
     /*
     Unit(&'a [()]), // TODO: None?
     Error(&'a dyn std::error::Error),
@@ -49,7 +55,7 @@ impl fmt::Debug for Slice<'_> {
             U32(v) => d.entries(v),
             U64(v) => d.entries(v),
             U128(v) => d.entries(v),
-            
+            Usize(v) => d.entries(v),
             _ => unimplemented!(),
         };
 
