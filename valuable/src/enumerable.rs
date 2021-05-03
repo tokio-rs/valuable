@@ -3,10 +3,8 @@ use crate::*;
 
 use core::fmt;
 
-pub trait Enumerable {
+pub trait Enumerable: Valuable {
     fn definition(&self) -> EnumDef<'_>;
-
-    fn visit(&self, visitor: &mut dyn Visit);
 }
 
 pub struct EnumDef<'a> {

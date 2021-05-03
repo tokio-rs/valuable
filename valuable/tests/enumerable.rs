@@ -36,6 +36,12 @@ fn test_manual_impl() {
                 is_dynamic: false,
             }
         }
+    }
+
+    impl Valuable for Enum {
+        fn as_value(&self) -> Value<'_> {
+            Value::Enumerable(self)
+        }
 
         fn visit(&self, visitor: &mut dyn Visit) {
             match self {
@@ -53,12 +59,6 @@ fn test_manual_impl() {
                     visitor.visit_variant_unnamed_fields(&Variant { name: "Unit" }, &[]);
                 }
             }
-        }
-    }
-
-    impl Valuable for Enum {
-        fn as_value(&self) -> Value<'_> {
-            Value::Enumerable(self)
         }
     }
 

@@ -21,6 +21,12 @@ impl Structable for HelloWorld {
             is_dynamic: false,
         }
     }
+}
+
+impl Valuable for HelloWorld {
+    fn as_value(&self) -> Value<'_> {
+        Value::Structable(self)
+    }
 
     fn visit(&self, v: &mut dyn Visit) {
         v.visit_named_fields(&NamedValues::new(
@@ -30,13 +36,20 @@ impl Structable for HelloWorld {
     }
 }
 
-impl Valuable for HelloWorld {
+static WORLD_FIELDS: &'static [NamedField<'static>] = &[NamedField::new("answer")];
+
+impl Valuable for World {
     fn as_value(&self) -> Value<'_> {
         Value::Structable(self)
     }
-}
 
-static WORLD_FIELDS: &'static [NamedField<'static>] = &[NamedField::new("answer")];
+    fn visit(&self, v: &mut dyn Visit) {
+        v.visit_named_fields(&NamedValues::new(
+            WORLD_FIELDS,
+            &[Value::Usize(self.answer)],
+        ));
+    }
+}
 
 impl Structable for World {
     fn definition(&self) -> StructDef<'_> {
@@ -45,13 +58,6 @@ impl Structable for World {
             fields: Fields::NamedStatic(WORLD_FIELDS),
             is_dynamic: false,
         }
-    }
-
-    fn visit(&self, v: &mut dyn Visit) {
-        v.visit_named_fields(&NamedValues::new(
-            WORLD_FIELDS,
-            &[Value::Usize(self.answer)],
-        ));
     }
 }
 
@@ -66,6 +72,6 @@ fn main() {
 
     let slice = &[1, 2, 3][..];
 
-    let value: Value = Valuable::as_value(&slice);
+    let value = &slice as &dyn Valuable;
     println!("{:?}", value);
 }

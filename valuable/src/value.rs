@@ -1,8 +1,9 @@
-use crate::{Enumerable, Listable, Structable, Valuable};
+use crate::*;
 
 use std::fmt::{self, Debug};
 
 #[non_exhaustive]
+#[derive(Clone, Copy)]
 pub enum Value<'a> {
     Bool(bool),
     Char(char),
@@ -24,38 +25,25 @@ pub enum Value<'a> {
     Unit, // TODO: None?
     Error(&'a dyn std::error::Error),
     Listable(&'a dyn Listable),
+    Mappable(&'a dyn Mappable),
     Structable(&'a dyn Structable),
     Enumerable(&'a dyn Enumerable),
 }
 
 impl Valuable for Value<'_> {
     fn as_value(&self) -> Value<'_> {
-        use Value::*;
+        self.clone()
+    }
 
-        match *self {
-            String(v) => String(v),
-            Char(v) => Char(v),
-            Bool(v) => Bool(v),
-            F32(v) => F32(v),
-            F64(v) => F64(v),
-            I8(v) => I8(v),
-            I16(v) => I16(v),
-            I32(v) => I32(v),
-            I64(v) => I64(v),
-            I128(v) => I128(v),
-            Isize(v) => Isize(v),
-            U8(v) => U8(v),
-            U16(v) => U16(v),
-            U32(v) => U32(v),
-            U64(v) => U64(v),
-            U128(v) => U128(v),
-            Usize(v) => Usize(v),
-            Unit => Unit,
-            Listable(v) => Listable(v),
-            Structable(v) => Structable(v),
-            Enumerable(v) => Enumerable(v),
-            _ => unimplemented!(),
-        }
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(self.clone());
+    }
+
+    fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
+    where
+        Self: Sized,
+    {
+        visit.visit_slice(Slice::Value(slice));
     }
 }
 
@@ -90,9 +78,9 @@ impl fmt::Debug for Value<'_> {
             Unit => ().fmt(fmt),
             Error(v) => fmt::Debug::fmt(v, fmt),
             Listable(v) => v.fmt(fmt),
+            Mappable(v) => unimplemented!(),
             Structable(v) => v.fmt(fmt),
             Enumerable(v) => v.fmt(fmt),
-            // Structable(v) => structable::debug(v, fmt),
         }
     }
 }

@@ -71,10 +71,6 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
             fn definition(&self) -> ::valuable::StructDef<'_> {
                 #struct_def
             }
-
-            fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
-                #visit_fields
-            }
         }
     };
 
@@ -82,6 +78,10 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
         impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
             fn as_value(&self) -> ::valuable::Value<'_> {
                 ::valuable::Value::Structable(self)
+            }
+
+            fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
+                #visit_fields
             }
         }
     };
@@ -210,12 +210,6 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     is_dynamic: false,
                 }
             }
-
-            fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
-                match self {
-                    #(#visit_variants)*
-                }
-            }
         }
     };
 
@@ -223,6 +217,12 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
         impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
             fn as_value(&self) -> ::valuable::Value<'_> {
                 ::valuable::Value::Enumerable(self)
+            }
+
+            fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
+                match self {
+                    #(#visit_variants)*
+                }
             }
         }
     };

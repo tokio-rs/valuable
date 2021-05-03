@@ -16,5 +16,5 @@ fn main() {
         phones: vec!["876-5309".to_string()],
     };
 
-    println!("{:?}", p.as_value());
+    println!("{:#?}", p.as_value());
 }
