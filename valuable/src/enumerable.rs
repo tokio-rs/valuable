@@ -29,7 +29,7 @@ pub struct VariantDef<'a> {
 }
 
 pub struct Variant<'a> {
-    name: &'a str,
+    pub name: &'a str,
 }
 
 impl EnumDef<'_> {
@@ -58,7 +58,7 @@ impl fmt::Debug for dyn Enumerable + '_ {
             name: &'b str,
             fmt: &'b mut fmt::Formatter<'a>,
             res: fmt::Result,
-        };
+        }
 
         impl Visit for DebugEnumerable<'_, '_> {
             fn visit_variant_named_fields(

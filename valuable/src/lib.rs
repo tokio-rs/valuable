@@ -19,7 +19,7 @@ mod structable;
 pub use structable::{StructDef, Structable};
 
 mod valuable;
-pub use valuable::Valuable;
+pub use crate::valuable::Valuable;
 
 mod value;
 pub use value::Value;
