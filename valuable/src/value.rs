@@ -1,10 +1,38 @@
 use crate::*;
 
-use std::fmt::{self, Debug};
+use core::fmt;
 
-#[non_exhaustive]
-#[derive(Clone, Copy)]
-pub enum Value<'a> {
+macro_rules! value {
+    (
+        $(
+            $variant:ident($ty:ty),
+        )*
+    ) => {
+        #[non_exhaustive]
+        #[derive(Clone, Copy)]
+        pub enum Value<'a> {
+            $(
+                $variant($ty),
+            )*
+            Unit, // TODO: None?
+        }
+
+        impl fmt::Debug for Value<'_> {
+            fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+                use Value::*;
+
+                match self {
+                    $(
+                        $variant(v) => fmt::Debug::fmt(v, fmt),
+                    )*
+                    Unit => ().fmt(fmt),
+                }
+            }
+        }
+    }
+}
+
+value! {
     Bool(bool),
     Char(char),
     F32(f32),
@@ -22,7 +50,6 @@ pub enum Value<'a> {
     U64(u64),
     U128(u128),
     Usize(usize),
-    Unit, // TODO: None?
     Error(&'a dyn std::error::Error),
     Listable(&'a dyn Listable),
     Mappable(&'a dyn Mappable),
@@ -50,37 +77,5 @@ impl Valuable for Value<'_> {
 impl Default for Value<'_> {
     fn default() -> Self {
         Value::Unit
-    }
-}
-
-impl fmt::Debug for Value<'_> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use Value::*;
-
-        match *self {
-            String(v) => v.fmt(fmt),
-            Char(v) => v.fmt(fmt),
-            Bool(v) => v.fmt(fmt),
-            F32(v) => v.fmt(fmt),
-            F64(v) => v.fmt(fmt),
-            I8(v) => v.fmt(fmt),
-            I16(v) => v.fmt(fmt),
-            I32(v) => v.fmt(fmt),
-            I64(v) => v.fmt(fmt),
-            I128(v) => v.fmt(fmt),
-            Isize(v) => v.fmt(fmt),
-            U8(v) => v.fmt(fmt),
-            U16(v) => v.fmt(fmt),
-            U32(v) => v.fmt(fmt),
-            U64(v) => v.fmt(fmt),
-            U128(v) => v.fmt(fmt),
-            Usize(v) => v.fmt(fmt),
-            Unit => ().fmt(fmt),
-            Error(v) => fmt::Debug::fmt(v, fmt),
-            Listable(v) => v.fmt(fmt),
-            Mappable(v) => unimplemented!(),
-            Structable(v) => v.fmt(fmt),
-            Enumerable(v) => v.fmt(fmt),
-        }
     }
 }

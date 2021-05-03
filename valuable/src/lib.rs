@@ -1,3 +1,6 @@
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 mod enumerable;
 pub use enumerable::{EnumDef, Enumerable, Variant, VariantDef};
 
