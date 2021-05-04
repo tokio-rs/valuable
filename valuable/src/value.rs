@@ -17,6 +17,14 @@ macro_rules! value {
             Unit, // TODO: None?
         }
 
+        $(
+            impl<'a> From<$ty> for Value<'a> {
+                fn from(src: $ty) -> Value<'a> {
+                    Value::$variant(src)
+                }
+            }
+        )*
+
         impl fmt::Debug for Value<'_> {
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 use Value::*;
@@ -78,4 +86,52 @@ impl Default for Value<'_> {
     fn default() -> Self {
         Value::Unit
     }
+}
+
+macro_rules! num_convert {
+    (
+        $(
+            $ty:ty => ( $as:ident ),
+        )*
+    ) => {
+        $(
+            impl<'a> Value<'a> {
+                pub fn $as(&self) -> Option<$ty> {
+                    use Value::*;
+                    use core::convert::TryInto;
+
+                    match *self {
+                        I8(v) => v.try_into().ok(),
+                        I16(v) => v.try_into().ok(),
+                        I32(v) => v.try_into().ok(),
+                        I64(v) => v.try_into().ok(),
+                        I128(v) => v.try_into().ok(),
+                        Isize(v) => v.try_into().ok(),
+                        U8(v) => v.try_into().ok(),
+                        U16(v) => v.try_into().ok(),
+                        U32(v) => v.try_into().ok(),
+                        U64(v) => v.try_into().ok(),
+                        U128(v) => v.try_into().ok(),
+                        Usize(v) => v.try_into().ok(),
+                        _ => None,
+                    }
+                }
+            }
+        )*
+    }
+}
+
+num_convert! {
+    i8 => (as_i8),
+    i16 => (as_i16),
+    i32 => (as_i32),
+    i64 => (as_i64),
+    i128 => (as_i128),
+    isize => (as_isize),
+    u8 => (as_u8),
+    u16 => (as_u16),
+    u32 => (as_u32),
+    u64 => (as_u64),
+    u128 => (as_u128),
+    usize => (as_usize),
 }
