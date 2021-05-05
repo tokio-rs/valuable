@@ -25,6 +25,12 @@ macro_rules! value {
             }
         )*
 
+        impl<'a> From<()> for Value<'a> {
+            fn from(_: ()) -> Value<'a> {
+                Value::Unit
+            }
+        }
+
         impl fmt::Debug for Value<'_> {
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 use Value::*;

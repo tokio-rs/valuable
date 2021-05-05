@@ -2,6 +2,38 @@ use valuable::*;
 
 use core::{isize, usize};
 
+macro_rules! visit_unimplemented {
+    () => {
+        fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
+            panic!();
+        }
+
+        fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
+            panic!();
+        }
+
+        fn visit_variant_named_fields(
+            &mut self,
+            _: &Variant<'_>,
+            _: &NamedValues<'_>,
+        ) {
+            panic!();
+        }
+
+        fn visit_variant_unnamed_fields(&mut self, _: &Variant<'_>, _: &[Value<'_>]) {
+            panic!();
+        }
+
+        fn visit_slice(&mut self, _: Slice<'_>) {
+            panic!();
+        }
+
+        fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
+            panic!();
+        }
+    }
+}
+
 macro_rules! assert_value {
     (
         $ty:ty: $variant:ident, $eq:ident => $( $values:expr ),*
@@ -17,33 +49,7 @@ macro_rules! assert_value {
                 self.1 += 1;
             }
 
-            fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
-                panic!();
-            }
-
-            fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
-                panic!();
-            }
-
-            fn visit_variant_named_fields(
-                &mut self,
-                _: &Variant<'_>,
-                _: &NamedValues<'_>,
-            ) {
-                panic!();
-            }
-
-            fn visit_variant_unnamed_fields(&mut self, _: &Variant<'_>, _: &[Value<'_>]) {
-                panic!();
-            }
-
-            fn visit_slice(&mut self, _: Slice<'_>) {
-                panic!();
-            }
-
-            fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
-                panic!();
-            }
+            visit_unimplemented!();
         }
 
 
@@ -185,6 +191,44 @@ fn test_error() {
     let error: io::Error = io::ErrorKind::Other.into();
     let error: &dyn error::Error = &error;
     assert_value!(&'a dyn error::Error: Error, yes => error);
+}
+
+#[test]
+fn test_unit() {
+    use Value::Unit;
+
+    struct VisitValue(usize);
+
+    impl Visit for VisitValue {
+        fn visit_value(&mut self, val: Value<'_>) {
+            assert!(matches!(val, Unit));
+            assert_eq!(self.0, 0);
+            self.0 += 1;
+        }
+
+        visit_unimplemented!();
+    }
+
+    // Visit the raw value once
+    let mut visit = VisitValue(0);
+    ().visit(&mut visit);
+    assert_eq!(visit.0, 1);
+
+    let val = Value::from(());
+
+    // Visit the converted value
+    let mut visit = VisitValue(0);
+    val.visit(&mut visit);
+    assert_eq!(visit.0, 1);
+
+    // Test conversion
+    assert!(matches!(val, Unit));
+
+    // Test `as_value()`
+    assert!(matches!(Valuable::as_value(&()), Unit));
+
+    // Test clone()
+    assert!(matches!(val.clone(), Unit));
 }
 
 test_num! {
