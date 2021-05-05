@@ -13,7 +13,7 @@ impl<'a> NamedValues<'a> {
     }
 
     pub fn get(&self, field: &NamedField<'_>) -> Option<&Value<'_>> {
-        use std::mem;
+        use core::mem;
 
         let idx = (field as *const _ as usize - &self.fields[0] as *const _ as usize)
             / mem::size_of::<NamedField>();
