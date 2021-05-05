@@ -48,9 +48,14 @@ macro_rules! assert_value {
 
 
         for &src in &[ $( $values ),* ] {
+            // Visit the raw value once
+            let mut visit = VisitValue(src, 0, std::marker::PhantomData);
+            src.visit(&mut visit);
+            assert_eq!(visit.1, 1);
+
             let val = Value::from(src);
 
-            // Visit the value
+            // Visit the converted value
             let mut visit = VisitValue(src, 0, std::marker::PhantomData);
             val.visit(&mut visit);
             assert_eq!(visit.1, 1);

@@ -170,6 +170,16 @@ impl<T: Valuable> Valuable for Vec<T> {
     }
 }
 
+impl Valuable for dyn std::error::Error + '_ {
+    fn as_value(&self) -> Value<'_> {
+        Value::Error(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(self.as_value());
+    }
+}
+
 impl fmt::Debug for dyn Valuable + '_ {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         let value = self.as_value();
