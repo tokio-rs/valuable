@@ -2,32 +2,12 @@ use valuable::*;
 
 use core::{isize, usize};
 
-macro_rules! visit_unimplemented {
-    () => {
-        fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
-            panic!();
-        }
-
-        fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
-            panic!();
-        }
-
-        fn visit_variant_named_fields(&mut self, _: &Variant<'_>, _: &NamedValues<'_>) {
-            panic!();
-        }
-
-        fn visit_variant_unnamed_fields(&mut self, _: &Variant<'_>, _: &[Value<'_>]) {
-            panic!();
-        }
-
-        fn visit_slice(&mut self, _: Slice<'_>) {
-            panic!();
-        }
-
-        fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
-            panic!();
-        }
-    };
+macro_rules! assert_visit_call {
+    ($v:expr) => {
+        let mut visit = tests::VisitCount::default();
+        $v.visit(&mut visit);
+        assert_eq!(visit, tests::VisitCount { visit_value: 1, .. Default::default() });
+    }
 }
 
 macro_rules! assert_value {
@@ -36,31 +16,27 @@ macro_rules! assert_value {
     ) => {{
         use Value::*;
 
-        struct VisitValue<'a>($ty, usize, std::marker::PhantomData<&'a ()>);
+        struct VisitValue<'a>($ty, std::marker::PhantomData<&'a ()>);
 
         impl<'a> Visit for VisitValue<'a> {
             fn visit_value(&mut self, val: Value<'_>) {
                 assert!(matches!(val, $variant(v) if $eq(&v, &self.0)));
-                assert_eq!(self.1, 0);
-                self.1 += 1;
             }
-
-            visit_unimplemented!();
         }
 
 
         for &src in &[ $( $values ),* ] {
             // Visit the raw value once
-            let mut visit = VisitValue(src, 0, std::marker::PhantomData);
+            assert_visit_call!(src);
+            let mut visit = VisitValue(src, std::marker::PhantomData);
             src.visit(&mut visit);
-            assert_eq!(visit.1, 1);
 
             let val = Value::from(src);
 
             // Visit the converted value
-            let mut visit = VisitValue(src, 0, std::marker::PhantomData);
+            assert_visit_call!(val);
+            let mut visit = VisitValue(src, std::marker::PhantomData);
             val.visit(&mut visit);
-            assert_eq!(visit.1, 1);
 
             // Test conversion
             assert!(matches!(val, $variant(v) if $eq(&v, &src)));
@@ -193,29 +169,25 @@ fn test_error() {
 fn test_unit() {
     use Value::Unit;
 
-    struct VisitValue(usize);
+    struct VisitValue;
 
     impl Visit for VisitValue {
         fn visit_value(&mut self, val: Value<'_>) {
             assert!(matches!(val, Unit));
-            assert_eq!(self.0, 0);
-            self.0 += 1;
         }
-
-        visit_unimplemented!();
     }
 
     // Visit the raw value once
-    let mut visit = VisitValue(0);
+    assert_visit_call!(());
+    let mut visit = VisitValue;
     ().visit(&mut visit);
-    assert_eq!(visit.0, 1);
 
     let val = Value::from(());
 
     // Visit the converted value
-    let mut visit = VisitValue(0);
+    assert_visit_call!(());
+    let mut visit = VisitValue;
     val.visit(&mut visit);
-    assert_eq!(visit.0, 1);
 
     // Test conversion
     assert!(matches!(val, Unit));
