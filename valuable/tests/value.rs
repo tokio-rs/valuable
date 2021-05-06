@@ -12,11 +12,7 @@ macro_rules! visit_unimplemented {
             panic!();
         }
 
-        fn visit_variant_named_fields(
-            &mut self,
-            _: &Variant<'_>,
-            _: &NamedValues<'_>,
-        ) {
+        fn visit_variant_named_fields(&mut self, _: &Variant<'_>, _: &NamedValues<'_>) {
             panic!();
         }
 
@@ -31,7 +27,7 @@ macro_rules! visit_unimplemented {
         fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
             panic!();
         }
-    }
+    };
 }
 
 macro_rules! assert_value {
