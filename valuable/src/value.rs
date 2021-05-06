@@ -128,7 +128,7 @@ macro_rules! convert {
                     _ => None,
                 }
             }
-        
+
             $(
                 pub fn $as(&self) -> Option<$ty> {
                     use Value::*;

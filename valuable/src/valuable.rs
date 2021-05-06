@@ -16,6 +16,11 @@ pub trait Valuable {
         let mut batch: [_; N] = Default::default();
         let mut curr = 0;
 
+        if slice.is_empty() {
+            visit.visit_slice(Slice::Value(&batch[..0]));
+            return;
+        }
+
         for v in slice {
             if curr == N {
                 visit.visit_slice(Slice::Value(&batch[..]));
