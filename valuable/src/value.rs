@@ -94,14 +94,42 @@ impl Default for Value<'_> {
     }
 }
 
-macro_rules! num_convert {
+macro_rules! convert {
     (
         $(
-            $ty:ty => ( $as:ident ),
+            $ty:ty => $as:ident,
         )*
     ) => {
-        $(
-            impl<'a> Value<'a> {
+        impl<'a> Value<'a> {
+            pub fn as_bool(&self) -> Option<bool> {
+                match *self {
+                    Value::Bool(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            pub fn as_char(&self) -> Option<char> {
+                match *self {
+                    Value::Char(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            pub fn as_f32(&self) -> Option<f32> {
+                match *self {
+                    Value::F32(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            pub fn as_f64(&self) -> Option<f64> {
+                match *self {
+                    Value::F64(v) => Some(v),
+                    _ => None,
+                }
+            }
+        
+            $(
                 pub fn $as(&self) -> Option<$ty> {
                     use Value::*;
                     use core::convert::TryInto;
@@ -122,22 +150,64 @@ macro_rules! num_convert {
                         _ => None,
                     }
                 }
+            )*
+
+            pub fn as_str(&self) -> Option<&str> {
+                match *self {
+                    Value::String(v) => Some(v),
+                    _ => None,
+                }
             }
-        )*
+
+            pub fn as_error(&self) -> Option<&dyn std::error::Error> {
+                match *self {
+                    Value::Error(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            pub fn as_listable(&self) -> Option<&dyn Listable> {
+                match *self {
+                    Value::Listable(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            pub fn as_mappable(&self) -> Option<&dyn Mappable> {
+                match *self {
+                    Value::Mappable(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            pub fn as_structable(&self) -> Option<&dyn Structable> {
+                match *self {
+                    Value::Structable(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            pub fn as_enumerable(&self) -> Option<&dyn Enumerable> {
+                match *self {
+                    Value::Enumerable(v) => Some(v),
+                    _ => None,
+                }
+            }
+        }
     }
 }
 
-num_convert! {
-    i8 => (as_i8),
-    i16 => (as_i16),
-    i32 => (as_i32),
-    i64 => (as_i64),
-    i128 => (as_i128),
-    isize => (as_isize),
-    u8 => (as_u8),
-    u16 => (as_u16),
-    u32 => (as_u32),
-    u64 => (as_u64),
-    u128 => (as_u128),
-    usize => (as_usize),
+convert! {
+    i8 => as_i8,
+    i16 => as_i16,
+    i32 => as_i32,
+    i64 => as_i64,
+    i128 => as_i128,
+    isize => as_isize,
+    u8 => as_u8,
+    u16 => as_u16,
+    u32 => as_u32,
+    u64 => as_u64,
+    u128 => as_u128,
+    usize => as_usize,
 }

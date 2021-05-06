@@ -1,12 +1,12 @@
-use valuable::*;
 use valuable::field::*;
+use valuable::*;
 
 #[derive(Default, Debug)]
 pub struct HelloWorld {
     pub id: u32,
 }
 
-static FIELDS: &[NamedField<'static>] = &[NamedField::new("id")];
+pub static HELLO_WORLD_FIELDS: &[NamedField<'static>] = &[NamedField::new("id")];
 
 impl Valuable for HelloWorld {
     fn as_value(&self) -> Value<'_> {
@@ -14,7 +14,10 @@ impl Valuable for HelloWorld {
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_named_fields(&NamedValues::new(FIELDS, &[Value::U32(self.id)]));
+        visit.visit_named_fields(&NamedValues::new(
+            HELLO_WORLD_FIELDS,
+            &[Value::U32(self.id)],
+        ));
     }
 }
 
@@ -22,7 +25,7 @@ impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
         StructDef {
             name: "HelloWorld",
-            fields: Fields::NamedStatic(FIELDS),
+            fields: Fields::NamedStatic(HELLO_WORLD_FIELDS),
             is_dynamic: false,
         }
     }

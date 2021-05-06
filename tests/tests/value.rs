@@ -4,15 +4,38 @@ use core::{isize, usize};
 
 macro_rules! assert_visit_call {
     ($v:expr) => {
-        let mut visit = tests::VisitCount::default();
-        $v.visit(&mut visit);
-        assert_eq!(visit, tests::VisitCount { visit_value: 1, .. Default::default() });
+        let counts = tests::visit_counts($v);
+        assert_eq!(
+            counts,
+            tests::VisitCount {
+                visit_value: 1,
+                ..Default::default()
+            }
+        );
+    };
+}
+
+macro_rules! assert_as {
+    ($val:expr, $src:expr, $variant:ident, $eq:ident, [$( $as:ident => $v:ident, )*]) => {
+        $(
+            if $val.$as().is_some() {
+                let a = stringify!($variant);
+                let b = stringify!($v);
+                // numeric types convert between each other
+
+                if !NUMERICS.contains(&a) || !NUMERICS.contains(&b) {
+                    assert_eq!(stringify!($variant), stringify!($v));
+                }
+            } else {
+                assert_ne!(stringify!($variant), stringify!($v));
+            }
+        )*
     }
 }
 
 macro_rules! assert_value {
     (
-        $ty:ty: $variant:ident, $eq:ident => $( $values:expr ),*
+        $ty:ty: $variant:ident, $as:ident, $eq:ident => $( $values:expr ),*
     ) => {{
         use Value::*;
 
@@ -27,14 +50,14 @@ macro_rules! assert_value {
 
         for &src in &[ $( $values ),* ] {
             // Visit the raw value once
-            assert_visit_call!(src);
+            assert_visit_call!(&src);
             let mut visit = VisitValue(src, std::marker::PhantomData);
             src.visit(&mut visit);
 
             let val = Value::from(src);
 
             // Visit the converted value
-            assert_visit_call!(val);
+            assert_visit_call!(&val);
             let mut visit = VisitValue(src, std::marker::PhantomData);
             val.visit(&mut visit);
 
@@ -46,6 +69,35 @@ macro_rules! assert_value {
 
             // Test clone()
             assert!(matches!(val.clone(), $variant(v) if $eq(&v, &src)));
+
+            // Test self as_*() conversion
+            assert!($eq(&val.$as().unwrap(), &src));
+
+            // Test all `as_*()` conversion
+            assert_as!(val, src, $variant, $eq, [
+                as_bool => Bool,
+                as_char => Char,
+                as_f32 => F32,
+                as_f64 => F64,
+                as_i8 => I8,
+                as_i16 => I16,
+                as_i32 => I32,
+                as_i64 => I64,
+                as_i128 => I128,
+                as_isize => Isize,
+                as_str => String,
+                as_u8 => U8,
+                as_u16 => U16,
+                as_u32 => U32,
+                as_u64 => U64,
+                as_u128 => U128,
+                as_usize => Usize,
+                as_error => Error,
+                as_listable => Listable,
+                as_mappable => Mappable,
+                as_structable => Structable,
+                as_enumerable => Enumerable,
+            ]);
         }
     }};
 }
@@ -84,6 +136,13 @@ macro_rules! test_num {
             $name:ident($as:ident, $ty:ty, $variant:ident);
         )*
      ) => {
+         // Stringify all variants
+         const NUMERICS: &[&str] = &[
+            $(
+                stringify!($variant),
+            )*
+         ];
+
         $(
             #[test]
             fn $name() {
@@ -110,7 +169,7 @@ macro_rules! test_num {
                 }
 
                 for &n in &valid {
-                    assert_value!($ty: $variant, eq => n);
+                    assert_value!($ty: $variant, $as, eq => n);
 
                     for val in ints!(n) {
                         assert_eq!(Some(n), val.$as());
@@ -132,28 +191,28 @@ fn test_default() {
 
 #[test]
 fn test_bool() {
-    assert_value!(bool: Bool, eq => true, false);
+    assert_value!(bool: Bool, as_bool, eq => true, false);
 }
 
 #[test]
 fn test_char() {
-    assert_value!(char: Char, eq => 'a', 'b', 'c');
+    assert_value!(char: Char, as_char, eq => 'a', 'b', 'c');
 }
 
 #[test]
 fn test_f32() {
-    assert_value!(f32: F32, eq => 3.1415_f32, -1.234_f32, f32::MAX, f32::MIN);
+    assert_value!(f32: F32, as_f32, eq => 3.1415_f32, -1.234_f32, f32::MAX, f32::MIN);
 }
 
 #[test]
 fn test_f64() {
-    assert_value!(f64: F64, eq => 3.1415_f64, -1.234_f64, f64::MAX, f64::MIN);
+    assert_value!(f64: F64, as_f64, eq => 3.1415_f64, -1.234_f64, f64::MAX, f64::MIN);
 }
 
 #[test]
 fn test_str() {
     let string = "in a string".to_string();
-    assert_value!(&'a str: String, eq => "hello world", &string);
+    assert_value!(&'a str: String, as_str, eq => "hello world", &string);
 }
 
 #[test]
@@ -162,7 +221,7 @@ fn test_error() {
 
     let error: io::Error = io::ErrorKind::Other.into();
     let error: &dyn error::Error = &error;
-    assert_value!(&'a dyn error::Error: Error, yes => error);
+    assert_value!(&'a dyn error::Error: Error, as_error, yes => error);
 }
 
 #[test]
@@ -178,14 +237,14 @@ fn test_unit() {
     }
 
     // Visit the raw value once
-    assert_visit_call!(());
+    assert_visit_call!(&());
     let mut visit = VisitValue;
     ().visit(&mut visit);
 
     let val = Value::from(());
 
     // Visit the converted value
-    assert_visit_call!(());
+    assert_visit_call!(&());
     let mut visit = VisitValue;
     val.visit(&mut visit);
 

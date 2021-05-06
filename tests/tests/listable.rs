@@ -1,29 +1,32 @@
-use valuable::field::*;
+use tests::*;
 use valuable::*;
 
-#[derive(Default, Debug)]
-struct HelloWorld {
-    id: u32,
-}
+struct VisitHello(u32);
 
-static FIELDS: &[NamedField<'static>] = &[NamedField::new("num")];
-
-impl Valuable for HelloWorld {
-    fn as_value(&self) -> Value<'_> {
-        Value::Structable(self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_named_fields(&NamedValues::new(FIELDS, &[Value::U32(self.id)]));
+impl Visit for VisitHello {
+    fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
+        let id = &HELLO_WORLD_FIELDS[0];
+        assert_eq!("id", id.name());
+        assert_eq!(Some(self.0), named_values.get(id).unwrap().as_u32());
     }
 }
 
-impl Structable for HelloWorld {
-    fn definition(&self) -> StructDef<'_> {
-        StructDef {
-            name: "HelloWorld",
-            fields: Fields::NamedStatic(FIELDS),
-            is_dynamic: false,
+struct VisitList(u32);
+
+impl Visit for VisitList {
+    fn visit_slice(&mut self, slice: Slice<'_>) {
+        match slice {
+            Slice::Value(slice) => {
+                for value in slice {
+                    match *value {
+                        Value::Structable(value) => {
+                            unimplemented!()
+                        }
+                        _ => panic!(),
+                    }
+                }
+            }
+            _ => panic!(),
         }
     }
 }
@@ -31,8 +34,7 @@ impl Structable for HelloWorld {
 #[test]
 #[ignore]
 fn test_default_visit_slice_empty() {
-    // let empty: Vec<HelloWorld> = vec![];
-
+    let empty: Vec<HelloWorld> = vec![];
     unimplemented!()
 }
 

@@ -11,6 +11,12 @@ pub struct VisitCount {
     pub visit_entry: u32,
 }
 
+pub fn visit_counts(val: &impl Valuable) -> VisitCount {
+    let mut visit = VisitCount::default();
+    val.visit(&mut visit);
+    visit
+}
+
 impl Visit for VisitCount {
     fn visit_value(&mut self, _: Value<'_>) {
         self.visit_value += 1;
