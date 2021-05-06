@@ -1,3 +1,5 @@
+#![cfg(feature = "derive")]
+
 use valuable::Valuable;
 
 #[test]

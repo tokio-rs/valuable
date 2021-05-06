@@ -3,4 +3,5 @@
 members = [
     "valuable",
     "valuable-derive",
+    "tests",
 ]
