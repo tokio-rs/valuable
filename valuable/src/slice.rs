@@ -23,12 +23,18 @@ macro_rules! slice {
             )*
         }
 
+        impl<'a> Slice<'a> {
+            pub fn iter(&self) -> Iter<'a> {
+                self.into_iter()
+            }
+        }
+
         impl<'a> IntoIterator for Slice<'a> {
             type Item = Value<'a>;
             type IntoIter = Iter<'a>;
 
             fn into_iter(self) -> Self::IntoIter {
-                unimplemented!()
+                (&self).into_iter()
             }
         }
 
