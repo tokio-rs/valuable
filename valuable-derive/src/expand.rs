@@ -27,11 +27,11 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 Some(named_fields_static(&named_fields_static_name, &data.fields));
 
             struct_def = quote! {
-                ::valuable::StructDef {
-                    name: #name_literal,
-                    fields: ::valuable::field::Fields::NamedStatic(#named_fields_static_name),
-                    is_dynamic: false,
-                }
+                ::valuable::StructDef::new(
+                    #name_literal,
+                    ::valuable::field::Fields::NamedStatic(#named_fields_static_name),
+                    false,
+                )
             };
 
             let fields = data.fields.iter().map(|field| field.ident.as_ref());
@@ -46,11 +46,11 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
         }
         syn::Fields::Unnamed(_) | syn::Fields::Unit => {
             struct_def = quote! {
-                ::valuable::StructDef {
-                    name: #name_literal,
-                    fields: ::valuable::field::Fields::Unnamed,
-                    is_dynamic: false,
-                }
+                ::valuable::StructDef::new(
+                    #name_literal,
+                    ::valuable::field::Fields::Unnamed,
+                    false,
+                )
             };
 
             let indices = (0..data.fields.len()).map(syn::Index::from);

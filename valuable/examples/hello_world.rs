@@ -15,11 +15,11 @@ static HELLO_WORLD_FIELDS: &[NamedField<'static>] =
 
 impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
-        StructDef {
-            name: "HelloWorld",
-            fields: Fields::NamedStatic(HELLO_WORLD_FIELDS),
-            is_dynamic: false,
-        }
+        StructDef::new(
+            "HelloWorld",
+            Fields::NamedStatic(HELLO_WORLD_FIELDS),
+            false,
+        )
     }
 }
 
@@ -53,11 +53,11 @@ impl Valuable for World {
 
 impl Structable for World {
     fn definition(&self) -> StructDef<'_> {
-        StructDef {
-            name: "World",
-            fields: Fields::NamedStatic(WORLD_FIELDS),
-            is_dynamic: false,
-        }
+        StructDef::new(
+            "World",
+            Fields::NamedStatic(WORLD_FIELDS),
+            false,
+        )
     }
 }
 

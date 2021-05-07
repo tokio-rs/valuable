@@ -8,13 +8,13 @@ pub trait Structable: Valuable {
 }
 pub struct StructDef<'a> {
     /// Type name
-    pub name: &'a str,
+    name: &'a str,
 
     /// Fields
-    pub fields: Fields<'a>,
+    fields: Fields<'a>,
 
     /// Is this a dynamic struct?
-    pub is_dynamic: bool,
+    is_dynamic: bool,
 }
 
 impl fmt::Debug for dyn Structable + '_ {
@@ -59,7 +59,15 @@ impl fmt::Debug for dyn Structable + '_ {
     }
 }
 
-impl StructDef<'_> {
+impl<'a> StructDef<'a> {
+    pub fn new(name: &'a str, fields: Fields<'a>, is_dynamic: bool) -> StructDef<'a> {
+        StructDef {
+            name,
+            fields,
+            is_dynamic,
+        }
+    }
+
     pub fn name(&self) -> &str {
         self.name
     }
