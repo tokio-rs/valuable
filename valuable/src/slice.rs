@@ -24,6 +24,14 @@ macro_rules! slice {
         }
 
         impl<'a> Slice<'a> {
+            pub fn len(&self) -> usize {
+                match self {
+                    $(
+                        Slice::$variant(s) => s.len(),
+                    )*
+                }
+            }
+
             pub fn iter(&self) -> Iter<'a> {
                 self.into_iter()
             }

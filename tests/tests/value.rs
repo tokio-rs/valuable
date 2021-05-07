@@ -47,7 +47,6 @@ macro_rules! assert_value {
             }
         }
 
-
         for &src in &[ $( $values ),* ] {
             // Visit the raw value once
             assert_visit_call!(&src);
@@ -271,6 +270,20 @@ test_num! {
     test_i64(as_i64, i64, I64);
     test_i128(as_i128, i128, I128);
     test_isize(as_isize, isize, Isize);
+}
+
+#[test]
+fn test_valuable_ref() {
+    let val = &123;
+    let val = Valuable::as_value(&val);
+    assert!(matches!(val, Value::I32(v) if v == 123));
+}
+
+#[test]
+fn test_valuable_box() {
+    let val = Box::new(123);
+    let val = Valuable::as_value(&val);
+    assert!(matches!(val, Value::I32(v) if v == 123));
 }
 
 fn eq<T: PartialEq>(a: &T, b: &T) -> bool {

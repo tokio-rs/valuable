@@ -14,8 +14,8 @@ pub use listable::Listable;
 mod mappable;
 pub use mappable::Mappable;
 
-mod record;
-pub use record::NamedValues;
+mod named_values;
+pub use named_values::NamedValues;
 
 mod slice;
 pub use slice::Slice;

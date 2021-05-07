@@ -16,106 +16,156 @@ struct VisitList(u32);
 
 impl Visit for VisitList {
     fn visit_slice(&mut self, slice: Slice<'_>) {
+        let start = self.0;
+
+        test_value_iter(slice.iter(), start);
+        test_value_iter(IntoIterator::into_iter(&slice), start);
+
+        let mut cnt = 0;
         match slice {
             Slice::Value(slice) => {
                 for value in slice {
-                    let value = value.as_structable().unwrap();
-
-                    // Check only one visit method is called
-                    let counts = tests::visit_counts(&value);
-                    assert_eq!(
-                        counts,
-                        tests::VisitCount {
-                            visit_named_fields: 1,
-                            ..Default::default()
-                        }
-                    );
-
-                    // Check the next ID
-                    let mut v = VisitHello(self.0);
-                    value.visit(&mut v);
+                    visit_hello(value, self.0);
+                    cnt += 1;
                     self.0 += 1;
                 }
             }
             _ => panic!(),
         }
+
+        assert_eq!(slice.len(), cnt);
+
+        // Consumes self
+        test_value_iter(IntoIterator::into_iter(slice), start);
     }
 }
 
-#[test]
-fn test_default_visit_slice_empty() {
-    let empty: Vec<HelloWorld> = vec![];
+fn test_value_iter<'a>(i: impl Iterator<Item = Value<'a>>, start: u32) {
+    let size_hint = i.size_hint();
 
-    assert_eq!(Listable::size_hint(&empty), (0, Some(0)));
+    let mut cnt: usize = 0;
+    for (idx, value) in i.enumerate() {
+        visit_hello(&value, start + idx as u32);
+        cnt += 1;
+    }
 
-    let counts = tests::visit_counts(&empty);
-    assert_eq!(
-        counts,
-        tests::VisitCount {
-            visit_slice: 1,
-            ..Default::default()
-        }
-    );
+    assert_eq!(size_hint, (cnt, Some(cnt)));
 }
 
-#[test]
-fn test_default_visit_slice_small() {
-    let hellos = (0..4).map(|i| HelloWorld { id: i }).collect::<Vec<_>>();
+fn visit_hello(value: &Value<'_>, expect: u32) {
+    let value = value.as_structable().unwrap();
 
-    assert_eq!(Listable::size_hint(&hellos), (4, Some(4)));
-
-    let counts = tests::visit_counts(&hellos);
+    // Check only one visit method is called
+    let counts = tests::visit_counts(&value);
     assert_eq!(
         counts,
         tests::VisitCount {
-            visit_slice: 1,
+            visit_named_fields: 1,
             ..Default::default()
         }
     );
 
-    let mut visit = VisitList::default();
-    hellos.visit(&mut visit);
-    assert_eq!(visit.0, 4);
+    // Check the next ID
+    let mut v = VisitHello(expect);
+    value.visit(&mut v);
 }
 
-#[test]
-fn test_default_visit_slice_big_pow_2() {
-    let hellos = (0..1024).map(|i| HelloWorld { id: i }).collect::<Vec<_>>();
+macro_rules! test_default {
+    (
+        $(
+            $name:ident => |$x:ident| $b:expr;
+        )*
+    ) => {
+        $(
+            mod $name {
+                use super::*;
+                #[test]
+                fn test_default_visit_slice_empty() {
+                    let $x: Vec<HelloWorld> = vec![];
+                    let empty = $b;
 
-    assert_eq!(Listable::size_hint(&hellos), (1024, Some(1024)));
+                    assert_eq!(Listable::size_hint(&empty), (0, Some(0)));
 
-    let counts = tests::visit_counts(&hellos);
-    assert_eq!(
-        counts,
-        tests::VisitCount {
-            visit_slice: 128,
-            ..Default::default()
-        }
-    );
+                    let counts = tests::visit_counts(&empty);
+                    assert_eq!(
+                        counts,
+                        tests::VisitCount {
+                            visit_slice: 1,
+                            ..Default::default()
+                        }
+                    );
+                }
 
-    let mut visit = VisitList::default();
-    hellos.visit(&mut visit);
-    assert_eq!(visit.0, 1024);
+                #[test]
+                fn test_default_visit_slice_small() {
+                    let $x = (0..4).map(|i| HelloWorld { id: i }).collect::<Vec<_>>();
+                    let hellos = $b;
+
+                    assert_eq!(Listable::size_hint(&hellos), (4, Some(4)));
+
+                    let counts = tests::visit_counts(&hellos);
+                    assert_eq!(
+                        counts,
+                        tests::VisitCount {
+                            visit_slice: 1,
+                            ..Default::default()
+                        }
+                    );
+
+                    let mut visit = VisitList::default();
+                    hellos.visit(&mut visit);
+                    assert_eq!(visit.0, 4);
+                }
+
+                #[test]
+                fn test_default_visit_slice_big_pow_2() {
+                    let $x = (0..1024).map(|i| HelloWorld { id: i }).collect::<Vec<_>>();
+                    let hellos = $b;
+
+                    assert_eq!(Listable::size_hint(&hellos), (1024, Some(1024)));
+
+                    let counts = tests::visit_counts(&hellos);
+                    assert_eq!(
+                        counts,
+                        tests::VisitCount {
+                            visit_slice: 128,
+                            ..Default::default()
+                        }
+                    );
+
+                    let mut visit = VisitList::default();
+                    hellos.visit(&mut visit);
+                    assert_eq!(visit.0, 1024);
+                }
+
+                #[test]
+                fn test_default_visit_slice_big_odd() {
+                    let $x = (0..63).map(|i| HelloWorld { id: i }).collect::<Vec<_>>();
+                    let hellos = $b;
+
+                    assert_eq!(Listable::size_hint(&hellos), (63, Some(63)));
+
+                    let counts = tests::visit_counts(&hellos);
+                    assert_eq!(
+                        counts,
+                        tests::VisitCount {
+                            visit_slice: 8,
+                            ..Default::default()
+                        }
+                    );
+
+                    let mut visit = VisitList::default();
+                    hellos.visit(&mut visit);
+                    assert_eq!(visit.0, 63);
+                }
+            }
+        )*
+    }
 }
 
-#[test]
-fn test_default_visit_slice_big_odd() {
-    let hellos = (0..63).map(|i| HelloWorld { id: i }).collect::<Vec<_>>();
-
-    assert_eq!(Listable::size_hint(&hellos), (63, Some(63)));
-
-    let counts = tests::visit_counts(&hellos);
-    assert_eq!(
-        counts,
-        tests::VisitCount {
-            visit_slice: 8,
-            ..Default::default()
-        }
-    );
-
-    let mut visit = VisitList::default();
-    hellos.visit(&mut visit);
-    assert_eq!(visit.0, 63);
+test_default! {
+    test_vec => |x| x;
+    test_slice => |x| &x[..];
 }
 
 macro_rules! test_primitive {
@@ -132,6 +182,8 @@ macro_rules! test_primitive {
 
                 impl Visit for VisitPrimitive {
                     fn visit_slice(&mut self, slice: Slice<'_>) {
+                        assert_eq!(slice.len(), self.0.len());
+
                         // Test the expected variant has been received
                         match slice {
                             Slice::$variant(slice) => {
