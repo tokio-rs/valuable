@@ -23,10 +23,6 @@ impl Valuable for HelloWorld {
 
 impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
-        StructDef::new(
-            "HelloWorld",
-            Fields::NamedStatic(HELLO_WORLD_FIELDS),
-            false,
-        )
+        StructDef::new("HelloWorld", Fields::NamedStatic(HELLO_WORLD_FIELDS), false)
     }
 }
