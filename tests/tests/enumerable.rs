@@ -11,30 +11,14 @@ fn test_manual_impl() {
 
     static ENUM_STRUCT_FIELDS: &[NamedField<'static>] = &[NamedField::new("x")];
     static ENUM_VARIANTS: &[VariantDef<'static>] = &[
-        VariantDef {
-            name: "Struct",
-            fields: Fields::NamedStatic(&ENUM_STRUCT_FIELDS),
-            is_dynamic: false,
-        },
-        VariantDef {
-            name: "Tuple",
-            fields: Fields::Unnamed,
-            is_dynamic: false,
-        },
-        VariantDef {
-            name: "Unit",
-            fields: Fields::Unnamed,
-            is_dynamic: false,
-        },
+        VariantDef::new("Struct", Fields::NamedStatic(&ENUM_STRUCT_FIELDS), false),
+        VariantDef::new("Tuple", Fields::Unnamed, false),
+        VariantDef::new("Unit", Fields::Unnamed, false),
     ];
 
     impl Enumerable for Enum {
         fn definition(&self) -> EnumDef<'_> {
-            EnumDef {
-                name: "Enum",
-                variants: ENUM_VARIANTS,
-                is_dynamic: false,
-            }
+            EnumDef::new("Enum", ENUM_VARIANTS, false)
         }
     }
 

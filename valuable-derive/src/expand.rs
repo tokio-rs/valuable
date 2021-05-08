@@ -119,11 +119,11 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 let variant_name = &variant.ident;
                 let variant_name_literal = variant_name.to_string();
                 variant_defs.push(quote! {
-                    ::valuable::VariantDef {
-                        name: #variant_name_literal,
-                        fields: ::valuable::field::Fields::NamedStatic(#named_fields_static_name),
-                        is_dynamic: false,
-                    },
+                    ::valuable::VariantDef::new(
+                        #variant_name_literal,
+                        ::valuable::field::Fields::NamedStatic(#named_fields_static_name),
+                        false,
+                    ),
                 });
 
                 let fields: Vec<_> = variant
@@ -149,11 +149,11 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 let variant_name = &variant.ident;
                 let variant_name_literal = variant_name.to_string();
                 variant_defs.push(quote! {
-                    ::valuable::VariantDef {
-                        name: #variant_name_literal,
-                        fields: ::valuable::field::Fields::Unnamed,
-                        is_dynamic: false,
-                    },
+                    ::valuable::VariantDef::new(
+                        #variant_name_literal,
+                        ::valuable::field::Fields::Unnamed,
+                        false,
+                    ),
                 });
 
                 let bindings: Vec<_> = (0..variant.fields.len())
@@ -174,11 +174,11 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 let variant_name = &variant.ident;
                 let variant_name_literal = variant_name.to_string();
                 variant_defs.push(quote! {
-                    ::valuable::VariantDef {
-                        name: #variant_name_literal,
-                        fields: ::valuable::field::Fields::Unnamed,
-                        is_dynamic: false,
-                    },
+                    ::valuable::VariantDef::new(
+                        #variant_name_literal,
+                        ::valuable::field::Fields::Unnamed,
+                        false,
+                    ),
                 });
 
                 visit_variants.push(quote! {
@@ -204,11 +204,11 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     let enumerable_impl = quote! {
         impl #impl_generics ::valuable::Enumerable for #name #ty_generics #where_clause {
             fn definition(&self) -> ::valuable::EnumDef<'_> {
-                ::valuable::EnumDef {
-                    name: #name_literal,
-                    variants: #variants_static_name,
-                    is_dynamic: false,
-                }
+                ::valuable::EnumDef::new(
+                    #name_literal,
+                    #variants_static_name,
+                    false,
+                )
             }
         }
     };

@@ -9,30 +9,42 @@ pub trait Enumerable: Valuable {
 
 pub struct EnumDef<'a> {
     /// Enum type name
-    pub name: &'a str,
+    name: &'a str,
 
     /// Known variants
-    pub variants: &'a [VariantDef<'a>],
+    variants: &'a [VariantDef<'a>],
 
     /// `true` when not all variants are statically known
-    pub is_dynamic: bool,
+    is_dynamic: bool,
 }
 
 pub struct VariantDef<'a> {
     /// Variant name
-    pub name: &'a str,
+    name: &'a str,
 
-    pub fields: Fields<'a>,
+    fields: Fields<'a>,
 
     /// Are all fields statically known?
-    pub is_dynamic: bool,
+    is_dynamic: bool,
 }
 
 pub struct Variant<'a> {
     pub name: &'a str,
 }
 
-impl EnumDef<'_> {
+impl<'a> EnumDef<'a> {
+    pub const fn new(
+        name: &'a str,
+        variants: &'a [VariantDef<'a>],
+        is_dynamic: bool,
+    ) -> EnumDef<'a> {
+        EnumDef {
+            name,
+            variants,
+            is_dynamic,
+        }
+    }
+
     pub fn name(&self) -> &str {
         self.name
     }
@@ -46,7 +58,33 @@ impl EnumDef<'_> {
     }
 }
 
-impl Variant<'_> {
+impl<'a> VariantDef<'a> {
+    pub const fn new(name: &'a str, fields: Fields<'a>, is_dynamic: bool) -> VariantDef<'a> {
+        VariantDef {
+            name,
+            fields,
+            is_dynamic,
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        self.name
+    }
+
+    pub fn fields(&self) -> &Fields<'_> {
+        &self.fields
+    }
+
+    pub fn is_dynamic(&self) -> bool {
+        self.is_dynamic
+    }
+}
+
+impl<'a> Variant<'a> {
+    pub const fn new(name: &'a str) -> Variant<'a> {
+        Variant { name }
+    }
+
     pub fn name(&self) -> &str {
         self.name
     }
