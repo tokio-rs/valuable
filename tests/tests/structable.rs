@@ -76,6 +76,12 @@ fn test_manual_static_impl() {
 }
 
 #[test]
+#[ignore]
+fn test_manual_dyn_impl() {
+    todo!();
+}
+
+#[test]
 fn test_named_field() {
     let name = "hello".to_string();
     let field = NamedField::new(&name[..]);

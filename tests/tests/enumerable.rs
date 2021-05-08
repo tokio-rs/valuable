@@ -2,7 +2,7 @@ use valuable::field::*;
 use valuable::*;
 
 #[test]
-fn test_manual_impl() {
+fn test_manual_static_impl() {
     enum Enum {
         Struct { x: &'static str },
         Tuple(u8),
@@ -52,4 +52,34 @@ fn test_manual_impl() {
     assert_eq!(format!("{:?}", v.as_value()), r#"Enum::Tuple(0)"#);
     let v = Enum::Unit;
     assert_eq!(format!("{:?}", v.as_value()), r#"Enum::Unit"#);
+}
+
+#[test]
+#[ignore]
+fn test_manual_dyn_impl() {
+    todo!();
+}
+
+#[test]
+#[ignore]
+fn test_variant_named_field() {
+    todo!()
+}
+
+#[test]
+#[ignore]
+fn test_variant_unnamed_field() {
+    todo!()
+}
+
+#[test]
+#[ignore]
+fn test_variant_unnamed_fields() {
+    todo!();
+}
+
+#[test]
+#[ignore]
+fn test_enum_def() {
+    todo!();
 }
