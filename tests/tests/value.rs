@@ -60,6 +60,12 @@ macro_rules! assert_value {
             let mut visit = VisitValue(src, std::marker::PhantomData);
             val.visit(&mut visit);
 
+            // fmt::Debug
+            assert_eq!(
+                format!("{:?}", val),
+                format!("{:?}", src),
+            );
+
             // Test conversion
             assert!(matches!(val, $variant(v) if $eq(&v, &src)));
 

@@ -184,6 +184,12 @@ macro_rules! test_primitive {
                     fn visit_slice(&mut self, slice: Slice<'_>) {
                         assert_eq!(slice.len(), self.0.len());
 
+                        // fmt::Debug
+                        assert_eq!(
+                            format!("{:?}", slice),
+                            format!("{:?}", self.0),
+                        );
+
                         // Test the expected variant has been received
                         match slice {
                             Slice::$variant(slice) => {
