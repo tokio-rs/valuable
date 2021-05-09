@@ -5,6 +5,7 @@ use core::fmt;
 macro_rules! value {
     (
         $(
+            $(#[$attrs:meta])*
             $variant:ident($ty:ty),
         )*
     ) => {
@@ -12,12 +13,14 @@ macro_rules! value {
         #[derive(Clone, Copy)]
         pub enum Value<'a> {
             $(
+                $(#[$attrs])*
                 $variant($ty),
             )*
             Unit, // TODO: None?
         }
 
         $(
+            $(#[$attrs])*
             impl<'a> From<$ty> for Value<'a> {
                 fn from(src: $ty) -> Value<'a> {
                     Value::$variant(src)
@@ -37,6 +40,7 @@ macro_rules! value {
 
                 match self {
                     $(
+                        $(#[$attrs])*
                         $variant(v) => fmt::Debug::fmt(v, fmt),
                     )*
                     Unit => ().fmt(fmt),
@@ -64,6 +68,7 @@ value! {
     U64(u64),
     U128(u128),
     Usize(usize),
+    #[cfg(feature = "std")]
     Error(&'a dyn std::error::Error),
     Listable(&'a dyn Listable),
     Mappable(&'a dyn Mappable),
@@ -159,6 +164,7 @@ macro_rules! convert {
                 }
             }
 
+            #[cfg(feature = "std")]
             pub fn as_error(&self) -> Option<&dyn std::error::Error> {
                 match *self {
                     Value::Error(v) => Some(v),

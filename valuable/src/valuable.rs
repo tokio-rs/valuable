@@ -47,7 +47,30 @@ impl<V: ?Sized + Valuable> Valuable for &V {
     }
 }
 
-impl<V: ?Sized + Valuable> Valuable for Box<V> {
+#[cfg(feature = "alloc")]
+impl<V: ?Sized + Valuable> Valuable for alloc::boxed::Box<V> {
+    fn as_value(&self) -> Value<'_> {
+        (&**self).as_value()
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        V::visit(&**self, visit);
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<V: ?Sized + Valuable> Valuable for alloc::rc::Rc<V> {
+    fn as_value(&self) -> Value<'_> {
+        (&**self).as_value()
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        V::visit(&**self, visit);
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<V: ?Sized + Valuable> Valuable for alloc::sync::Arc<V> {
     fn as_value(&self) -> Value<'_> {
         (&**self).as_value()
     }
@@ -138,7 +161,8 @@ impl Valuable for &'_ str {
     }
 }
 
-impl Valuable for String {
+#[cfg(feature = "alloc")]
+impl Valuable for alloc::string::String {
     fn as_value(&self) -> Value<'_> {
         Value::String(&self[..])
     }
@@ -165,7 +189,18 @@ impl<T: Valuable> Valuable for &'_ [T] {
     }
 }
 
-impl<T: Valuable> Valuable for Vec<T> {
+#[cfg(feature = "alloc")]
+impl<T: Valuable> Valuable for alloc::boxed::Box<[T]> {
+    fn as_value(&self) -> Value<'_> {
+        Value::Listable(self as &dyn Listable)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        T::visit_slice(self, visit);
+    }
+}
+
+impl<T: Valuable, const N: usize> Valuable for [T; N] {
     fn as_value(&self) -> Value<'_> {
         Value::Listable(self)
     }
@@ -175,6 +210,18 @@ impl<T: Valuable> Valuable for Vec<T> {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl<T: Valuable> Valuable for alloc::vec::Vec<T> {
+    fn as_value(&self) -> Value<'_> {
+        Value::Listable(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        T::visit_slice(self, visit);
+    }
+}
+
+#[cfg(feature = "std")]
 impl Valuable for dyn std::error::Error + '_ {
     fn as_value(&self) -> Value<'_> {
         Value::Error(self)
