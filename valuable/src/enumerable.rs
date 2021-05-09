@@ -29,7 +29,7 @@ pub struct VariantDef<'a> {
 }
 
 pub struct Variant<'a> {
-    pub name: &'a str,
+    name: &'a str,
 }
 
 impl<'a> EnumDef<'a> {

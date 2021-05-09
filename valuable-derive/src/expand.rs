@@ -134,7 +134,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 visit_variants.push(quote! {
                     Self::#variant_name { #(#fields),* } => {
                         visitor.visit_variant_named_fields(
-                            &::valuable::Variant { name: #variant_name_literal },
+                            &::valuable::Variant::new(#variant_name_literal),
                             &::valuable::NamedValues::new(
                                 #named_fields_static_name,
                                 &[
@@ -162,7 +162,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 visit_variants.push(quote! {
                     Self::#variant_name(#(#bindings),*) => {
                         visitor.visit_variant_unnamed_fields(
-                            &::valuable::Variant { name: #variant_name_literal },
+                            &::valuable::Variant::new(#variant_name_literal),
                             &[
                                 #(::valuable::Valuable::as_value(#bindings),)*
                             ],
@@ -184,7 +184,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 visit_variants.push(quote! {
                     Self::#variant_name => {
                         visitor.visit_variant_unnamed_fields(
-                            &::valuable::Variant { name: #variant_name_literal },
+                            &::valuable::Variant::new(#variant_name_literal),
                             &[],
                         );
                     }
