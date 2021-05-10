@@ -76,9 +76,38 @@ fn test_manual_static_impl() {
 }
 
 #[test]
-#[ignore]
 fn test_manual_dyn_impl() {
-    todo!();
+    struct MyStruct;
+
+    impl Valuable for MyStruct {
+        fn as_value(&self) -> Value<'_> {
+            Value::Structable(self)
+        }
+
+        fn visit(&self, visit: &mut dyn Visit) {
+            visit.visit_named_fields(&NamedValues::new(
+                &[NamedField::new("foo")],
+                &[Value::U32(1)],
+            ));
+            visit.visit_named_fields(&NamedValues::new(
+                &[NamedField::new("bar")],
+                &[Value::String("two")],
+            ));
+        }
+    }
+
+    impl Structable for MyStruct {
+        fn definition(&self) -> StructDef<'_> {
+            StructDef::new("MyStruct", Fields::NamedStatic(&[]), true)
+        }
+    }
+
+    let my_struct = MyStruct;
+
+    assert_eq!(
+        format!("{:?}", my_struct.as_value()),
+        "MyStruct { foo: 1, bar: \"two\" }"
+    );
 }
 
 #[test]

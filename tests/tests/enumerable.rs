@@ -31,16 +31,15 @@ fn test_manual_static_impl() {
             match self {
                 Enum::Struct { x } => {
                     visitor.visit_variant_named_fields(
-                        &Variant { name: "Struct" },
+                        &Variant::new("Struct"),
                         &NamedValues::new(ENUM_STRUCT_FIELDS, &[Value::String(x)]),
                     );
                 }
                 Enum::Tuple(y) => {
-                    visitor
-                        .visit_variant_unnamed_fields(&Variant { name: "Tuple" }, &[Value::U8(*y)]);
+                    visitor.visit_variant_unnamed_fields(&Variant::new("Tuple"), &[Value::U8(*y)]);
                 }
                 Enum::Unit => {
-                    visitor.visit_variant_unnamed_fields(&Variant { name: "Unit" }, &[]);
+                    visitor.visit_variant_unnamed_fields(&Variant::new("Unit"), &[]);
                 }
             }
         }
@@ -61,25 +60,40 @@ fn test_manual_dyn_impl() {
 }
 
 #[test]
-#[ignore]
 fn test_variant_named_field() {
-    todo!()
+    let name = "my_field".to_string();
+    let fields = [NamedField::new(&name[..])];
+    let variant = VariantDef::new("Hello", Fields::Named(&fields[..]), false);
+
+    assert_eq!(variant.name(), "Hello");
+    assert!(!variant.is_dynamic());
+
+    match *variant.fields() {
+        Fields::Named(f) => {
+            assert!(std::ptr::eq((&fields[..]).as_ptr(), f.as_ptr(),));
+        }
+        _ => panic!(),
+    }
 }
 
 #[test]
-#[ignore]
 fn test_variant_unnamed_field() {
-    todo!()
+    let variant = VariantDef::new("Hello", Fields::Unnamed, false);
+
+    assert_eq!(variant.name(), "Hello");
+    assert!(!variant.is_dynamic());
+    assert!(matches!(variant.fields(), Fields::Unnamed));
 }
 
 #[test]
-#[ignore]
-fn test_variant_unnamed_fields() {
-    todo!();
-}
-
-#[test]
-#[ignore]
 fn test_enum_def() {
-    todo!();
+    let fields = [NamedField::new("foo")];
+    let a = VariantDef::new("A", Fields::Named(&fields[..]), false);
+    let b = VariantDef::new("B", Fields::Unnamed, false);
+    let variants = [a, b];
+    let def = EnumDef::new("Foo", &variants, false);
+
+    assert_eq!(def.name(), "Foo");
+    assert!(std::ptr::eq(variants.as_ptr(), def.variants().as_ptr(),));
+    assert!(!def.is_dynamic());
 }

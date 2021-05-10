@@ -19,43 +19,49 @@ pub struct StructDef<'a> {
 
 impl fmt::Debug for dyn Structable + '_ {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        struct DebugStruct<'a, 'b> {
-            name: &'b str,
-            fmt: &'b mut fmt::Formatter<'a>,
-            res: fmt::Result,
-        }
-
-        impl Visit for DebugStruct<'_, '_> {
-            fn visit_named_fields(&mut self, record: &NamedValues<'_>) {
-                let mut d = self.fmt.debug_struct(self.name);
-
-                for (field, value) in record.entries() {
-                    d.field(field.name(), value);
-                }
-
-                self.res = d.finish();
-            }
-
-            fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
-                let mut d = self.fmt.debug_tuple(self.name);
-
-                for value in values {
-                    d.field(value);
-                }
-
-                self.res = d.finish();
-            }
-        }
-
         let def = self.definition();
-        let mut visit = DebugStruct {
-            name: def.name(),
-            fmt,
-            res: Ok(()),
-        };
 
-        self.visit(&mut visit);
-        visit.res
+        if def.fields().is_named() {
+            struct DebugStruct<'a, 'b> {
+                fmt: fmt::DebugStruct<'a, 'b>,
+            }
+
+            let mut debug = DebugStruct {
+                fmt: fmt.debug_struct(def.name()),
+            };
+
+            impl Visit for DebugStruct<'_, '_> {
+                fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
+                    for (field, value) in named_values.entries() {
+                        self.fmt.field(field.name(), value);
+                    }
+                }
+            }
+
+            self.visit(&mut debug);
+
+            debug.fmt.finish()
+        } else {
+            struct DebugStruct<'a, 'b> {
+                fmt: fmt::DebugTuple<'a, 'b>,
+            }
+
+            let mut debug = DebugStruct {
+                fmt: fmt.debug_tuple(def.name()),
+            };
+
+            impl Visit for DebugStruct<'_, '_> {
+                fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
+                    for value in values {
+                        self.fmt.field(value);
+                    }
+                }
+            }
+
+            self.visit(&mut debug);
+
+            debug.fmt.finish()
+        }
     }
 }
 
