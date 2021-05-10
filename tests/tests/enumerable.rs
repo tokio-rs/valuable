@@ -20,6 +20,14 @@ fn test_manual_static_impl() {
         fn definition(&self) -> EnumDef<'_> {
             EnumDef::new("Enum", ENUM_VARIANTS, false)
         }
+
+        fn variant(&self) -> Variant<'_> {
+            match *self {
+                Enum::Struct { .. } => Variant::Static(&ENUM_VARIANTS[0]),
+                Enum::Tuple(..) => Variant::Static(&ENUM_VARIANTS[1]),
+                Enum::Unit => Variant::Static(&ENUM_VARIANTS[2]),
+            }
+        }
     }
 
     impl Valuable for Enum {
@@ -30,16 +38,16 @@ fn test_manual_static_impl() {
         fn visit(&self, visitor: &mut dyn Visit) {
             match self {
                 Enum::Struct { x } => {
-                    visitor.visit_variant_named_fields(
-                        &Variant::new("Struct"),
-                        &NamedValues::new(ENUM_STRUCT_FIELDS, &[Value::String(x)]),
-                    );
+                    visitor.visit_named_fields(&NamedValues::new(
+                        ENUM_STRUCT_FIELDS,
+                        &[Value::String(x)],
+                    ));
                 }
                 Enum::Tuple(y) => {
-                    visitor.visit_variant_unnamed_fields(&Variant::new("Tuple"), &[Value::U8(*y)]);
+                    visitor.visit_unnamed_fields(&[Value::U8(*y)]);
                 }
                 Enum::Unit => {
-                    visitor.visit_variant_unnamed_fields(&Variant::new("Unit"), &[]);
+                    visitor.visit_unnamed_fields(&[]);
                 }
             }
         }
