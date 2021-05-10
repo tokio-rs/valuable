@@ -13,7 +13,7 @@ default = ["std"]
 derive = ["valuable-derive"]
 
 # Provide impls for common standard library types like Vec<T> and HashMap<K, V>.
-std = []
+std = ["alloc"]
 
 # Provide imps for types in Rust's `alloc` library.
 alloc = []

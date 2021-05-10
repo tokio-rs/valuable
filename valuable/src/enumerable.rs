@@ -1,6 +1,8 @@
 use crate::field::*;
 use crate::*;
 
+#[cfg(feature = "alloc")]
+use alloc::format;
 use core::fmt;
 
 pub trait Enumerable: Valuable {
@@ -139,5 +141,32 @@ impl fmt::Debug for dyn Enumerable + '_ {
 
         self.visit(&mut visit);
         visit.res
+    }
+}
+
+impl<E: ?Sized + Enumerable> Enumerable for &E {
+    fn definition(&self) -> EnumDef<'_> {
+        E::definition(*self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<E: ?Sized + Enumerable> Enumerable for alloc::boxed::Box<E> {
+    fn definition(&self) -> EnumDef<'_> {
+        E::definition(&**self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<E: ?Sized + Enumerable> Enumerable for alloc::rc::Rc<E> {
+    fn definition(&self) -> EnumDef<'_> {
+        E::definition(&**self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<E: ?Sized + Enumerable> Enumerable for alloc::sync::Arc<E> {
+    fn definition(&self) -> EnumDef<'_> {
+        E::definition(&**self)
     }
 }

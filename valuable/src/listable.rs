@@ -12,7 +12,22 @@ impl<L: ?Sized + Listable> Listable for &L {
     }
 }
 
-impl<L: ?Sized + Listable> Listable for Box<L> {
+#[cfg(feature = "alloc")]
+impl<L: ?Sized + Listable> Listable for alloc::boxed::Box<L> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        L::size_hint(&**self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<L: ?Sized + Listable> Listable for alloc::rc::Rc<L> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        L::size_hint(&**self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<L: ?Sized + Listable> Listable for alloc::sync::Arc<L> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         L::size_hint(&**self)
     }
@@ -24,7 +39,21 @@ impl<T: Valuable> Listable for &'_ [T] {
     }
 }
 
-impl<T: Valuable> Listable for Vec<T> {
+#[cfg(feature = "alloc")]
+impl<T: Valuable> Listable for alloc::boxed::Box<[T]> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<T: Valuable, const N: usize> Listable for [T; N] {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T: Valuable> Listable for alloc::vec::Vec<T> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
