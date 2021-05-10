@@ -6,6 +6,33 @@ pub trait Mappable: Valuable {
     fn size_hint(&self) -> (usize, Option<usize>);
 }
 
+impl<M: ?Sized + Mappable> Mappable for &M {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        M::size_hint(*self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<M: ?Sized + Mappable> Mappable for alloc::boxed::Box<M> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        M::size_hint(&**self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<M: ?Sized + Mappable> Mappable for alloc::rc::Rc<M> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        M::size_hint(&**self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<M: ?Sized + Mappable> Mappable for alloc::sync::Arc<M> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        M::size_hint(&**self)
+    }
+}
+
 #[cfg(feature = "std")]
 impl<K: Valuable, V: Valuable> Valuable for std::collections::HashMap<K, V> {
     fn as_value(&self) -> Value<'_> {
@@ -21,6 +48,26 @@ impl<K: Valuable, V: Valuable> Valuable for std::collections::HashMap<K, V> {
 
 #[cfg(feature = "std")]
 impl<K: Valuable, V: Valuable> Mappable for std::collections::HashMap<K, V> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter().size_hint()
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<K: Valuable, V: Valuable> Valuable for alloc::collections::BTreeMap<K, V> {
+    fn as_value(&self) -> Value<'_> {
+        Value::Mappable(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        for (key, value) in self.iter() {
+            visit.visit_entry(key.as_value(), value.as_value());
+        }
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<K: Valuable, V: Valuable> Mappable for alloc::collections::BTreeMap<K, V> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter().size_hint()
     }

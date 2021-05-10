@@ -115,7 +115,7 @@ slice! {
     I128(i128),
     Isize(isize),
     Str(&'a str),
-    String(String),
+    String(alloc::string::String),
     U8(u8),
     U16(u16),
     U32(u32),

@@ -6,6 +6,7 @@ use core::fmt;
 pub trait Structable: Valuable {
     fn definition(&self) -> StructDef<'_>;
 }
+
 pub struct StructDef<'a> {
     /// Type name
     name: &'a str,
@@ -78,5 +79,32 @@ impl<'a> StructDef<'a> {
 
     pub fn is_dynamic(&self) -> bool {
         self.is_dynamic
+    }
+}
+
+impl<S: ?Sized + Structable> Structable for &S {
+    fn definition(&self) -> StructDef<'_> {
+        S::definition(*self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<S: ?Sized + Structable> Structable for alloc::boxed::Box<S> {
+    fn definition(&self) -> StructDef<'_> {
+        S::definition(&**self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<S: ?Sized + Structable> Structable for alloc::rc::Rc<S> {
+    fn definition(&self) -> StructDef<'_> {
+        S::definition(&**self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<S: ?Sized + Structable> Structable for alloc::sync::Arc<S> {
+    fn definition(&self) -> StructDef<'_> {
+        S::definition(&**self)
     }
 }
