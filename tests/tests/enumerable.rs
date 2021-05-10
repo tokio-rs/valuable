@@ -31,16 +31,15 @@ fn test_manual_impl() {
             match self {
                 Enum::Struct { x } => {
                     visitor.visit_variant_named_fields(
-                        &Variant { name: "Struct" },
+                        &Variant::new("Struct"),
                         &NamedValues::new(ENUM_STRUCT_FIELDS, &[Value::String(x)]),
                     );
                 }
                 Enum::Tuple(y) => {
-                    visitor
-                        .visit_variant_unnamed_fields(&Variant { name: "Tuple" }, &[Value::U8(*y)]);
+                    visitor.visit_variant_unnamed_fields(&Variant::new("Tuple"), &[Value::U8(*y)]);
                 }
                 Enum::Unit => {
-                    visitor.visit_variant_unnamed_fields(&Variant { name: "Unit" }, &[]);
+                    visitor.visit_variant_unnamed_fields(&Variant::new("Unit"), &[]);
                 }
             }
         }
