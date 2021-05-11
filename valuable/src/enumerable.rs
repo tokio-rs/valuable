@@ -133,9 +133,11 @@ impl<'a> DynamicVariant<'a> {
 
 impl fmt::Debug for dyn Enumerable + '_ {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let def = self.definition();
         let variant = self.variant();
-        let name = format!("{}::{}", def.name(), variant.name());
+        #[cfg(feature = "alloc")]
+        let name = format!("{}::{}", self.definition().name(), variant.name());
+        #[cfg(not(feature = "alloc"))]
+        let name = variant.name();
 
         if variant.is_named_fields() {
             struct DebugEnum<'a, 'b> {
