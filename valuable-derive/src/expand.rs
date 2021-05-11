@@ -103,9 +103,10 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     // `static FIELDS: &[NamedField<'static>]` for variant with named fields
     let mut named_fields_statics = vec![];
     let mut variant_defs = vec![];
+    let mut variant_fn = vec![];
     let mut visit_variants = vec![];
 
-    for variant in &data.variants {
+    for (i, variant) in data.variants.iter().enumerate() {
         match &variant.fields {
             syn::Fields::Named(_) => {
                 // <enum>_<variant>_FIELDS
@@ -126,6 +127,12 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     ),
                 });
 
+                variant_fn.push(quote! {
+                    Self::#variant_name { .. } => {
+                        ::valuable::Variant::Static(&#variants_static_name[#i])
+                    }
+                });
+
                 let fields: Vec<_> = variant
                     .fields
                     .iter()
@@ -133,8 +140,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     .collect();
                 visit_variants.push(quote! {
                     Self::#variant_name { #(#fields),* } => {
-                        visitor.visit_variant_named_fields(
-                            &::valuable::Variant::new(#variant_name_literal),
+                        visitor.visit_named_fields(
                             &::valuable::NamedValues::new(
                                 #named_fields_static_name,
                                 &[
@@ -156,13 +162,18 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     ),
                 });
 
+                variant_fn.push(quote! {
+                    Self::#variant_name(..) => {
+                        ::valuable::Variant::Static(&#variants_static_name[#i])
+                    }
+                });
+
                 let bindings: Vec<_> = (0..variant.fields.len())
                     .map(|i| format_ident!("__binding_{}", i))
                     .collect();
                 visit_variants.push(quote! {
                     Self::#variant_name(#(#bindings),*) => {
-                        visitor.visit_variant_unnamed_fields(
-                            &::valuable::Variant::new(#variant_name_literal),
+                        visitor.visit_unnamed_fields(
                             &[
                                 #(::valuable::Valuable::as_value(#bindings),)*
                             ],
@@ -181,10 +192,15 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     ),
                 });
 
+                variant_fn.push(quote! {
+                    Self::#variant_name => {
+                        ::valuable::Variant::Static(&#variants_static_name[#i])
+                    }
+                });
+
                 visit_variants.push(quote! {
                     Self::#variant_name => {
-                        visitor.visit_variant_unnamed_fields(
-                            &::valuable::Variant::new(#variant_name_literal),
+                        visitor.visit_unnamed_fields(
                             &[],
                         );
                     }
@@ -209,6 +225,12 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     #variants_static_name,
                     false,
                 )
+            }
+
+            fn variant(&self) -> ::valuable::Variant<'_> {
+                match self {
+                    #(#variant_fn)*
+                }
             }
         }
     };
