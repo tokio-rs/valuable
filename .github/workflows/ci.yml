@@ -53,7 +53,7 @@ jobs:
         run: rustup update stable
       - name: Install cargo-hack
         run: cargo install cargo-hack
-      - run: cargo hack build --workspace --feature-powerset --no-dev-deps
+      - run: cargo hack build --workspace --feature-powerset
 
   fmt:
     runs-on: ubuntu-latest
