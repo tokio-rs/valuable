@@ -108,6 +108,7 @@ impl<S: ?Sized + Structable> Structable for alloc::rc::Rc<S> {
     }
 }
 
+#[cfg(not(valuable_no_atomic_cas))]
 #[cfg(feature = "alloc")]
 impl<S: ?Sized + Structable> Structable for alloc::sync::Arc<S> {
     fn definition(&self) -> StructDef<'_> {

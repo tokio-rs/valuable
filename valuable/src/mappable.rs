@@ -26,6 +26,7 @@ impl<M: ?Sized + Mappable> Mappable for alloc::rc::Rc<M> {
     }
 }
 
+#[cfg(not(valuable_no_atomic_cas))]
 #[cfg(feature = "alloc")]
 impl<M: ?Sized + Mappable> Mappable for alloc::sync::Arc<M> {
     fn size_hint(&self) -> (usize, Option<usize>) {
