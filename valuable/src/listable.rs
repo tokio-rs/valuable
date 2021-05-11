@@ -26,6 +26,7 @@ impl<L: ?Sized + Listable> Listable for alloc::rc::Rc<L> {
     }
 }
 
+#[cfg(not(valuable_no_atomic_cas))]
 #[cfg(feature = "alloc")]
 impl<L: ?Sized + Listable> Listable for alloc::sync::Arc<L> {
     fn size_hint(&self) -> (usize, Option<usize>) {

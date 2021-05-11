@@ -215,6 +215,7 @@ impl<E: ?Sized + Enumerable> Enumerable for alloc::rc::Rc<E> {
     }
 }
 
+#[cfg(not(valuable_no_atomic_cas))]
 #[cfg(feature = "alloc")]
 impl<E: ?Sized + Enumerable> Enumerable for alloc::sync::Arc<E> {
     fn definition(&self) -> EnumDef<'_> {

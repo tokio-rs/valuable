@@ -69,6 +69,7 @@ impl<V: ?Sized + Valuable> Valuable for alloc::rc::Rc<V> {
     }
 }
 
+#[cfg(not(valuable_no_atomic_cas))]
 #[cfg(feature = "alloc")]
 impl<V: ?Sized + Valuable> Valuable for alloc::sync::Arc<V> {
     fn as_value(&self) -> Value<'_> {

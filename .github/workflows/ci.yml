@@ -26,9 +26,7 @@ jobs:
     strategy:
       matrix:
         target:
-          # TODO: Currently, valuable cannot build with targets that do not have atomic CAS.
-          #       We should port https://github.com/rust-lang/futures-rs/pull/2400.
-          # - thumbv6m-none-eabi
+          - thumbv6m-none-eabi
           - thumbv7m-none-eabi
     runs-on: ubuntu-latest
     steps:
@@ -54,6 +52,19 @@ jobs:
       - name: Install cargo-hack
         run: cargo install cargo-hack
       - run: cargo hack build --workspace --feature-powerset
+
+  # When this job failed, run ci/no_atomic_cas.sh and commit result changes.
+  # TODO(taiki-e): Ideally, this should be automated using a bot that creates
+  #                PR when failed, but there is no bandwidth to implement it
+  #                right now...
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        run: rustup update nightly && rustup default nightly
+      - run: ci/no_atomic_cas.sh
+      - run: git diff --exit-code
 
   fmt:
     runs-on: ubuntu-latest
