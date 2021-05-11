@@ -20,6 +20,7 @@ jobs:
       - name: Install Rust
         run: rustup update stable
       - run: cargo test --all-features --workspace
+      - run: cargo build --all-features --all-targets --workspace
 
   no-std:
     strategy:

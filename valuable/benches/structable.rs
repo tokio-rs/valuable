@@ -24,15 +24,16 @@ static FIELDS: &[NamedField<'static>] = &[
 
 impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
-        StructDef {
-            name: "HelloWorld",
-            static_fields: FIELDS,
-            is_dynamic: false,
-        }
+        StructDef::new("HelloWorld", Fields::NamedStatic(FIELDS), false)
+    }
+}
+
+impl Valuable for HelloWorld {
+    fn as_value(&self) -> Value<'_> {
+        Value::Structable(self)
     }
 
     fn visit(&self, v: &mut dyn Visit) {
-        let definition = self.definition();
         v.visit_named_fields(&NamedValues::new(
             FIELDS,
             &[
@@ -52,7 +53,10 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let hello_world = black_box(HelloWorld::default());
     let structable = &hello_world as &dyn Structable;
-    let f = &structable.definition().static_fields()[5];
+    let f = match structable.definition().fields() {
+        Fields::NamedStatic(fields) => &fields[5],
+        _ => unreachable!(),
+    };
 
     struct Sum(usize, &'static NamedField<'static>);
 
