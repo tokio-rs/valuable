@@ -5,12 +5,14 @@ use core::fmt;
 macro_rules! slice {
     (
         $(
+            $(#[$attrs:meta])*
             $variant:ident($ty:ty),
         )*
     ) => {
         #[non_exhaustive]
         pub enum Slice<'a> {
             $(
+                $(#[$attrs])*
                 $variant(&'a [$ty]),
             )*
         }
@@ -19,6 +21,7 @@ macro_rules! slice {
 
         enum IterKind<'a> {
             $(
+                $(#[$attrs])*
                 $variant(core::slice::Iter<'a, $ty>),
             )*
         }
@@ -27,6 +30,7 @@ macro_rules! slice {
             pub fn len(&self) -> usize {
                 match self {
                     $(
+                        $(#[$attrs])*
                         Slice::$variant(s) => s.len(),
                     )*
                 }
@@ -53,6 +57,7 @@ macro_rules! slice {
             fn into_iter(self) -> Self::IntoIter {
                 Iter(match self {
                     $(
+                        $(#[$attrs])*
                         Slice::$variant(s) => IterKind::$variant(s.iter()),
                     )*
                 })
@@ -67,6 +72,7 @@ macro_rules! slice {
 
                 match *self {
                     $(
+                        $(#[$attrs])*
                         $variant(v) => d.entries(v),
                     )*
                 };
@@ -83,6 +89,7 @@ macro_rules! slice {
 
                 match &self.0 {
                     $(
+                        $(#[$attrs])*
                         $variant(v) => v.size_hint(),
                     )*
                 }
@@ -93,6 +100,7 @@ macro_rules! slice {
 
                 match &mut self.0 {
                     $(
+                        $(#[$attrs])*
                         $variant(v) => v.next().map(|v| {
                             Valuable::as_value(v)
                         }),
@@ -115,6 +123,7 @@ slice! {
     I128(i128),
     Isize(isize),
     Str(&'a str),
+    #[cfg(feature = "alloc")]
     String(alloc::string::String),
     U8(u8),
     U16(u16),
