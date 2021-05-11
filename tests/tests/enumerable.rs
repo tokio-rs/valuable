@@ -62,9 +62,34 @@ fn test_manual_static_impl() {
 }
 
 #[test]
-#[ignore]
 fn test_manual_dyn_impl() {
-    todo!();
+    struct MyEnum;
+
+    impl Valuable for MyEnum {
+        fn as_value(&self) -> Value<'_> {
+            Value::Enumerable(self)
+        }
+
+        fn visit(&self, visitor: &mut dyn Visit) {
+            visitor.visit_unnamed_fields(&[Value::String("hello")]);
+        }
+    }
+
+    impl Enumerable for MyEnum {
+        fn definition(&self) -> EnumDef<'_> {
+            EnumDef::new("MyEnum", &[], true)
+        }
+
+        fn variant(&self) -> Variant<'_> {
+            Variant::Dynamic(DynamicVariant::new("MyVariant", false))
+        }
+    }
+
+    let v = MyEnum;
+    assert_eq!(
+        format!("{:?}", v.as_value()),
+        "MyEnum::MyVariant(\"hello\")"
+    );
 }
 
 #[test]

@@ -4,7 +4,7 @@
 extern crate alloc;
 
 mod enumerable;
-pub use enumerable::{EnumDef, Enumerable, Variant, VariantDef};
+pub use enumerable::{DynamicVariant, EnumDef, Enumerable, Variant, VariantDef};
 
 pub mod field;
 
