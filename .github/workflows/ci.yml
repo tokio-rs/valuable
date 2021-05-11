@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+env:
+  RUSTFLAGS: -Dwarnings
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        run: rustup update stable
+      - run: cargo test --all-features --workspace
+
+  no-std:
+    strategy:
+      matrix:
+        target:
+          # TODO: Currently, valuable cannot build with targets that do not have atomic CAS.
+          #       We should port https://github.com/rust-lang/futures-rs/pull/2400.
+          # - thumbv6m-none-eabi
+          - thumbv7m-none-eabi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        run: rustup update stable
+      - run: rustup target add ${{ matrix.target }}
+      # TODO: Currently, valuable cannot build without `alloc` feature
+      #       because `Debug` impl of `dyn Enumerable` uses `format!` macro.
+      # - run: cargo build --target ${{ matrix.target }} --no-default-features
+      #   working-directory: valuable
+      # - run: cargo build --target ${{ matrix.target }} --no-default-features --features derive
+      #   working-directory: valuable
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features alloc
+        working-directory: valuable
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features alloc,derive
+        working-directory: valuable
+
+  # TODO: Currently, valuable cannot build without `alloc` feature
+  #       because `Debug` impl of `dyn Enumerable` uses `format!` macro.
+  # features:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Install Rust
+  #       run: rustup update stable
+  #     - name: Install cargo-hack
+  #       run: cargo install cargo-hack
+  #     - run: cargo hack build --workspace --feature-powerset --no-dev-deps
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        run: rustup update stable
+      - run: cargo fmt --all -- --check
