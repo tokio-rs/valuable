@@ -1,4 +1,4 @@
-use crate::{Listable, Slice, Value, Visit};
+use crate::{Slice, Value, Visit};
 
 use core::fmt;
 
@@ -176,48 +176,6 @@ impl Valuable for alloc::string::String {
         Self: Sized,
     {
         visit.visit_slice(Slice::String(slice));
-    }
-}
-
-impl<T: Valuable> Valuable for &'_ [T] {
-    fn as_value(&self) -> Value<'_> {
-        Value::Listable(self as &dyn Listable)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        T::visit_slice(self, visit);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T: Valuable> Valuable for alloc::boxed::Box<[T]> {
-    fn as_value(&self) -> Value<'_> {
-        Value::Listable(self as &dyn Listable)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        T::visit_slice(self, visit);
-    }
-}
-
-impl<T: Valuable, const N: usize> Valuable for [T; N] {
-    fn as_value(&self) -> Value<'_> {
-        Value::Listable(self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        T::visit_slice(self, visit);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T: Valuable> Valuable for alloc::vec::Vec<T> {
-    fn as_value(&self) -> Value<'_> {
-        Value::Listable(self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        T::visit_slice(self, visit);
     }
 }
 
