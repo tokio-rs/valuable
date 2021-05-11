@@ -1,6 +1,7 @@
 use crate::{Slice, Value, Visit};
 
 use core::fmt;
+use core::num::Wrapping;
 
 pub trait Valuable {
     fn as_value(&self) -> Value<'_>;
@@ -104,7 +105,6 @@ macro_rules! valuable {
                     visit.visit_slice(Slice::$variant(slice));
                 }
             }
-
         )*
     };
 }
@@ -126,6 +126,51 @@ valuable! {
     U64(u64),
     U128(u128),
     Usize(usize),
+}
+
+macro_rules! nonzero {
+    (
+        $(
+            $variant:ident($ty:ident),
+        )*
+    ) => {
+        $(
+            impl Valuable for core::num::$ty {
+                fn as_value(&self) -> Value<'_> {
+                    Value::$variant(self.get())
+                }
+
+                fn visit(&self, visit: &mut dyn Visit) {
+                    visit.visit_value(self.as_value());
+                }
+            }
+        )*
+    };
+}
+
+nonzero! {
+    I8(NonZeroI8),
+    I16(NonZeroI16),
+    I32(NonZeroI32),
+    I64(NonZeroI64),
+    I128(NonZeroI128),
+    Isize(NonZeroIsize),
+    U8(NonZeroU8),
+    U16(NonZeroU16),
+    U32(NonZeroU32),
+    U64(NonZeroU64),
+    U128(NonZeroU128),
+    Usize(NonZeroUsize),
+}
+
+impl<T: Valuable> Valuable for Wrapping<T> {
+    fn as_value(&self) -> Value<'_> {
+        self.0.as_value()
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        self.0.visit(visit);
+    }
 }
 
 impl Valuable for () {
