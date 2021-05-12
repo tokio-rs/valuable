@@ -1,3 +1,14 @@
+//! Valuable provides object-safe value inspection. Use cases include passing
+//! structured data to trait objects and object-safe serialization.
+//!
+//! # Getting started
+//!
+//! TODO
+//!
+//! # Design
+//!
+//! TODO
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "alloc")]
