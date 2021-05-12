@@ -5,7 +5,8 @@ pub struct VisitCount {
     pub visit_value: u32,
     pub visit_named_fields: u32,
     pub visit_unnamed_fields: u32,
-    pub visit_slice: u32,
+    pub visit_primitive_slice: u32,
+    pub visit_item: u32,
     pub visit_entry: u32,
 }
 
@@ -28,8 +29,12 @@ impl Visit for VisitCount {
         self.visit_unnamed_fields += 1;
     }
 
-    fn visit_slice(&mut self, _: Slice<'_>) {
-        self.visit_slice += 1;
+    fn visit_primitive_slice(&mut self, _: Slice<'_>) {
+        self.visit_primitive_slice += 1;
+    }
+
+    fn visit_item(&mut self, _: Value<'_>) {
+        self.visit_item += 1;
     }
 
     fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {

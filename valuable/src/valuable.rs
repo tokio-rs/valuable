@@ -12,28 +12,8 @@ pub trait Valuable {
     where
         Self: Sized,
     {
-        const N: usize = 8;
-
-        let mut batch: [_; N] = Default::default();
-        let mut curr = 0;
-
-        if slice.is_empty() {
-            visit.visit_slice(Slice::Value(&batch[..0]));
-            return;
-        }
-
-        for v in slice {
-            if curr == N {
-                visit.visit_slice(Slice::Value(&batch[..]));
-                curr = 0;
-            }
-
-            batch[curr] = v.as_value();
-            curr += 1;
-        }
-
-        if curr > 0 {
-            visit.visit_slice(Slice::Value(&batch[..curr]));
+        for item in slice {
+            visit.visit_item(item.as_value());
         }
     }
 }
@@ -102,7 +82,7 @@ macro_rules! valuable {
                 where
                     Self: Sized,
                 {
-                    visit.visit_slice(Slice::$variant(slice));
+                    visit.visit_primitive_slice(Slice::$variant(slice));
                 }
             }
         )*
@@ -186,7 +166,7 @@ impl Valuable for () {
     where
         Self: Sized,
     {
-        visit.visit_slice(Slice::Unit(slice));
+        visit.visit_primitive_slice(Slice::Unit(slice));
     }
 }
 
@@ -203,7 +183,7 @@ impl Valuable for &'_ str {
     where
         Self: Sized,
     {
-        visit.visit_slice(Slice::Str(slice));
+        visit.visit_primitive_slice(Slice::Str(slice));
     }
 }
 
@@ -221,7 +201,7 @@ impl Valuable for alloc::string::String {
     where
         Self: Sized,
     {
-        visit.visit_slice(Slice::String(slice));
+        visit.visit_primitive_slice(Slice::String(slice));
     }
 }
 
