@@ -15,41 +15,10 @@ impl Visit for VisitHello {
 struct VisitList(u32);
 
 impl Visit for VisitList {
-    fn visit_slice(&mut self, slice: Slice<'_>) {
-        let start = self.0;
-
-        test_value_iter(slice.iter(), start);
-        test_value_iter(IntoIterator::into_iter(&slice), start);
-
-        let mut cnt = 0;
-        match slice {
-            Slice::Value(slice) => {
-                for value in slice {
-                    visit_hello(value, self.0);
-                    cnt += 1;
-                    self.0 += 1;
-                }
-            }
-            _ => panic!(),
-        }
-
-        assert_eq!(slice.len(), cnt);
-
-        // Consumes self
-        test_value_iter(IntoIterator::into_iter(slice), start);
+    fn visit_value(&mut self, item: Value<'_>) {
+        visit_hello(&item, self.0);
+        self.0 += 1;
     }
-}
-
-fn test_value_iter<'a>(i: impl Iterator<Item = Value<'a>>, start: u32) {
-    let size_hint = i.size_hint();
-
-    let mut cnt: usize = 0;
-    for (idx, value) in i.enumerate() {
-        visit_hello(&value, start + idx as u32);
-        cnt += 1;
-    }
-
-    assert_eq!(size_hint, (cnt, Some(cnt)));
 }
 
 fn visit_hello(value: &Value<'_>, expect: u32) {
@@ -89,10 +58,7 @@ macro_rules! test_default {
                     let counts = tests::visit_counts(&empty);
                     assert_eq!(
                         counts,
-                        tests::VisitCount {
-                            visit_slice: 1,
-                            ..Default::default()
-                        }
+                        Default::default(),
                     );
                 }
 
@@ -107,7 +73,7 @@ macro_rules! test_default {
                     assert_eq!(
                         counts,
                         tests::VisitCount {
-                            visit_slice: 1,
+                            visit_value: 4,
                             ..Default::default()
                         }
                     );
@@ -128,7 +94,7 @@ macro_rules! test_default {
                     assert_eq!(
                         counts,
                         tests::VisitCount {
-                            visit_slice: 128,
+                            visit_value: 1024,
                             ..Default::default()
                         }
                     );
@@ -149,7 +115,7 @@ macro_rules! test_default {
                     assert_eq!(
                         counts,
                         tests::VisitCount {
-                            visit_slice: 8,
+                            visit_value: 63,
                             ..Default::default()
                         }
                     );
@@ -176,12 +142,27 @@ macro_rules! test_primitive {
     ) => {
         $(
             mod $name {
-                use valuable::*;
+                use super::*;
 
-                struct VisitPrimitive(Vec<$ty>);
+                fn test_iter<'a>(mut i: impl Iterator<Item = Value<'a>>, expect: &[$ty]) {
+                    assert_eq!(i.size_hint(), (expect.len(), Some(expect.len())));
+                    let mut expect = expect.iter();
 
-                impl Visit for VisitPrimitive {
-                    fn visit_slice(&mut self, slice: Slice<'_>) {
+                    loop {
+                        match (i.next(), expect.next()) {
+                            (Some(Value::$vvariant(actual)), Some(expect)) => {
+                                assert_eq!(actual, *expect)
+                            }
+                            (None, None) => break,
+                            _ => panic!(),
+                        }
+                    }
+                }
+
+                struct VisitPrimitive<'a>(&'a [$ty]);
+
+                impl Visit for VisitPrimitive<'_> {
+                    fn visit_primitive_slice(&mut self, slice: Slice<'_>) {
                         assert_eq!(slice.len(), self.0.len());
 
                         // fmt::Debug
@@ -198,16 +179,9 @@ macro_rules! test_primitive {
                             _ => panic!(),
                         }
 
-                        let iter = slice.iter();
-                        assert_eq!(iter.size_hint(), (self.0.len(), Some(self.0.len())));
-
-                        // Test iterator
-                        for (idx, value) in iter.enumerate() {
-                            match value {
-                                Value::$vvariant(value) => assert_eq!(self.0[idx], value),
-                                _ => panic!(),
-                            }
-                        }
+                        test_iter(slice.iter(), &self.0);
+                        test_iter(IntoIterator::into_iter(&slice), &self.0);
+                        test_iter(IntoIterator::into_iter(slice), &self.0);
                     }
                 }
 
@@ -218,21 +192,27 @@ macro_rules! test_primitive {
                     assert_eq!(Listable::size_hint(&empty), (0, Some(0)));
 
                     let counts = tests::visit_counts(&empty);
-                    assert_eq!(counts, tests::VisitCount { visit_slice: 1, .. Default::default() });
+                    assert_eq!(counts, tests::VisitCount { visit_primitive_slice: 1, .. Default::default() });
                 }
 
                 #[test]
                 fn test_slices() {
+                    fn do_test(listable: &impl Listable, expect: &[$ty]) {
+                        assert_eq!(listable.size_hint(), expect.iter().size_hint());
+
+                        let counts = tests::visit_counts(listable);
+                        assert_eq!(counts, tests::VisitCount { visit_primitive_slice: 1, .. Default::default() });
+
+                        let mut visit = VisitPrimitive(expect);
+                        listable.visit(&mut visit);
+                    }
+
                     for &len in &[4_usize, 10, 30, 32, 63, 64, 100, 1000, 1024] {
                         let vec = (0..len).map(|$x| $b).collect::<Vec<$ty>>();
+                        do_test(&vec, &vec);
 
-                        assert_eq!(Listable::size_hint(&vec), (len, Some(len)));
-
-                        let counts = tests::visit_counts(&vec);
-                        assert_eq!(counts, tests::VisitCount { visit_slice: 1, .. Default::default() });
-
-                        let mut visit = VisitPrimitive(vec.clone());
-                        vec.visit(&mut visit);
+                        let vec = vec.into_boxed_slice();
+                        do_test(&vec, &vec);
                     }
                 }
             }

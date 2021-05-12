@@ -128,16 +128,15 @@ impl fmt::Debug for dyn Listable + '_ {
         }
 
         impl Visit for DebugListable<'_, '_> {
-            fn visit_slice(&mut self, slice: Slice<'_>) {
-                for value in &slice {
-                    self.fmt.entry(&value);
-                }
+            fn visit_value(&mut self, value: Value<'_>) {
+                self.fmt.entry(&value);
             }
         }
 
         let mut debug = DebugListable {
             fmt: fmt.debug_list(),
         };
+
         self.visit(&mut debug);
         debug.fmt.finish()
     }

@@ -131,6 +131,5 @@ slice! {
     U64(u64),
     U128(u128),
     Usize(usize),
-    Value(Value<'a>),
     Unit(()),
 }

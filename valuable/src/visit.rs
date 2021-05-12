@@ -17,8 +17,10 @@ pub trait Visit {
     }
 
     /// Visit a slice
-    fn visit_slice(&mut self, slice: Slice<'_>) {
-        drop(slice);
+    fn visit_primitive_slice(&mut self, slice: Slice<'_>) {
+        for value in slice {
+            self.visit_value(value);
+        }
     }
 
     // TODO: should we batch visit entries?

@@ -84,13 +84,6 @@ impl Valuable for Value<'_> {
     fn visit(&self, visit: &mut dyn Visit) {
         visit.visit_value(self.clone());
     }
-
-    fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
-    where
-        Self: Sized,
-    {
-        visit.visit_slice(Slice::Value(slice));
-    }
 }
 
 impl Default for Value<'_> {
