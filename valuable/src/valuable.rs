@@ -13,7 +13,7 @@ pub trait Valuable {
         Self: Sized,
     {
         for item in slice {
-            visit.visit_item(item.as_value());
+            visit.visit_value(item.as_value());
         }
     }
 }

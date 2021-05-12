@@ -15,7 +15,7 @@ impl Visit for VisitHello {
 struct VisitList(u32);
 
 impl Visit for VisitList {
-    fn visit_item(&mut self, item: Value<'_>) {
+    fn visit_value(&mut self, item: Value<'_>) {
         visit_hello(&item, self.0);
         self.0 += 1;
     }
@@ -73,7 +73,7 @@ macro_rules! test_default {
                     assert_eq!(
                         counts,
                         tests::VisitCount {
-                            visit_item: 4,
+                            visit_value: 4,
                             ..Default::default()
                         }
                     );
@@ -94,7 +94,7 @@ macro_rules! test_default {
                     assert_eq!(
                         counts,
                         tests::VisitCount {
-                            visit_item: 1024,
+                            visit_value: 1024,
                             ..Default::default()
                         }
                     );
@@ -115,7 +115,7 @@ macro_rules! test_default {
                     assert_eq!(
                         counts,
                         tests::VisitCount {
-                            visit_item: 63,
+                            visit_value: 63,
                             ..Default::default()
                         }
                     );
@@ -159,9 +159,9 @@ macro_rules! test_primitive {
                     }
                 }
 
-                struct VisitPrimitive(Vec<$ty>);
+                struct VisitPrimitive<'a>(&'a [$ty]);
 
-                impl Visit for VisitPrimitive {
+                impl Visit for VisitPrimitive<'_> {
                     fn visit_primitive_slice(&mut self, slice: Slice<'_>) {
                         assert_eq!(slice.len(), self.0.len());
 
@@ -197,16 +197,22 @@ macro_rules! test_primitive {
 
                 #[test]
                 fn test_slices() {
-                    for &len in &[4_usize, 10, 30, 32, 63, 64, 100, 1000, 1024] {
-                        let vec = (0..len).map(|$x| $b).collect::<Vec<$ty>>();
+                    fn do_test(listable: &impl Listable, expect: &[$ty]) {
+                        assert_eq!(listable.size_hint(), expect.iter().size_hint());
 
-                        assert_eq!(Listable::size_hint(&vec), (len, Some(len)));
-
-                        let counts = tests::visit_counts(&vec);
+                        let counts = tests::visit_counts(listable);
                         assert_eq!(counts, tests::VisitCount { visit_primitive_slice: 1, .. Default::default() });
 
-                        let mut visit = VisitPrimitive(vec.clone());
-                        vec.visit(&mut visit);
+                        let mut visit = VisitPrimitive(expect);
+                        listable.visit(&mut visit);
+                    }
+
+                    for &len in &[4_usize, 10, 30, 32, 63, 64, 100, 1000, 1024] {
+                        let vec = (0..len).map(|$x| $b).collect::<Vec<$ty>>();
+                        do_test(&vec, &vec);
+
+                        let vec = vec.into_boxed_slice();
+                        do_test(&vec, &vec);
                     }
                 }
             }
