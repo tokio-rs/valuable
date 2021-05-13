@@ -54,7 +54,10 @@ fn criterion_benchmark(c: &mut Criterion) {
     let hello_world = black_box(HelloWorld::default());
     let structable = &hello_world as &dyn Structable;
     let f = match structable.definition() {
-        StructDef::Static { fields: Fields::Named(fields), .. } => &fields[5],
+        StructDef::Static {
+            fields: Fields::Named(fields),
+            ..
+        } => &fields[5],
         _ => unreachable!(),
     };
 
