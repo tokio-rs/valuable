@@ -9,6 +9,54 @@ macro_rules! value {
             $variant:ident($ty:ty),
         )*
     ) => {
+        /// Any Rust value
+        ///
+        /// The `Value` enum is used to pass single values to the
+        /// [visitor][`Visit`]. Primitive types are enumerated and other types
+        /// are represented at trait objects.
+        ///
+        /// Values are converted to `Value` instances using
+        /// [`Valuable::as_value()`].
+        ///
+        /// # Examples
+        ///
+        /// Convert a primitive type
+        ///
+        /// ```
+        /// use valuable::{Value, Valuable};
+        ///
+        /// let num = 123;
+        /// let val = num.as_value();
+        ///
+        /// assert!(matches!(val, Value::I32(v) if v == 123));
+        /// ```
+        ///
+        /// Converting a struct
+        ///
+        /// ```
+        /// use valuable::{Value, Valuable};
+        ///
+        /// #[derive(Valuable, Debug)]
+        /// struct HelloWorld {
+        ///     message: String,
+        /// }
+        ///
+        /// let hello = HelloWorld {
+        ///     message: "greetings".to_string(),
+        /// };
+        ///
+        /// let val = hello.as_value();
+        ///
+        /// assert!(matches!(val, Value::Structable(_v)));
+        ///
+        /// // The Value `Debug` output matches the struct's
+        /// assert_eq!(
+        ///     format!("{:?}", val),
+        ///     format!("{:?}", hello),
+        /// );
+        /// ```
+        ///
+        /// [visitor]: Visit
         #[non_exhaustive]
         #[derive(Clone, Copy)]
         pub enum Value<'a> {
@@ -38,6 +86,9 @@ macro_rules! value {
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 use Value::*;
 
+                // Doc comments are expanded into the branch arms, which results
+                // in a warning. It isn't a big deal, so silence it.
+                #[allow(unused_doc_comments)]
                 match self {
                     $(
                         $(#[$attrs])*
@@ -51,28 +102,271 @@ macro_rules! value {
 }
 
 value! {
+    /// A Rust `bool` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::Bool(true);
+    /// ```
     Bool(bool),
+
+    /// A Rust `char` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::Char('h');
+    /// ```
     Char(char),
+
+    /// A Rust `f32` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::F32(3.1415);
+    /// ```
     F32(f32),
+
+    /// A Rust `f64` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::F64(3.1415);
+    /// ```
     F64(f64),
+
+    /// A Rust `i8` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::I8(42);
+    /// ```
     I8(i8),
+
+    /// A Rust `i16` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::I16(42);
+    /// ```
     I16(i16),
+
+    /// A Rust `i32` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::I32(42);
+    /// ```
     I32(i32),
+
+    /// A Rust `i64` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::I64(42);
+    /// ```
     I64(i64),
+
+    /// A Rust `i128` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::I128(42);
+    /// ```
     I128(i128),
+
+    /// A Rust `isize` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::Isize(42);
+    /// ```
     Isize(isize),
+
+    /// A Rust `&str` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::String("hello");
+    /// ```
     String(&'a str),
+
+    /// A Rust `u8` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::U8(42);
+    /// ```
     U8(u8),
+
+    /// A Rust `u16` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::U16(42);
+    /// ```
     U16(u16),
+
+    /// A Rust `u32` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::U32(42);
+    /// ```
     U32(u32),
+
+    /// A Rust `u64` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::U64(42);
+    /// ```
     U64(u64),
+
+    /// A Rust `u128` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::U128(42);
+    /// ```
     U128(u128),
+
+    /// A Rust `usize` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let v = Value::Usize(42);
+    /// ```
     Usize(usize),
+
+    /// A Rust error value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    /// use std::io;
+    ///
+    /// let err: io::Error = io::ErrorKind::Other.into();
+    /// let v = Value::Error(&err);
+    /// ```
     #[cfg(feature = "std")]
     Error(&'a dyn std::error::Error),
+
+    /// A Rust list value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// let vals = vec![1, 2, 3, 4, 5];
+    /// let v = Value::Listable(&vals);
+    /// ```
     Listable(&'a dyn Listable),
+
+    /// A Rust map value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    /// use std::collections::HashMap;
+    ///
+    /// let mut map = HashMap::new();
+    /// map.insert("foo", 1);
+    /// map.insert("bar", 2);
+    ///
+    /// let v = Value::Mappable(&map);
+    /// ```
     Mappable(&'a dyn Mappable),
+
+    /// A Rust struct value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Value, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// struct MyStruct {
+    ///     field: u32,
+    /// }
+    ///
+    /// let my_struct = MyStruct {
+    ///     field: 123,
+    /// };
+    ///
+    /// let v = Value::Structable(&my_struct);
+    /// ```
     Structable(&'a dyn Structable),
+
+    /// A Rust enum value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Value, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// enum MyEnum {
+    ///     Foo,
+    ///     Bar,
+    /// }
+    ///
+    /// let my_enum = MyEnum::Foo;
+    /// let v = Value::Enumerable(&my_enum);
+    /// ```
     Enumerable(&'a dyn Enumerable),
 }
 

@@ -1,8 +1,7 @@
 # Valuable
 
-Valuable is a library for inspecting and serializing Rust data structures.
-Valuable uses an object-safe visitor pattern, supporting efficient use of
-trait-objects.
+Valuable provides object-safe value inspection. Use cases include passing
+structured data to trait objects and object-safe serialization.
 
 ## License
 
