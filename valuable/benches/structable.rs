@@ -24,7 +24,7 @@ static FIELDS: &[NamedField<'static>] = &[
 
 impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
-        StructDef::new("HelloWorld", Fields::NamedStatic(FIELDS), false)
+        StructDef::new_static("HelloWorld", Fields::Named(FIELDS))
     }
 }
 
@@ -53,8 +53,8 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let hello_world = black_box(HelloWorld::default());
     let structable = &hello_world as &dyn Structable;
-    let f = match structable.definition().fields() {
-        Fields::NamedStatic(fields) => &fields[5],
+    let f = match structable.definition() {
+        StructDef::Static { fields: Fields::Named(fields), .. } => &fields[5],
         _ => unreachable!(),
     };
 
