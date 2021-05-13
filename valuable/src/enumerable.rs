@@ -11,6 +11,7 @@ pub trait Enumerable: Valuable {
     fn variant(&self) -> Variant<'_>;
 }
 
+#[non_exhaustive]
 pub enum EnumDef<'a> {
     #[non_exhaustive]
     Static {

@@ -7,6 +7,7 @@ pub trait Structable: Valuable {
     fn definition(&self) -> StructDef<'_>;
 }
 
+#[non_exhaustive]
 pub enum StructDef<'a> {
     #[non_exhaustive]
     Static {
