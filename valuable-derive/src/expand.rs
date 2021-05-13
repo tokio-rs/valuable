@@ -27,10 +27,9 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 Some(named_fields_static(&named_fields_static_name, &data.fields));
 
             struct_def = quote! {
-                ::valuable::StructDef::new(
+                ::valuable::StructDef::new_static(
                     #name_literal,
-                    ::valuable::field::Fields::NamedStatic(#named_fields_static_name),
-                    false,
+                    ::valuable::field::Fields::Named(#named_fields_static_name),
                 )
             };
 
@@ -46,10 +45,9 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
         }
         syn::Fields::Unnamed(_) | syn::Fields::Unit => {
             struct_def = quote! {
-                ::valuable::StructDef::new(
+                ::valuable::StructDef::new_static(
                     #name_literal,
                     ::valuable::field::Fields::Unnamed,
-                    false,
                 )
             };
 
@@ -122,8 +120,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::field::Fields::NamedStatic(#named_fields_static_name),
-                        false,
+                        ::valuable::field::Fields::Named(#named_fields_static_name),
                     ),
                 });
 
@@ -158,7 +155,6 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
                         ::valuable::field::Fields::Unnamed,
-                        false,
                     ),
                 });
 
@@ -188,7 +184,6 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
                         ::valuable::field::Fields::Unnamed,
-                        false,
                     ),
                 });
 
@@ -220,10 +215,9 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     let enumerable_impl = quote! {
         impl #impl_generics ::valuable::Enumerable for #name #ty_generics #where_clause {
             fn definition(&self) -> ::valuable::EnumDef<'_> {
-                ::valuable::EnumDef::new(
+                ::valuable::EnumDef::new_static(
                     #name_literal,
                     #variants_static_name,
-                    false,
                 )
             }
 

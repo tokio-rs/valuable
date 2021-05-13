@@ -40,7 +40,7 @@ fn test_manual_static_impl() {
 
     impl Structable for MyStruct {
         fn definition(&self) -> StructDef<'_> {
-            StructDef::new("MyStruct", Fields::NamedStatic(MY_STRUCT_FIELDS), false)
+            StructDef::new_static("MyStruct", Fields::Named(MY_STRUCT_FIELDS))
         }
     }
 
@@ -59,7 +59,7 @@ fn test_manual_static_impl() {
 
     impl Structable for SubStruct {
         fn definition(&self) -> StructDef<'_> {
-            StructDef::new("SubStruct", Fields::NamedStatic(SUB_STRUCT_FIELDS), false)
+            StructDef::new_static("SubStruct", Fields::Named(SUB_STRUCT_FIELDS))
         }
     }
 
@@ -98,7 +98,7 @@ fn test_manual_dyn_impl() {
 
     impl Structable for MyStruct {
         fn definition(&self) -> StructDef<'_> {
-            StructDef::new("MyStruct", Fields::NamedStatic(&[]), true)
+            StructDef::new_dynamic("MyStruct", Fields::Named(&[]))
         }
     }
 
@@ -124,21 +124,7 @@ fn test_named_field() {
 
     match fields {
         Fields::Named(..) => {}
-        Fields::NamedStatic(..) | Fields::Unnamed => panic!(),
-    }
-}
-
-#[test]
-fn test_named_static_field() {
-    static FIELDS: &[NamedField<'_>] = &[NamedField::new("hello")];
-
-    let fields = Fields::NamedStatic(FIELDS);
-    assert!(fields.is_named());
-    assert!(!fields.is_unnamed());
-
-    match fields {
-        Fields::NamedStatic(..) => {}
-        Fields::Named(..) | Fields::Unnamed => panic!(),
+        _ => panic!(),
     }
 }
 
@@ -151,7 +137,7 @@ fn test_fields_unnamed() {
 
 #[test]
 fn test_struct_def() {
-    let def = StructDef::new("hello", Fields::Unnamed, false);
+    let def = StructDef::new_static("hello", Fields::Unnamed);
 
     assert_eq!(def.name(), "hello");
     assert!(matches!(def.fields(), Fields::Unnamed));

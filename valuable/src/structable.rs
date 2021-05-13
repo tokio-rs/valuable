@@ -7,15 +7,15 @@ pub trait Structable: Valuable {
     fn definition(&self) -> StructDef<'_>;
 }
 
-pub struct StructDef<'a> {
-    /// Type name
-    name: &'a str,
+pub enum StructDef<'a> {
+    #[non_exhaustive]
+    Static {
+        name: &'static str,
+        fields: Fields<'static>,
+    },
 
-    /// Fields
-    fields: Fields<'a>,
-
-    /// Is this a dynamic struct?
-    is_dynamic: bool,
+    #[non_exhaustive]
+    Dynamic { name: &'a str, fields: Fields<'a> },
 }
 
 impl fmt::Debug for dyn Structable + '_ {
@@ -67,24 +67,34 @@ impl fmt::Debug for dyn Structable + '_ {
 }
 
 impl<'a> StructDef<'a> {
-    pub fn new(name: &'a str, fields: Fields<'a>, is_dynamic: bool) -> StructDef<'a> {
-        StructDef {
-            name,
-            fields,
-            is_dynamic,
-        }
+    pub const fn new_static(name: &'static str, fields: Fields<'static>) -> StructDef<'a> {
+        StructDef::Static { name, fields }
+    }
+
+    pub const fn new_dynamic(name: &'a str, fields: Fields<'a>) -> StructDef<'a> {
+        StructDef::Dynamic { name, fields }
     }
 
     pub fn name(&self) -> &str {
-        self.name
+        match self {
+            StructDef::Static { name, .. } => name,
+            StructDef::Dynamic { name, .. } => name,
+        }
     }
 
     pub fn fields(&self) -> &Fields<'_> {
-        &self.fields
+        match self {
+            StructDef::Static { fields, .. } => fields,
+            StructDef::Dynamic { fields, .. } => fields,
+        }
+    }
+
+    pub fn is_static(&self) -> bool {
+        matches!(self, StructDef::Static { .. })
     }
 
     pub fn is_dynamic(&self) -> bool {
-        self.is_dynamic
+        matches!(self, StructDef::Dynamic { .. })
     }
 }
 

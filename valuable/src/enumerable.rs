@@ -11,15 +11,18 @@ pub trait Enumerable: Valuable {
     fn variant(&self) -> Variant<'_>;
 }
 
-pub struct EnumDef<'a> {
-    /// Enum type name
-    name: &'a str,
+pub enum EnumDef<'a> {
+    #[non_exhaustive]
+    Static {
+        name: &'static str,
+        variants: &'static [VariantDef<'static>],
+    },
 
-    /// Known variants
-    variants: &'a [VariantDef<'a>],
-
-    /// `true` when not all variants are statically known
-    is_dynamic: bool,
+    #[non_exhaustive]
+    Dynamic {
+        name: &'a str,
+        variants: &'a [VariantDef<'a>],
+    },
 }
 
 pub struct VariantDef<'a> {
@@ -27,54 +30,51 @@ pub struct VariantDef<'a> {
     name: &'a str,
 
     fields: Fields<'a>,
-
-    /// Are all fields statically known?
-    is_dynamic: bool,
 }
 
 pub enum Variant<'a> {
     Static(&'static VariantDef<'static>),
-    Dynamic(DynamicVariant<'a>),
-}
-
-pub struct DynamicVariant<'a> {
-    name: &'a str,
-    is_named_fields: bool,
+    Dynamic(VariantDef<'a>),
 }
 
 impl<'a> EnumDef<'a> {
-    pub const fn new(
-        name: &'a str,
-        variants: &'a [VariantDef<'a>],
-        is_dynamic: bool,
+    pub const fn new_static(
+        name: &'static str,
+        variants: &'static [VariantDef<'static>],
     ) -> EnumDef<'a> {
-        EnumDef {
-            name,
-            variants,
-            is_dynamic,
-        }
+        EnumDef::Static { name, variants }
+    }
+
+    pub const fn new_dynamic(name: &'a str, variants: &'a [VariantDef<'a>]) -> EnumDef<'a> {
+        EnumDef::Dynamic { name, variants }
     }
 
     pub fn name(&self) -> &str {
-        self.name
+        match self {
+            EnumDef::Static { name, .. } => name,
+            EnumDef::Dynamic { name, .. } => name,
+        }
     }
 
     pub fn variants(&self) -> &[VariantDef<'_>] {
-        self.variants
+        match self {
+            EnumDef::Static { variants, .. } => variants,
+            EnumDef::Dynamic { variants, .. } => variants,
+        }
+    }
+
+    pub fn is_static(&self) -> bool {
+        matches!(self, EnumDef::Static { .. })
     }
 
     pub fn is_dynamic(&self) -> bool {
-        self.is_dynamic
+        matches!(self, EnumDef::Dynamic { .. })
     }
 }
 
 impl<'a> VariantDef<'a> {
-    pub const fn new(name: &'a str, fields: Fields<'a>, is_dynamic: bool) -> VariantDef<'a> {
-        VariantDef {
-            name,
-            fields,
-            is_dynamic,
-        }
+    pub const fn new(name: &'a str, fields: Fields<'a>) -> VariantDef<'a> {
+        VariantDef { name, fields }
     }
 
     pub fn name(&self) -> &str {
@@ -83,10 +83,6 @@ impl<'a> VariantDef<'a> {
 
     pub fn fields(&self) -> &Fields<'_> {
         &self.fields
-    }
-
-    pub fn is_dynamic(&self) -> bool {
-        self.is_dynamic
     }
 }
 
@@ -101,33 +97,12 @@ impl Variant<'_> {
     pub fn is_named_fields(&self) -> bool {
         match self {
             Variant::Static(v) => v.fields().is_named(),
-            Variant::Dynamic(v) => v.is_named_fields(),
+            Variant::Dynamic(v) => v.fields().is_named(),
         }
     }
 
     pub fn is_unnamed_fields(&self) -> bool {
         !self.is_named_fields()
-    }
-}
-
-impl<'a> DynamicVariant<'a> {
-    pub const fn new(name: &'a str, is_named_fields: bool) -> DynamicVariant<'a> {
-        DynamicVariant {
-            name,
-            is_named_fields,
-        }
-    }
-
-    pub fn name(&self) -> &str {
-        self.name
-    }
-
-    pub fn is_named_fields(&self) -> bool {
-        self.is_named_fields
-    }
-
-    pub fn is_unnamed_fields(&self) -> bool {
-        !self.is_named_fields
     }
 }
 
