@@ -221,6 +221,14 @@ fn test_str() {
 }
 
 #[test]
+fn test_path() {
+    use std::path;
+
+    let path = path::PathBuf::from("a.txt");
+    assert_value!(&'a path::Path: Path, as_path, eq => path::Path::new("b.txt"), &path);
+}
+
+#[test]
 fn test_error() {
     use std::{error, io};
 
