@@ -213,12 +213,12 @@ where
     }
 }
 
-enum VisitList<'a, S: serde::Serializer> {
+enum VisitList<'a, S: Serializer> {
     Serializer(&'a mut S::SerializeSeq),
     Error(S::Error),
 }
 
-impl<S: serde::Serializer> Visit for VisitList<'_, S> {
+impl<S: Serializer> Visit for VisitList<'_, S> {
     fn visit_value(&mut self, value: Value<'_>) {
         if let Self::Serializer(ser) = self {
             if let Err(e) = ser.serialize_element(&Serializable(value)) {
@@ -228,12 +228,12 @@ impl<S: serde::Serializer> Visit for VisitList<'_, S> {
     }
 }
 
-enum VisitMap<'a, S: serde::Serializer> {
+enum VisitMap<'a, S: Serializer> {
     Serializer(&'a mut S::SerializeMap),
     Error(S::Error),
 }
 
-impl<S: serde::Serializer> Visit for VisitMap<'_, S> {
+impl<S: Serializer> Visit for VisitMap<'_, S> {
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
         if let Self::Serializer(ser) = self {
             if let Err(e) = ser.serialize_entry(&Serializable(key), &Serializable(value)) {
@@ -404,13 +404,13 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
 }
 
 // Dynamic struct and variant of dynamic enum will be serialized as map or seq.
-enum VisitDynamic<'a, S: serde::Serializer> {
+enum VisitDynamic<'a, S: Serializer> {
     NamedFields(&'a mut S::SerializeMap),
     UnnamedFields(&'a mut S::SerializeSeq),
     Error(S::Error),
 }
 
-impl<S: serde::Serializer> Visit for VisitDynamic<'_, S> {
+impl<S: Serializer> Visit for VisitDynamic<'_, S> {
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
         let ser = match self {
             Self::NamedFields(ser) => ser,
