@@ -299,6 +299,20 @@ value! {
     /// ```
     Usize(usize),
 
+    /// A Rust `&Path` value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    /// use std::path::Path;
+    ///
+    /// let path = Path::new("a.txt");
+    /// let v = Value::Path(path);
+    /// ```
+    #[cfg(feature = "std")]
+    Path(&'a std::path::Path),
+
     /// A Rust error value
     ///
     /// # Examples
@@ -504,11 +518,32 @@ macro_rules! convert {
             /// use valuable::Value;
             ///
             /// assert_eq!(Value::String("hello").as_str(), Some("hello"));
-            /// assert_eq!(Value::Bool(true).as_f64(), None);
+            /// assert_eq!(Value::Bool(true).as_str(), None);
             /// ```
             pub fn as_str(&self) -> Option<&str> {
                 match *self {
                     Value::String(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            /// Return a `&Path` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            /// use std::path::Path;
+            ///
+            /// let path = Path::new("a.txt");
+            ///
+            /// assert!(Value::Path(path).as_path().is_some());
+            /// assert!(Value::Bool(true).as_path().is_none());
+            /// ```
+            #[cfg(feature = "std")]
+            pub fn as_path(&self) -> Option<&std::path::Path> {
+                match *self {
+                    Value::Path(v) => Some(v),
                     _ => None,
                 }
             }

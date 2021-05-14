@@ -219,6 +219,28 @@ impl Valuable for alloc::string::String {
 }
 
 #[cfg(feature = "std")]
+impl Valuable for &std::path::Path {
+    fn as_value(&self) -> Value<'_> {
+        Value::Path(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(Value::Path(self));
+    }
+}
+
+#[cfg(feature = "std")]
+impl Valuable for std::path::PathBuf {
+    fn as_value(&self) -> Value<'_> {
+        Value::Path(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(Value::Path(self));
+    }
+}
+
+#[cfg(feature = "std")]
 impl Valuable for dyn std::error::Error + '_ {
     fn as_value(&self) -> Value<'_> {
         Value::Error(self)
