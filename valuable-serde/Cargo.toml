@@ -1,0 +1,18 @@
+[package]
+name = "valuable-serde"
+version = "0.1.0"
+authors = ["Taiki Endo <te316e89@gmail.com>"]
+edition = "2018"
+license = "MIT"
+description = "serde::Serialize implementation for valuable::Value."
+
+[dependencies]
+valuable = { version = "0.1", path = "../valuable" }
+serde = { version = "1.0.118", default-features = false, features = ["alloc"] }
+
+[dev-dependencies]
+valuable = { version = "0.1", path = "../valuable", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio-serde = "0.8"
+serde_test = "1"

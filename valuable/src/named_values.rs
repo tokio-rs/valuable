@@ -26,4 +26,12 @@ impl<'a> NamedValues<'a> {
             .enumerate()
             .map(move |(i, field)| (field, &self.values[i]))
     }
+
+    pub fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
+    }
 }
