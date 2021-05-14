@@ -292,6 +292,17 @@ fn test_valuable_box() {
     assert!(matches!(val, Value::I32(v) if v == 123));
 }
 
+#[test]
+fn test_option() {
+    let val = Some(1_i32);
+    let val = Valuable::as_value(&val);
+    assert!(matches!(val, Value::I32(v) if v == 1));
+
+    let val = None::<i32>;
+    let val = Valuable::as_value(&val);
+    assert!(matches!(val, Value::Unit));
+}
+
 fn eq<T: PartialEq>(a: &T, b: &T) -> bool {
     *a == *b
 }
