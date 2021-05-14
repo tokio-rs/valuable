@@ -4,7 +4,7 @@
 //!
 //! ```
 //! use valuable::Valuable;
-//! use valuable_serde::SerdeValue;
+//! use valuable_serde::Serializable;
 //!
 //! #[derive(Valuable)]
 //! struct Point {
@@ -14,7 +14,7 @@
 //!
 //! let point = Point { x: 1, y: 2 };
 //!
-//! let value = SerdeValue::new(&point);
+//! let value = Serializable::new(&point);
 //!
 //! assert_eq!(
 //!     serde_json::to_string(&value).unwrap(),
@@ -37,10 +37,10 @@ use valuable::{EnumDef, NamedValues, StructDef, Valuable, Value, Variant, Varian
 
 /// A wrapper around [`Value`] that implements [`Serialize`].
 #[derive(Debug, Clone, Copy)]
-pub struct SerdeValue<'a>(Value<'a>);
+pub struct Serializable<'a>(Value<'a>);
 
-impl<'a> SerdeValue<'a> {
-    /// Creates a new `SerdeValue`.
+impl<'a> Serializable<'a> {
+    /// Creates a new `Serializable`.
     pub fn new<V>(v: &'a V) -> Self
     where
         V: Valuable,
@@ -49,20 +49,20 @@ impl<'a> SerdeValue<'a> {
     }
 }
 
-impl<'a> From<Value<'a>> for SerdeValue<'a> {
-    /// Creates a new `SerdeValue` from [`Value`].
+impl<'a> From<Value<'a>> for Serializable<'a> {
+    /// Creates a new `Serializable` from [`Value`].
     fn from(v: Value<'a>) -> Self {
         Self(v)
     }
 }
 
-impl<'a> From<SerdeValue<'a>> for Value<'a> {
-    fn from(v: SerdeValue<'a>) -> Self {
+impl<'a> From<Serializable<'a>> for Value<'a> {
+    fn from(v: Serializable<'a>) -> Self {
         v.0
     }
 }
 
-impl Valuable for SerdeValue<'_> {
+impl Valuable for Serializable<'_> {
     fn as_value(&self) -> Value<'_> {
         self.0
     }
@@ -72,7 +72,7 @@ impl Valuable for SerdeValue<'_> {
     }
 }
 
-impl Serialize for SerdeValue<'_> {
+impl Serialize for Serializable<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -191,7 +191,7 @@ enum VisitList<'a, S: serde::Serializer> {
 impl<S: serde::Serializer> Visit for VisitList<'_, S> {
     fn visit_value(&mut self, value: Value<'_>) {
         if let Self::Serializer(ser) = self {
-            if let Err(e) = ser.serialize_element(&SerdeValue(value)) {
+            if let Err(e) = ser.serialize_element(&Serializable(value)) {
                 *self = Self::Error(e);
             }
         }
@@ -206,7 +206,7 @@ enum VisitMap<'a, S: serde::Serializer> {
 impl<S: serde::Serializer> Visit for VisitMap<'_, S> {
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
         if let Self::Serializer(ser) = self {
-            if let Err(e) = ser.serialize_entry(&SerdeValue(key), &SerdeValue(value)) {
+            if let Err(e) = ser.serialize_entry(&Serializable(key), &Serializable(value)) {
                 *self = Self::Error(e);
             }
         }
@@ -241,7 +241,7 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
             }
         };
         for (i, (_, v)) in named_values.entries().enumerate() {
-            if let Err(e) = ser.serialize_field(fields[i].name(), &SerdeValue(v.as_value())) {
+            if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v.as_value())) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -259,7 +259,7 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
             _ => unreachable!(),
         };
         if values.len() == 1 {
-            *self = Self::End(serializer.serialize_newtype_struct(name, &SerdeValue(values[0])));
+            *self = Self::End(serializer.serialize_newtype_struct(name, &Serializable(values[0])));
             return;
         }
         let mut ser = match serializer.serialize_tuple_struct(name, values.len()) {
@@ -270,7 +270,7 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
             }
         };
         for v in values {
-            if let Err(e) = ser.serialize_field(&SerdeValue(v.as_value())) {
+            if let Err(e) = ser.serialize_field(&Serializable(v.as_value())) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -300,7 +300,7 @@ impl<S: serde::Serializer> Visit for VisitDynamicStruct<S> {
             }
         };
         for (f, v) in named_values.entries() {
-            if let Err(e) = ser.serialize_entry(f.name(), &SerdeValue(v.as_value())) {
+            if let Err(e) = ser.serialize_entry(f.name(), &Serializable(v.as_value())) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -321,7 +321,7 @@ impl<S: serde::Serializer> Visit for VisitDynamicStruct<S> {
             }
         };
         for v in values {
-            if let Err(e) = ser.serialize_element(&SerdeValue(v.as_value())) {
+            if let Err(e) = ser.serialize_element(&Serializable(v.as_value())) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -372,7 +372,7 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
             Fields::Unnamed => unreachable!(),
         };
         for (i, (_, v)) in named_values.entries().enumerate() {
-            if let Err(e) = ser.serialize_field(fields[i].name(), &SerdeValue(v.as_value())) {
+            if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v.as_value())) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -398,7 +398,7 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
                 name,
                 variant_index as _,
                 variant_name,
-                &SerdeValue(values[0]),
+                &Serializable(values[0]),
             ));
             return;
         }
@@ -415,7 +415,7 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
             }
         };
         for v in values {
-            if let Err(e) = ser.serialize_field(&SerdeValue(v.as_value())) {
+            if let Err(e) = ser.serialize_field(&Serializable(v.as_value())) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -451,7 +451,7 @@ impl<S: Serializer> Visit for VisitDynamicEnum<'_, S> {
             }
         };
         for (f, v) in named_values.entries() {
-            if let Err(e) = ser.serialize_entry(f.name(), &SerdeValue(v.as_value())) {
+            if let Err(e) = ser.serialize_entry(f.name(), &Serializable(v.as_value())) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -475,7 +475,7 @@ impl<S: Serializer> Visit for VisitDynamicEnum<'_, S> {
             }
         };
         for v in values {
-            if let Err(e) = ser.serialize_element(&SerdeValue(v.as_value())) {
+            if let Err(e) = ser.serialize_element(&Serializable(v.as_value())) {
                 *self = Self::End(Err(e));
                 return;
             }

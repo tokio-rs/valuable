@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use valuable::*;
-use valuable_serde::SerdeValue;
+use valuable_serde::Serializable;
 
 #[derive(Valuable, serde::Serialize)]
 struct HelloWorld {
@@ -49,7 +49,7 @@ fn test() {
         ],
     };
 
-    let value = SerdeValue::new(&hello_world);
+    let value = Serializable::new(&hello_world);
     assert_eq!(
         serde_json::to_string(&value).unwrap(),
         serde_json::to_string(&hello_world).unwrap(),
