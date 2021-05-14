@@ -206,6 +206,46 @@ impl Valuable for alloc::string::String {
 }
 
 #[cfg(feature = "std")]
+impl Valuable for std::path::Path {
+    fn as_value(&self) -> Value<'_> {
+        struct Error;
+        static ERROR: Error = Error;
+        const MSG: &str = "path is not valid UTF-8 string";
+        impl fmt::Debug for Error {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::Debug::fmt(&MSG, f)
+            }
+        }
+        impl fmt::Display for Error {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::Display::fmt(&MSG, f)
+            }
+        }
+        impl std::error::Error for Error {}
+
+        match self.to_str() {
+            Some(s) => Value::String(s),
+            None => Value::Error(&ERROR),
+        }
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(self.as_value());
+    }
+}
+
+#[cfg(feature = "std")]
+impl Valuable for std::path::PathBuf {
+    fn as_value(&self) -> Value<'_> {
+        self.as_path().as_value()
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(self.as_value());
+    }
+}
+
+#[cfg(feature = "std")]
 impl Valuable for dyn std::error::Error + '_ {
     fn as_value(&self) -> Value<'_> {
         Value::Error(self)
