@@ -64,7 +64,17 @@ macro_rules! value {
                 $(#[$attrs])*
                 $variant($ty),
             )*
-            Unit, // TODO: None?
+
+            /// A Rust `()` or `None` value.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            ///
+            /// let v = Value::Unit;
+            /// ```
+            Unit,
         }
 
         $(
@@ -389,10 +399,21 @@ impl Default for Value<'_> {
 macro_rules! convert {
     (
         $(
+            $(#[$attrs:meta])*
             $ty:ty => $as:ident,
         )*
     ) => {
         impl<'a> Value<'a> {
+            /// Return a `bool` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            ///
+            /// assert_eq!(Value::Bool(true).as_bool(), Some(true));
+            /// assert_eq!(Value::Char('c').as_bool(), None);
+            /// ```
             pub fn as_bool(&self) -> Option<bool> {
                 match *self {
                     Value::Bool(v) => Some(v),
@@ -400,6 +421,16 @@ macro_rules! convert {
                 }
             }
 
+            /// Return a `char` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            ///
+            /// assert_eq!(Value::Char('c').as_char(), Some('c'));
+            /// assert_eq!(Value::Bool(true).as_char(), None);
+            /// ```
             pub fn as_char(&self) -> Option<char> {
                 match *self {
                     Value::Char(v) => Some(v),
@@ -407,6 +438,16 @@ macro_rules! convert {
                 }
             }
 
+            /// Return a `f32` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            ///
+            /// assert_eq!(Value::F32(3.1415).as_f32(), Some(3.1415));
+            /// assert_eq!(Value::Bool(true).as_f32(), None);
+            /// ```
             pub fn as_f32(&self) -> Option<f32> {
                 match *self {
                     Value::F32(v) => Some(v),
@@ -414,6 +455,16 @@ macro_rules! convert {
                 }
             }
 
+            /// Return a `f64` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            ///
+            /// assert_eq!(Value::F64(3.1415).as_f64(), Some(3.1415));
+            /// assert_eq!(Value::Bool(true).as_f64(), None);
+            /// ```
             pub fn as_f64(&self) -> Option<f64> {
                 match *self {
                     Value::F64(v) => Some(v),
@@ -422,6 +473,7 @@ macro_rules! convert {
             }
 
             $(
+                $(#[$attrs])*
                 pub fn $as(&self) -> Option<$ty> {
                     use Value::*;
                     use core::convert::TryInto;
@@ -444,6 +496,16 @@ macro_rules! convert {
                 }
             )*
 
+            /// Return a `&str` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            ///
+            /// assert_eq!(Value::String("hello").as_str(), Some("hello"));
+            /// assert_eq!(Value::Bool(true).as_f64(), None);
+            /// ```
             pub fn as_str(&self) -> Option<&str> {
                 match *self {
                     Value::String(v) => Some(v),
@@ -451,6 +513,19 @@ macro_rules! convert {
                 }
             }
 
+            /// Return a `&dyn Error` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            /// use std::io;
+            ///
+            /// let err: io::Error = io::ErrorKind::Other.into();
+            ///
+            /// assert!(Value::Error(&err).as_error().is_some());
+            /// assert!(Value::Bool(true).as_error().is_none());
+            /// ```
             #[cfg(feature = "std")]
             pub fn as_error(&self) -> Option<&dyn std::error::Error> {
                 match *self {
@@ -459,6 +534,19 @@ macro_rules! convert {
                 }
             }
 
+
+            /// Return a `&dyn Listable` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            ///
+            /// let list = vec![1, 2, 3, 4];
+            ///
+            /// assert!(Value::Listable(&list).as_listable().is_some());
+            /// assert!(Value::Bool(true).as_listable().is_none());
+            /// ```
             pub fn as_listable(&self) -> Option<&dyn Listable> {
                 match *self {
                     Value::Listable(v) => Some(v),
@@ -466,6 +554,21 @@ macro_rules! convert {
                 }
             }
 
+            /// Return a `&dyn Mappable` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            /// use std::collections::HashMap;
+            ///
+            /// let mut map = HashMap::new();
+            /// map.insert("foo", 123);
+            /// map.insert("bar", 456);
+            ///
+            /// assert!(Value::Mappable(&map).as_mappable().is_some());
+            /// assert!(Value::Bool(true).as_mappable().is_none());
+            /// ```
             pub fn as_mappable(&self) -> Option<&dyn Mappable> {
                 match *self {
                     Value::Mappable(v) => Some(v),
@@ -473,6 +576,23 @@ macro_rules! convert {
                 }
             }
 
+            /// Return a `&dyn Structable` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::{Value, Valuable};
+            ///
+            /// #[derive(Valuable)]
+            /// struct Hello {
+            ///     message: &'static str,
+            /// }
+            ///
+            /// let hello = Hello { message: "Hello world" };
+            ///
+            /// assert!(Value::Structable(&hello).as_structable().is_some());
+            /// assert!(Value::Bool(true).as_structable().is_none());
+            /// ```
             pub fn as_structable(&self) -> Option<&dyn Structable> {
                 match *self {
                     Value::Structable(v) => Some(v),
@@ -480,6 +600,24 @@ macro_rules! convert {
                 }
             }
 
+            /// Return a `&dyn Enumerable` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::{Value, Valuable};
+            ///
+            /// #[derive(Valuable)]
+            /// enum Greet {
+            ///     Hello,
+            ///     World,
+            /// }
+            ///
+            /// let greet = Greet::Hello;
+            ///
+            /// assert!(Value::Enumerable(&greet).as_enumerable().is_some());
+            /// assert!(Value::Bool(true).as_enumerable().is_none());
+            /// ```
             pub fn as_enumerable(&self) -> Option<&dyn Enumerable> {
                 match *self {
                     Value::Enumerable(v) => Some(v),
@@ -491,16 +629,183 @@ macro_rules! convert {
 }
 
 convert! {
+    /// Return a `i8` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::I8(42).as_i8(), Some(42));
+    /// assert_eq!(Value::I32(42).as_i8(), Some(42));
+    ///
+    /// assert_eq!(Value::I64(i64::MAX).as_i8(), None);
+    /// assert_eq!(Value::Bool(true).as_i8(), None);
+    /// ```
     i8 => as_i8,
+
+    /// Return a `i16` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::I16(42).as_i16(), Some(42));
+    /// assert_eq!(Value::I32(42).as_i16(), Some(42));
+    ///
+    /// assert_eq!(Value::I64(i64::MAX).as_i16(), None);
+    /// assert_eq!(Value::Bool(true).as_i16(), None);
+    /// ```
     i16 => as_i16,
+
+    /// Return a `i32` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::I32(42).as_i32(), Some(42));
+    /// assert_eq!(Value::I64(42).as_i32(), Some(42));
+    ///
+    /// assert_eq!(Value::I64(i64::MAX).as_i32(), None);
+    /// assert_eq!(Value::Bool(true).as_i32(), None);
+    /// ```
     i32 => as_i32,
+
+    /// Return a `i64` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::I64(42).as_i64(), Some(42));
+    /// assert_eq!(Value::I128(42).as_i64(), Some(42));
+    ///
+    /// assert_eq!(Value::I128(i128::MAX).as_i64(), None);
+    /// assert_eq!(Value::Bool(true).as_i64(), None);
+    /// ```
     i64 => as_i64,
+
+    /// Return a `i128` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::I128(42).as_i128(), Some(42));
+    /// assert_eq!(Value::U128(42).as_i128(), Some(42));
+    ///
+    /// assert_eq!(Value::U128(u128::MAX).as_i128(), None);
+    /// assert_eq!(Value::Bool(true).as_i128(), None);
+    /// ```
     i128 => as_i128,
+
+    /// Return a `isize` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::Isize(42).as_isize(), Some(42));
+    /// assert_eq!(Value::Usize(42).as_isize(), Some(42));
+    ///
+    /// assert_eq!(Value::Usize(usize::MAX).as_isize(), None);
+    /// assert_eq!(Value::Bool(true).as_isize(), None);
+    /// ```
     isize => as_isize,
+
+    /// Return a `u8` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::U8(42).as_u8(), Some(42));
+    /// assert_eq!(Value::U32(42).as_u8(), Some(42));
+    ///
+    /// assert_eq!(Value::U32(u32::MAX).as_u8(), None);
+    /// assert_eq!(Value::Bool(true).as_u8(), None);
+    /// ```
     u8 => as_u8,
+
+    /// Return a `u16` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::U16(42).as_u16(), Some(42));
+    /// assert_eq!(Value::U32(42).as_u16(), Some(42));
+    ///
+    /// assert_eq!(Value::U32(u32::MAX).as_u16(), None);
+    /// assert_eq!(Value::Bool(true).as_u16(), None);
+    /// ```
     u16 => as_u16,
+
+    /// Return a `u32` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::U32(42).as_u32(), Some(42));
+    /// assert_eq!(Value::U64(42).as_u32(), Some(42));
+    ///
+    /// assert_eq!(Value::U64(u64::MAX).as_u32(), None);
+    /// assert_eq!(Value::Bool(true).as_u32(), None);
+    /// ```
     u32 => as_u32,
+
+    /// Return a `u64` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::U64(42).as_u64(), Some(42));
+    /// assert_eq!(Value::U128(42).as_u64(), Some(42));
+    ///
+    /// assert_eq!(Value::U128(u128::MAX).as_u64(), None);
+    /// assert_eq!(Value::Bool(true).as_u64(), None);
+    /// ```
     u64 => as_u64,
+
+    /// Return a `u128` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::U128(42).as_u128(), Some(42));
+    /// assert_eq!(Value::I32(42).as_u128(), Some(42));
+    ///
+    /// assert_eq!(Value::I32(-5).as_u128(), None);
+    /// assert_eq!(Value::Bool(true).as_u128(), None);
+    /// ```
     u128 => as_u128,
+
+    /// Return a `usize` representation of `self`, if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Value;
+    ///
+    /// assert_eq!(Value::Usize(42).as_usize(), Some(42));
+    /// assert_eq!(Value::I8(42).as_usize(), Some(42));
+    ///
+    /// assert_eq!(Value::I8(-5).as_usize(), None);
+    /// assert_eq!(Value::Bool(true).as_usize(), None);
+    /// ```
     usize => as_usize,
 }
