@@ -25,7 +25,7 @@
 #![no_std]
 #![warn(missing_docs, rust_2018_idioms)]
 
-use core::mem;
+use core::{fmt, mem};
 
 use serde::ser::{
     Error, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
@@ -36,43 +36,49 @@ use valuable::field::Fields;
 use valuable::{EnumDef, NamedValues, StructDef, Valuable, Value, Variant, VariantDef, Visit};
 
 /// A wrapper around [`Value`] that implements [`Serialize`].
-#[derive(Debug, Clone, Copy)]
-pub struct Serializable<'a>(Value<'a>);
+pub struct Serializable<V>(V);
 
-impl<'a> Serializable<'a> {
+impl<V> Serializable<V>
+where
+    V: Valuable,
+{
     /// Creates a new `Serializable`.
-    pub fn new<V>(v: &'a V) -> Self
-    where
-        V: Valuable,
-    {
-        Self(v.as_value())
-    }
-}
-
-impl<'a> From<Value<'a>> for Serializable<'a> {
-    /// Creates a new `Serializable` from [`Value`].
-    fn from(v: Value<'a>) -> Self {
+    pub fn new(v: V) -> Self {
         Self(v)
     }
-}
 
-impl<'a> From<Serializable<'a>> for Value<'a> {
-    fn from(v: Serializable<'a>) -> Self {
-        v.0
+    /// Unwraps this `Serializable`, returning the underlying value.
+    pub fn into_inner(self) -> V {
+        self.0
     }
 }
 
-impl Valuable for Serializable<'_> {
+impl<V> fmt::Debug for Serializable<V>
+where
+    V: Valuable,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.as_value(), f)
+    }
+}
+
+impl<V> Valuable for Serializable<V>
+where
+    V: Valuable,
+{
     fn as_value(&self) -> Value<'_> {
-        self.0
+        self.0.as_value()
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_value(self.0);
+        self.0.visit(visit);
     }
 }
 
-impl Serialize for Serializable<'_> {
+impl<V> Serialize for Serializable<V>
+where
+    V: Valuable,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
