@@ -105,13 +105,21 @@ where
             Value::Listable(l) => {
                 let size_hint = l.size_hint();
                 let mut ser = serializer.serialize_seq(Some(size_hint.1.unwrap_or(size_hint.0)))?;
-                l.visit(&mut VisitList::<S>::Serializer(&mut ser));
+                let mut visitor = VisitList::<S>::Serializer(&mut ser);
+                l.visit(&mut visitor);
+                if let VisitList::Error(e) = visitor {
+                    return Err(e);
+                }
                 ser.end()
             }
             Value::Mappable(m) => {
                 let size_hint = m.size_hint();
                 let mut ser = serializer.serialize_map(size_hint.1)?;
-                m.visit(&mut VisitMap::<S>::Serializer(&mut ser));
+                let mut visitor = VisitMap::<S>::Serializer(&mut ser);
+                m.visit(&mut visitor);
+                if let VisitMap::Error(e) = visitor {
+                    return Err(e);
+                }
                 ser.end()
             }
             Value::Structable(s) => match s.definition() {
@@ -127,12 +135,25 @@ where
                         _ => unreachable!(),
                     }
                 }
-                StructDef::Dynamic { .. } => {
-                    let mut visitor = VisitDynamicStruct::Start(serializer);
-                    s.visit(&mut visitor);
-                    match visitor {
-                        VisitDynamicStruct::End(res) => res,
-                        _ => unreachable!(),
+                StructDef::Dynamic { fields, .. } => {
+                    if fields.is_named() {
+                        // TODO: size_hint?
+                        let mut ser = serializer.serialize_map(None)?;
+                        let mut visitor = VisitDynamic::<S>::NamedFields(&mut ser);
+                        s.visit(&mut visitor);
+                        if let VisitDynamic::Error(e) = visitor {
+                            return Err(e);
+                        }
+                        ser.end()
+                    } else {
+                        // TODO: size_hint?
+                        let mut ser = serializer.serialize_seq(None)?;
+                        let mut visitor = VisitDynamic::<S>::UnnamedFields(&mut ser);
+                        s.visit(&mut visitor);
+                        if let VisitDynamic::Error(e) = visitor {
+                            return Err(e);
+                        }
+                        ser.end()
                     }
                 }
                 _ => unreachable!(),
@@ -158,26 +179,25 @@ where
                         _ => unreachable!(),
                     }
                 }
-                (EnumDef::Dynamic { .. }, Variant::Dynamic(variant)) => {
-                    let mut visitor = VisitDynamicEnum::Start {
-                        variant: &variant,
-                        serializer,
-                    };
-                    e.visit(&mut visitor);
-                    match visitor {
-                        VisitDynamicEnum::End(res) => res,
-                        _ => unreachable!(),
-                    }
-                }
-                (EnumDef::Dynamic { .. }, Variant::Static(variant)) => {
-                    let mut visitor = VisitDynamicEnum::Start {
-                        variant,
-                        serializer,
-                    };
-                    e.visit(&mut visitor);
-                    match visitor {
-                        VisitDynamicEnum::End(res) => res,
-                        _ => unreachable!(),
+                (EnumDef::Dynamic { .. }, variant) => {
+                    if variant.is_named_fields() {
+                        // TODO: size_hint?
+                        let mut ser = serializer.serialize_map(None)?;
+                        let mut visitor = VisitDynamic::<S>::NamedFields(&mut ser);
+                        e.visit(&mut visitor);
+                        if let VisitDynamic::Error(e) = visitor {
+                            return Err(e);
+                        }
+                        ser.end()
+                    } else {
+                        // TODO: size_hint?
+                        let mut ser = serializer.serialize_seq(None)?;
+                        let mut visitor = VisitDynamic::<S>::UnnamedFields(&mut ser);
+                        e.visit(&mut visitor);
+                        if let VisitDynamic::Error(e) = visitor {
+                            return Err(e);
+                        }
+                        ser.end()
                     }
                 }
                 _ => unreachable!(),
@@ -289,57 +309,6 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
     }
 }
 
-// Dynamic struct will be serialized as map or seq.
-enum VisitDynamicStruct<S: serde::Serializer> {
-    Start(S),
-    End(Result<S::Ok, S::Error>),
-    Tmp,
-}
-
-impl<S: serde::Serializer> Visit for VisitDynamicStruct<S> {
-    fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-        let serializer = match mem::replace(self, Self::Tmp) {
-            Self::Start(serializer) => serializer,
-            _ => unreachable!(),
-        };
-        let mut ser = match serializer.serialize_map(Some(named_values.len())) {
-            Ok(ser) => ser,
-            Err(e) => {
-                *self = Self::End(Err(e));
-                return;
-            }
-        };
-        for (f, v) in named_values.entries() {
-            if let Err(e) = ser.serialize_entry(f.name(), &Serializable(v.as_value())) {
-                *self = Self::End(Err(e));
-                return;
-            }
-        }
-        *self = Self::End(ser.end());
-    }
-
-    fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
-        let serializer = match mem::replace(self, Self::Tmp) {
-            Self::Start(serializer) => serializer,
-            _ => unreachable!(),
-        };
-        let mut ser = match serializer.serialize_seq(Some(values.len())) {
-            Ok(ser) => ser,
-            Err(e) => {
-                *self = Self::End(Err(e));
-                return;
-            }
-        };
-        for v in values {
-            if let Err(e) = ser.serialize_element(&Serializable(v.as_value())) {
-                *self = Self::End(Err(e));
-                return;
-            }
-        }
-        *self = Self::End(ser.end());
-    }
-}
-
 enum VisitStaticEnum<S: Serializer> {
     Start {
         name: &'static str,
@@ -434,62 +403,39 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
     }
 }
 
-// Variant of dynamic enum will be serialized as map or seq.
-enum VisitDynamicEnum<'a, S: serde::Serializer> {
-    Start {
-        variant: &'a VariantDef<'a>,
-        serializer: S,
-    },
-    End(Result<S::Ok, S::Error>),
-    Tmp,
+// Dynamic struct and variant of dynamic enum will be serialized as map or seq.
+enum VisitDynamic<'a, S: serde::Serializer> {
+    NamedFields(&'a mut S::SerializeMap),
+    UnnamedFields(&'a mut S::SerializeSeq),
+    Error(S::Error),
 }
 
-impl<S: Serializer> Visit for VisitDynamicEnum<'_, S> {
+impl<S: serde::Serializer> Visit for VisitDynamic<'_, S> {
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-        let (_variant, serializer) = match mem::replace(self, Self::Tmp) {
-            Self::Start {
-                variant,
-                serializer,
-            } => (variant, serializer),
+        let ser = match self {
+            Self::NamedFields(ser) => ser,
+            Self::Error(..) => return,
             _ => unreachable!(),
-        };
-        let mut ser = match serializer.serialize_map(Some(named_values.len())) {
-            Ok(ser) => ser,
-            Err(e) => {
-                *self = Self::End(Err(e));
-                return;
-            }
         };
         for (f, v) in named_values.entries() {
             if let Err(e) = ser.serialize_entry(f.name(), &Serializable(v.as_value())) {
-                *self = Self::End(Err(e));
+                *self = Self::Error(e);
                 return;
             }
         }
-        *self = Self::End(ser.end());
     }
 
     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
-        let (_variant, serializer) = match mem::replace(self, Self::Tmp) {
-            Self::Start {
-                variant,
-                serializer,
-            } => (variant, serializer),
+        let ser = match self {
+            Self::UnnamedFields(ser) => ser,
+            Self::Error(..) => return,
             _ => unreachable!(),
-        };
-        let mut ser = match serializer.serialize_seq(Some(values.len())) {
-            Ok(ser) => ser,
-            Err(e) => {
-                *self = Self::End(Err(e));
-                return;
-            }
         };
         for v in values {
             if let Err(e) = ser.serialize_element(&Serializable(v.as_value())) {
-                *self = Self::End(Err(e));
+                *self = Self::Error(e);
                 return;
             }
         }
-        *self = Self::End(ser.end());
     }
 }

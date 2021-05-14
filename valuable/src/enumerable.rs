@@ -95,11 +95,15 @@ impl Variant<'_> {
         }
     }
 
-    pub fn is_named_fields(&self) -> bool {
+    pub fn fields(&self) -> &Fields<'_> {
         match self {
-            Variant::Static(v) => v.fields().is_named(),
-            Variant::Dynamic(v) => v.fields().is_named(),
+            Variant::Static(v) => v.fields(),
+            Variant::Dynamic(v) => v.fields(),
         }
+    }
+
+    pub fn is_named_fields(&self) -> bool {
+        self.fields().is_named()
     }
 
     pub fn is_unnamed_fields(&self) -> bool {
