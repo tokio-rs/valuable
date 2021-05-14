@@ -28,8 +28,8 @@
 use core::{fmt, mem};
 
 use serde::ser::{
-    Error, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
-    SerializeTupleStruct, SerializeTupleVariant,
+    SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTupleStruct,
+    SerializeTupleVariant,
 };
 use serde::{Serialize, Serializer};
 use valuable::field::Fields;
@@ -182,7 +182,11 @@ where
                 }
                 _ => unreachable!(),
             },
-            Value::Error(e) => Err(S::Error::custom(e)),
+            #[cfg(feature = "std")]
+            Value::Error(e) => {
+                use serde::ser::Error;
+                Err(S::Error::custom(e))
+            }
 
             v => unimplemented!("{:?}", v),
         }

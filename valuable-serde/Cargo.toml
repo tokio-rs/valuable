@@ -6,9 +6,15 @@ edition = "2018"
 license = "MIT"
 description = "serde::Serialize implementation for valuable::Value."
 
+[features]
+default = ["std"]
+
+std = ["valuable/std", "serde/std"]
+alloc = ["valuable/alloc", "serde/alloc"]
+
 [dependencies]
-valuable = { version = "0.1", path = "../valuable" }
-serde = { version = "1.0.118", default-features = false, features = ["alloc"] }
+valuable = { version = "0.1", path = "../valuable", default-features = false }
+serde = { version = "1.0.118", default-features = false }
 
 [dev-dependencies]
 valuable = { version = "0.1", path = "../valuable", features = ["derive"] }

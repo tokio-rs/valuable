@@ -42,6 +42,10 @@ jobs:
         working-directory: valuable
       - run: cargo build --target ${{ matrix.target }} --no-default-features --features alloc,derive
         working-directory: valuable
+      - run: cargo build --target ${{ matrix.target }} --no-default-features
+        working-directory: valuable-serde
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features alloc
+        working-directory: valuable-serde
 
   features:
     runs-on: ubuntu-latest
