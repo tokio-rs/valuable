@@ -203,6 +203,8 @@ where
                 _ => unreachable!(),
             },
             #[cfg(feature = "std")]
+            Value::Path(p) => Serialize::serialize(p, serializer),
+            #[cfg(feature = "std")]
             Value::Error(e) => {
                 use serde::ser::Error;
                 Err(S::Error::custom(e))
