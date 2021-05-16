@@ -289,7 +289,7 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
             }
         };
         for (i, (_, v)) in named_values.entries().enumerate() {
-            if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v.as_value())) {
+            if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v)) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -324,7 +324,7 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
             }
         };
         for v in values {
-            if let Err(e) = ser.serialize_field(&Serializable(v.as_value())) {
+            if let Err(e) = ser.serialize_field(&Serializable(v)) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -381,7 +381,7 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
             Fields::Unnamed => unreachable!(),
         };
         for (i, (_, v)) in named_values.entries().enumerate() {
-            if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v.as_value())) {
+            if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v)) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -430,7 +430,7 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
             }
         };
         for v in values {
-            if let Err(e) = ser.serialize_field(&Serializable(v.as_value())) {
+            if let Err(e) = ser.serialize_field(&Serializable(v)) {
                 *self = Self::End(Err(e));
                 return;
             }
@@ -454,7 +454,7 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
             _ => unreachable!(),
         };
         for (f, v) in named_values.entries() {
-            if let Err(e) = ser.serialize_entry(f.name(), &Serializable(v.as_value())) {
+            if let Err(e) = ser.serialize_entry(f.name(), &Serializable(v)) {
                 *self = Self::Error(e);
                 return;
             }
@@ -468,7 +468,7 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
             _ => unreachable!(),
         };
         for v in values {
-            if let Err(e) = ser.serialize_element(&Serializable(v.as_value())) {
+            if let Err(e) = ser.serialize_element(&Serializable(v)) {
                 *self = Self::Error(e);
                 return;
             }
