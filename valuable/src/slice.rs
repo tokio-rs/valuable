@@ -1,6 +1,7 @@
 use crate::*;
 
 use core::fmt;
+use core::iter::FusedIterator;
 
 macro_rules! slice {
     (
@@ -50,7 +51,7 @@ macro_rules! slice {
             }
         }
 
-        impl<'a> core::iter::IntoIterator for &'_ Slice<'a> {
+        impl<'a> IntoIterator for &'_ Slice<'a> {
             type Item = Value<'a>;
             type IntoIter = Iter<'a>;
 
@@ -81,7 +82,7 @@ macro_rules! slice {
             }
         }
 
-        impl<'a> core::iter::Iterator for Iter<'a> {
+        impl<'a> Iterator for Iter<'a> {
             type Item = Value<'a>;
 
             fn size_hint(&self) -> (usize, Option<usize>) {
@@ -101,13 +102,39 @@ macro_rules! slice {
                 match &mut self.0 {
                     $(
                         $(#[$attrs])*
-                        $variant(v) => v.next().map(|v| {
-                            Valuable::as_value(v)
-                        }),
+                        $variant(v) => v.next().map(Valuable::as_value),
                     )*
                 }
             }
         }
+
+        impl DoubleEndedIterator for Iter<'_> {
+            fn next_back(&mut self) -> Option<Self::Item> {
+                use IterKind::*;
+
+                match &mut self.0 {
+                    $(
+                        $(#[$attrs])*
+                        $variant(v) => v.next_back().map(Valuable::as_value),
+                    )*
+                }
+            }
+        }
+
+        impl ExactSizeIterator for Iter<'_> {
+            fn len(&self) -> usize {
+                use IterKind::*;
+
+                match &self.0 {
+                    $(
+                        $(#[$attrs])*
+                        $variant(v) => v.len(),
+                    )*
+                }
+            }
+        }
+
+        impl FusedIterator for Iter<'_> {}
     }
 }
 
