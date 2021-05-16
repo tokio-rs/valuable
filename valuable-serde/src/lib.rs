@@ -22,7 +22,7 @@
 //! );
 //! ```
 
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs, rust_2018_idioms)]
 
 use core::{fmt, mem};

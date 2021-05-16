@@ -9,7 +9,7 @@ description = "serde::Serialize implementation for valuable::Value."
 [features]
 default = ["std"]
 
-std = ["valuable/std", "serde/std"]
+std = ["alloc", "valuable/std", "serde/std"]
 alloc = ["valuable/alloc", "serde/alloc"]
 
 [dependencies]
