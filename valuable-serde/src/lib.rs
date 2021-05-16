@@ -47,6 +47,16 @@ where
         Self(v)
     }
 
+    /// Returns a reference to the underlying value.
+    pub fn get_ref(&self) -> &V {
+        &self.0
+    }
+
+    /// Returns a mutable reference to the underlying value.
+    pub fn get_mut(&mut self) -> &mut V {
+        &mut self.0
+    }
+
     /// Unwraps this `Serializable`, returning the underlying value.
     pub fn into_inner(self) -> V {
         self.0
