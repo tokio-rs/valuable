@@ -169,6 +169,16 @@ impl<E: ?Sized + Enumerable> Enumerable for &E {
     }
 }
 
+impl<E: ?Sized + Enumerable> Enumerable for &mut E {
+    fn definition(&self) -> EnumDef<'_> {
+        E::definition(&**self)
+    }
+
+    fn variant(&self) -> Variant<'_> {
+        E::variant(&**self)
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl<E: ?Sized + Enumerable> Enumerable for alloc::boxed::Box<E> {
     fn definition(&self) -> EnumDef<'_> {

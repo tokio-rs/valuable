@@ -12,6 +12,12 @@ impl<L: ?Sized + Listable> Listable for &L {
     }
 }
 
+impl<L: ?Sized + Listable> Listable for &mut L {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        L::size_hint(&**self)
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl<L: ?Sized + Listable> Listable for alloc::boxed::Box<L> {
     fn size_hint(&self) -> (usize, Option<usize>) {

@@ -12,6 +12,12 @@ impl<M: ?Sized + Mappable> Mappable for &M {
     }
 }
 
+impl<M: ?Sized + Mappable> Mappable for &mut M {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        M::size_hint(&**self)
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl<M: ?Sized + Mappable> Mappable for alloc::boxed::Box<M> {
     fn size_hint(&self) -> (usize, Option<usize>) {

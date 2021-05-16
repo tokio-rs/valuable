@@ -20,7 +20,7 @@ pub trait Valuable {
 
 impl<V: ?Sized + Valuable> Valuable for &V {
     fn as_value(&self) -> Value<'_> {
-        (*self).as_value()
+        V::as_value(*self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
@@ -28,10 +28,20 @@ impl<V: ?Sized + Valuable> Valuable for &V {
     }
 }
 
+impl<V: ?Sized + Valuable> Valuable for &mut V {
+    fn as_value(&self) -> Value<'_> {
+        V::as_value(&**self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        V::visit(&**self, visit);
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl<V: ?Sized + Valuable> Valuable for alloc::boxed::Box<V> {
     fn as_value(&self) -> Value<'_> {
-        (&**self).as_value()
+        V::as_value(&**self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
@@ -42,7 +52,7 @@ impl<V: ?Sized + Valuable> Valuable for alloc::boxed::Box<V> {
 #[cfg(feature = "alloc")]
 impl<V: ?Sized + Valuable> Valuable for alloc::rc::Rc<V> {
     fn as_value(&self) -> Value<'_> {
-        (&**self).as_value()
+        V::as_value(&**self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
@@ -54,7 +64,7 @@ impl<V: ?Sized + Valuable> Valuable for alloc::rc::Rc<V> {
 #[cfg(feature = "alloc")]
 impl<V: ?Sized + Valuable> Valuable for alloc::sync::Arc<V> {
     fn as_value(&self) -> Value<'_> {
-        (&**self).as_value()
+        V::as_value(&**self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {

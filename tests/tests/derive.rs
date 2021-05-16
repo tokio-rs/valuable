@@ -39,3 +39,29 @@ fn test_derive_enum() {
     let v = Enum::Unit;
     assert_eq!(format!("{:?}", v.as_value()), r#"Enum::Unit"#);
 }
+
+#[test]
+fn test_derive_mut() {
+    use valuable::Valuable;
+
+    use std::collections::HashMap;
+
+    #[derive(Valuable)]
+    struct S {
+        _f: (),
+    }
+
+    #[derive(Valuable)]
+    enum E {
+        _V,
+    }
+
+    #[derive(Valuable)]
+    struct Test<'a> {
+        string: &'a mut String,
+        list: &'a mut Vec<String>,
+        map: &'a mut HashMap<String, String>,
+        struct_: &'a mut S,
+        enum_: &'a mut E,
+    }
+}
