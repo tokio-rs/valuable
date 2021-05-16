@@ -28,8 +28,8 @@
 use core::{fmt, mem};
 
 use serde::ser::{
-    SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTupleStruct,
-    SerializeTupleVariant,
+    Error, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
+    SerializeTupleStruct, SerializeTupleVariant,
 };
 use serde::{Serialize, Serializer};
 use valuable::field::Fields;
@@ -210,15 +210,15 @@ where
                         ser.end()
                     }
                 }
+                (EnumDef::Static { .. }, Variant::Dynamic(..)) => {
+                    Err(S::Error::custom("dynamic variant in static enum"))
+                }
                 _ => unreachable!(),
             },
             #[cfg(feature = "std")]
             Value::Path(p) => Serialize::serialize(p, serializer),
             #[cfg(feature = "std")]
-            Value::Error(e) => {
-                use serde::ser::Error;
-                Err(S::Error::custom(e))
-            }
+            Value::Error(e) => Err(S::Error::custom(e)),
 
             v => unimplemented!("{:?}", v),
         }
@@ -273,6 +273,12 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
                 fields: Fields::Named(fields),
                 serializer,
             } => (name, fields, serializer),
+            Self::End(..) => {
+                *self = Self::End(Err(S::Error::custom(
+                    "visit_named_fields called multiple times in static struct",
+                )));
+                return;
+            }
             _ => unreachable!(),
         };
         let mut ser = match serializer.serialize_struct(name, named_values.len()) {
@@ -298,6 +304,12 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
                 fields: Fields::Unnamed,
                 serializer,
             } => (name, serializer),
+            Self::End(..) => {
+                *self = Self::End(Err(S::Error::custom(
+                    "visit_unnamed_fields called multiple times in static struct",
+                )));
+                return;
+            }
             _ => unreachable!(),
         };
         if values.len() == 1 {
@@ -341,6 +353,12 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
                 variant,
                 serializer,
             } => (name, def, variant, serializer),
+            Self::End(..) => {
+                *self = Self::End(Err(S::Error::custom(
+                    "visit_named_fields called multiple times in static enum",
+                )));
+                return;
+            }
             _ => unreachable!(),
         };
         let variant_name = variant.name();
@@ -379,6 +397,12 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
                 variant,
                 serializer,
             } => (name, def, variant, serializer),
+            Self::End(..) => {
+                *self = Self::End(Err(S::Error::custom(
+                    "visit_unnamed_fields called multiple times in static enum",
+                )));
+                return;
+            }
             _ => unreachable!(),
         };
         let variant_name = variant.name();
