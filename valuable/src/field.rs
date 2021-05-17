@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum Fields<'a> {
     /// Named fields
     Named(&'a [NamedField<'a>]),
@@ -6,10 +7,8 @@ pub enum Fields<'a> {
     Unnamed,
 }
 
-pub struct NamedField<'a> {
-    /// Field name
-    name: &'a str,
-}
+#[derive(Debug)]
+pub struct NamedField<'a>(&'a str);
 
 impl Fields<'_> {
     pub fn is_named(&self) -> bool {
@@ -23,10 +22,10 @@ impl Fields<'_> {
 
 impl<'a> NamedField<'a> {
     pub const fn new(name: &'a str) -> NamedField<'a> {
-        NamedField { name: name }
+        NamedField(name)
     }
 
     pub fn name(&self) -> &str {
-        self.name
+        self.0
     }
 }

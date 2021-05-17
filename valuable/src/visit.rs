@@ -1,29 +1,330 @@
 use crate::*;
 
+/// Traverse a value's fields and variants.
+///
+/// Each method of the `Visit` trait is a hook that enables the implementor to
+/// observe value fields. By default, most methods are implemented as a no-op.
+/// The `visit_primitive_slice` default implementation will iterate the slice,
+/// calling `visit_value` with each item.
+///
+/// To recurse, the implementor must implement methods to visit the arguments.
+///
+/// # Examples
+///
+/// Recursively printing a Rust value.
+///
+/// ```
+/// use valuable::{NamedValues, Valuable, Value, Visit};
+///
+/// struct Print(String);
+///
+/// impl Print {
+///     fn indent(&self) -> Print {
+///        Print(format!("{}    ", self.0))
+///     }
+/// }
+///
+/// impl Visit for Print {
+///     fn visit_value(&mut self, value: Value<'_>) {
+///         match value {
+///             Value::Structable(v) => {
+///                 let def = v.definition();
+///                 // Print the struct name
+///                 println!("{}{}:", self.0, def.name());
+///
+///                 // Visit fields
+///                 let mut visit = self.indent();
+///                 v.visit(&mut visit);
+///             }
+///             Value::Enumerable(v) => {
+///                 let def = v.definition();
+///                 let variant = v.variant();
+///                 // Print the enum name
+///                 println!("{}{}::{}:", self.0, def.name(), variant.name());
+///
+///                 // Visit fields
+///                 let mut visit = self.indent();
+///                 v.visit(&mut visit);
+///             }
+///             Value::Listable(v) => {
+///                 println!("{}", self.0);
+///
+///                 // Visit fields
+///                 let mut visit = self.indent();
+///                 v.visit(&mut visit);
+///             }
+///             Value::Mappable(v) => {
+///                 println!("{}", self.0);
+///
+///                 // Visit fields
+///                 let mut visit = self.indent();
+///                 v.visit(&mut visit);
+///             }
+///             // Primitive or unknown type, just render Debug
+///             v => println!("{:?}", v),
+///         }
+///     }
+///
+///     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
+///         for (field, value) in named_values.entries() {
+///             print!("{}- {}: ", self.0, field.name());
+///             value.visit(self);
+///         }
+///     }
+///
+///     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
+///         for value in values {
+///             print!("{}- ", self.0);
+///             value.visit(self);
+///         }
+///     }
+///
+///     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
+///         print!("{}- {:?}: ", self.0, key);
+///         value.visit(self);
+///     }
+/// }
+///
+/// #[derive(Valuable)]
+/// struct Person {
+///     name: String,
+///     age: u32,
+///     addresses: Vec<Address>,
+/// }
+///
+/// #[derive(Valuable)]
+/// struct Address {
+///     street: String,
+///     city: String,
+///     zip: String,
+/// }
+///
+/// let person = Person {
+///     name: "Angela Ashton".to_string(),
+///     age: 31,
+///     addresses: vec![
+///         Address {
+///             street: "123 1st Ave".to_string(),
+///             city: "Townsville".to_string(),
+///             zip: "12345".to_string(),
+///         },
+///         Address {
+///             street: "555 Main St.".to_string(),
+///             city: "New Old Town".to_string(),
+///             zip: "55555".to_string(),
+///         },
+///     ],
+/// };
+///
+/// let mut print = Print("".to_string());
+/// print.visit_value(person.as_value());
+/// ```
 pub trait Visit {
-    /// Visit a single value
+    /// Visit a single value.
+    ///
+    /// Thie `visit_value` method is called once when visiting single primitive
+    /// values. When visiting `Listable` types, the `visit_value` method is
+    /// called once per item in the listable type.
+    ///
+    /// Note, in the case of Listable types containing primitive types,
+    /// `visit_primitive_slice` can be implemented instead for less overhead.
+    ///
+    /// # Examples
+    ///
+    /// Visiting a single value.
+    ///
+    /// ```
+    /// use valuable::{Valuable, Visit, Value};
+    ///
+    /// struct Print;
+    ///
+    /// impl Visit for Print {
+    ///     fn visit_value(&mut self, value: Value<'_>) {
+    ///         println!("{:?}", value);
+    ///     }
+    /// }
+    ///
+    /// let my_val = 123;
+    /// my_val.visit(&mut Print);
+    /// ```
+    ///
+    /// Visiting multiple values in a list.
+    ///
+    /// ```
+    /// use valuable::{Valuable, Value, Visit};
+    ///
+    /// struct PrintList { comma: bool };
+    ///
+    /// impl Visit for PrintList {
+    ///     fn visit_value(&mut self, value: Value<'_>) {
+    ///         if self.comma {
+    ///             println!(", {:?}", value);
+    ///         } else {
+    ///             print!("{:?}", value);
+    ///             self.comma = true;
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// let my_list = vec![1, 2, 3, 4, 5];
+    /// my_list.visit(&mut PrintList { comma: false });
+    /// ```
     fn visit_value(&mut self, value: Value<'_>) {
         drop(value);
     }
 
-    /// Visits a struct's named fields
+    /// Visit a struct or enum's named fields.
+    ///
+    /// When the struct/enum is statically defined, all fields are known ahead
+    /// of time and `visit_named_fields` is called once with all field values.
+    /// When the struct/enum is dynamic, then the `visit_named_fields` method
+    /// may be called multiple times.
+    ///
+    /// See [`Structable`] and [`Enumerable`] for static vs. dynamic details.
+    ///
+    /// # Examples
+    ///
+    /// Visiting all fields in a struct.
+    ///
+    /// ```
+    /// use valuable::{NamedValues, Valuable, Visit};
+    ///
+    /// #[derive(Valuable)]
+    /// struct MyStruct {
+    ///     hello: String,
+    ///     world: u32,
+    /// }
+    ///
+    /// struct Print;
+    ///
+    /// impl Visit for Print {
+    ///     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
+    ///         for (field, value) in named_values.entries() {
+    ///             println!("{:?}: {:?}", field, value);
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// let my_struct = MyStruct {
+    ///     hello: "Hello world".to_string(),
+    ///     world: 42,
+    /// };
+    ///
+    /// my_struct.visit(&mut Print);
+    /// ```
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
         drop(named_values);
     }
 
-    /// Visits a struct's unnamed fields (tuple struct).
+    /// Visit a struct or enum's unnamed fields.
+    ///
+    /// When the struct/enum is statically defined, all fields are known ahead
+    /// of time and `visit_unnamed_fields` is called once with all field values.
+    /// When the struct/enum is dynamic, then the `visit_unnamed_fields` method
+    /// may be called multiple times.
+    ///
+    /// See [`Structable`] and [`Enumerable`] for static vs. dynamic details.
+    ///
+    /// # Examples
+    ///
+    /// Visiting all fields in a struct.
+    ///
+    /// ```
+    /// use valuable::{Valuable, Value, Visit};
+    ///
+    /// #[derive(Valuable)]
+    /// struct MyStruct(String, u32);
+    ///
+    /// struct Print;
+    ///
+    /// impl Visit for Print {
+    ///     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
+    ///         for value in values {
+    ///             println!("{:?}", value);
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// let my_struct = MyStruct("Hello world".to_string(), 42);
+    ///
+    /// my_struct.visit(&mut Print);
+    /// ```
     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
         drop(values);
     }
 
-    /// Visit a slice
+    /// Visit a primitive slice.
+    ///
+    /// This method exists as an optimization when visiting [`Listable`] types.
+    /// By default, `Listable` types are visited by passing each item to
+    /// `visit_value`. However, if the listable stores a **primitive** type
+    /// within contiguous memory, then `visit_primitive_slice` is called
+    /// instead.
+    ///
+    /// When implementing `visit_primitive_slice`, be aware that the method may
+    /// be called multiple times for a single `Listable` type.
+    ///
+    /// # Examples
+    ///
+    /// A vec calls `visit_primitive_slice` one time, but a `VecDeque` will call
+    /// `visit_primitive_slice` twice.
+    ///
+    /// ```
+    /// use valuable::{Valuable, Visit, Slice};
+    /// use std::collections::VecDeque;
+    ///
+    /// struct Count(u32);
+    ///
+    /// impl Visit for Count {
+    ///     fn visit_primitive_slice(&mut self, slice: Slice<'_>) {
+    ///         self.0 += 1;
+    ///     }
+    /// }
+    ///
+    /// let vec = vec![1, 2, 3, 4, 5];
+    ///
+    /// let mut count = Count(0);
+    /// vec.visit(&mut count);
+    /// assert_eq!(1, count.0);
+    ///
+    /// let mut vec_deque = VecDeque::from(vec);
+    ///
+    /// let mut count = Count(0);
+    /// vec_deque.visit(&mut count);
+    ///
+    /// assert_eq!(2, count.0);
+    /// ```
     fn visit_primitive_slice(&mut self, slice: Slice<'_>) {
         for value in slice {
             self.visit_value(value);
         }
     }
 
-    // TODO: should we batch visit entries?
+    /// Visit a `Mappable`'s entries.
+    ///
+    /// The `visit_entry` method is called once for each entry contained by a
+    /// `Mappable.`
+    ///
+    /// # Examples
+    ///
+    /// Visit a map's entries
+    ///
+    /// ```
+    /// use valuable::{Valuable, Value, Visit};
+    /// use std::collections::HashMap;
+    ///
+    /// let mut map = HashMap::new();
+    /// map.insert("hello", 123);
+    /// map.insert("world", 456);
+    ///
+    /// struct Print;
+    ///
+    /// impl Visit for Print {
+    ///     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
+    ///         println!("{:?} => {:?}", key, value);
+    ///     }
+    /// }
+    /// ```
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
         drop((key, value));
     }
