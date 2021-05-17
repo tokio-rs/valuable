@@ -1,6 +1,6 @@
 use valuable::*;
 
-use core::{isize, usize};
+use core::sync::atomic;
 
 macro_rules! assert_visit_call {
     ($v:expr) => {
@@ -309,6 +309,32 @@ fn test_option() {
     let val = None::<i32>;
     let val = Valuable::as_value(&val);
     assert!(matches!(val, Value::Unit));
+}
+
+#[test]
+fn test_atomic() {
+    let val = atomic::AtomicBool::new(true);
+    assert!(matches!(val.as_value(), Value::Bool(v) if v));
+    let val = atomic::AtomicI8::new(i8::MAX);
+    assert!(matches!(val.as_value(), Value::I8(v) if v == i8::MAX));
+    let val = atomic::AtomicI16::new(i16::MAX);
+    assert!(matches!(val.as_value(), Value::I16(v) if v == i16::MAX));
+    let val = atomic::AtomicI32::new(i32::MAX);
+    assert!(matches!(val.as_value(), Value::I32(v) if v == i32::MAX));
+    let val = atomic::AtomicI64::new(i64::MAX);
+    assert!(matches!(val.as_value(), Value::I64(v) if v == i64::MAX));
+    let val = atomic::AtomicIsize::new(isize::MAX);
+    assert!(matches!(val.as_value(), Value::Isize(v) if v == isize::MAX));
+    let val = atomic::AtomicU8::new(u8::MAX);
+    assert!(matches!(val.as_value(), Value::U8(v) if v == u8::MAX));
+    let val = atomic::AtomicU16::new(u16::MAX);
+    assert!(matches!(val.as_value(), Value::U16(v) if v == u16::MAX));
+    let val = atomic::AtomicU32::new(u32::MAX);
+    assert!(matches!(val.as_value(), Value::U32(v) if v == u32::MAX));
+    let val = atomic::AtomicU64::new(u64::MAX);
+    assert!(matches!(val.as_value(), Value::U64(v) if v == u64::MAX));
+    let val = atomic::AtomicUsize::new(usize::MAX);
+    assert!(matches!(val.as_value(), Value::Usize(v) if v == usize::MAX));
 }
 
 fn eq<T: PartialEq>(a: &T, b: &T) -> bool {

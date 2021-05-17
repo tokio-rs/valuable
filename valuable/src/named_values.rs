@@ -1,3 +1,5 @@
+use core::iter::{self, FusedIterator};
+
 use crate::field::*;
 use crate::*;
 
@@ -20,10 +22,37 @@ impl<'a> NamedValues<'a> {
         self.values.get(idx)
     }
 
-    pub fn entries<'b>(&'b self) -> impl Iterator<Item = (&'b NamedField, &'b Value<'a>)> + 'b {
-        self.fields
-            .iter()
-            .enumerate()
+    pub fn entries<'b>(&'b self) -> Entries<'a, 'b> {
+        Entries {
+            iter: self.fields.iter().enumerate(),
+            values: self.values,
+        }
+    }
+}
+
+pub struct Entries<'a, 'b> {
+    iter: iter::Enumerate<core::slice::Iter<'b, NamedField<'a>>>,
+    values: &'a [Value<'a>],
+}
+
+impl<'a, 'b> Iterator for Entries<'a, 'b> {
+    type Item = (&'b NamedField<'a>, &'b Value<'a>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter
+            .next()
+            .map(move |(i, field)| (field, &self.values[i]))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl DoubleEndedIterator for Entries<'_, '_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter
+            .next_back()
             .map(move |(i, field)| (field, &self.values[i]))
     }
 
@@ -35,3 +64,11 @@ impl<'a> NamedValues<'a> {
         self.fields.is_empty()
     }
 }
+
+impl ExactSizeIterator for Entries<'_, '_> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl FusedIterator for Entries<'_, '_> {}

@@ -20,7 +20,7 @@ pub trait Valuable {
 
 impl<V: ?Sized + Valuable> Valuable for &V {
     fn as_value(&self) -> Value<'_> {
-        (*self).as_value()
+        V::as_value(*self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
@@ -28,10 +28,20 @@ impl<V: ?Sized + Valuable> Valuable for &V {
     }
 }
 
+impl<V: ?Sized + Valuable> Valuable for &mut V {
+    fn as_value(&self) -> Value<'_> {
+        V::as_value(&**self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        V::visit(&**self, visit);
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl<V: ?Sized + Valuable> Valuable for alloc::boxed::Box<V> {
     fn as_value(&self) -> Value<'_> {
-        (&**self).as_value()
+        V::as_value(&**self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
@@ -42,7 +52,7 @@ impl<V: ?Sized + Valuable> Valuable for alloc::boxed::Box<V> {
 #[cfg(feature = "alloc")]
 impl<V: ?Sized + Valuable> Valuable for alloc::rc::Rc<V> {
     fn as_value(&self) -> Value<'_> {
-        (&**self).as_value()
+        V::as_value(&**self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
@@ -54,7 +64,7 @@ impl<V: ?Sized + Valuable> Valuable for alloc::rc::Rc<V> {
 #[cfg(feature = "alloc")]
 impl<V: ?Sized + Valuable> Valuable for alloc::sync::Arc<V> {
     fn as_value(&self) -> Value<'_> {
-        (&**self).as_value()
+        V::as_value(&**self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
@@ -141,6 +151,49 @@ nonzero! {
     U64(NonZeroU64),
     U128(NonZeroU128),
     Usize(NonZeroUsize),
+}
+
+#[cfg(not(valuable_no_atomic))]
+macro_rules! atomic {
+    (
+        $(
+            $(#[$attrs:meta])*
+            $variant:ident($ty:ident),
+        )*
+    ) => {
+        $(
+            $(#[$attrs])*
+            impl Valuable for core::sync::atomic::$ty {
+                fn as_value(&self) -> Value<'_> {
+                    // Use SeqCst to match Debug and serde which use SeqCst.
+                    // https://github.com/rust-lang/rust/blob/1.52.1/library/core/src/sync/atomic.rs#L1361-L1366
+                    // https://github.com/serde-rs/serde/issues/1496
+                    Value::$variant(self.load(core::sync::atomic::Ordering::SeqCst))
+                }
+
+                fn visit(&self, visit: &mut dyn Visit) {
+                    visit.visit_value(self.as_value());
+                }
+            }
+        )*
+    };
+}
+
+#[cfg(not(valuable_no_atomic))]
+atomic! {
+    Bool(AtomicBool),
+    I8(AtomicI8),
+    I16(AtomicI16),
+    I32(AtomicI32),
+    #[cfg(not(valuable_no_atomic_64))]
+    I64(AtomicI64),
+    Isize(AtomicIsize),
+    U8(AtomicU8),
+    U16(AtomicU16),
+    U32(AtomicU32),
+    #[cfg(not(valuable_no_atomic_64))]
+    U64(AtomicU64),
+    Usize(AtomicUsize),
 }
 
 impl<T: Valuable> Valuable for Wrapping<T> {

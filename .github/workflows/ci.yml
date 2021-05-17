@@ -26,9 +26,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # thumbv7m-none-eabi supports atomic CAS.
+        # thumbv6m-none-eabi supports atomic, but not atomic CAS.
+        # riscv32i-unknown-none-elf does not support atomic at all.
         target:
           - thumbv6m-none-eabi
           - thumbv7m-none-eabi
+          - riscv32i-unknown-none-elf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -52,7 +56,7 @@ jobs:
         run: cargo install cargo-hack
       - run: cargo hack build --workspace --feature-powerset
 
-  # When this job failed, run ci/no_atomic_cas.sh and commit result changes.
+  # When this job failed, run ci/no_atomic.sh and commit result changes.
   # TODO(taiki-e): Ideally, this should be automated using a bot that creates
   #                PR when failed, but there is no bandwidth to implement it
   #                right now...
@@ -62,7 +66,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install Rust
         run: rustup update nightly && rustup default nightly
-      - run: ci/no_atomic_cas.sh
+      - run: ci/no_atomic.sh
       - run: git diff --exit-code
 
   fmt:

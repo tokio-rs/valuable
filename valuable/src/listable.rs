@@ -12,6 +12,12 @@ impl<L: ?Sized + Listable> Listable for &L {
     }
 }
 
+impl<L: ?Sized + Listable> Listable for &mut L {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        L::size_hint(&**self)
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl<L: ?Sized + Listable> Listable for alloc::boxed::Box<L> {
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -110,8 +116,6 @@ macro_rules! collection {
 
 collection! {
     #[cfg(feature = "alloc")]
-    (T: Valuable) alloc::collections::VecDeque<T>,
-    #[cfg(feature = "alloc")]
     (T: Valuable) alloc::collections::LinkedList<T>,
     #[cfg(feature = "alloc")]
     (T: Valuable + Ord) alloc::collections::BinaryHeap<T>,
@@ -119,6 +123,26 @@ collection! {
     (T: Valuable + Ord) alloc::collections::BTreeSet<T> ,
     #[cfg(feature = "std")]
     (T: Valuable + Eq + std::hash::Hash, H: std::hash::BuildHasher) std::collections::HashSet<T, H>,
+}
+
+#[cfg(feature = "alloc")]
+impl<T: Valuable> Valuable for alloc::collections::VecDeque<T> {
+    fn as_value(&self) -> Value<'_> {
+        Value::Listable(self as &dyn Listable)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        let (first, second) = self.as_slices();
+        T::visit_slice(first, visit);
+        T::visit_slice(second, visit);
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T: Valuable> Listable for alloc::collections::VecDeque<T> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
 }
 
 impl fmt::Debug for dyn Listable + '_ {
