@@ -2,6 +2,8 @@
 
 use valuable::Valuable;
 
+use std::collections::HashMap;
+
 #[test]
 fn test_derive_struct() {
     #[derive(Valuable)]
@@ -42,10 +44,6 @@ fn test_derive_enum() {
 
 #[test]
 fn test_derive_mut() {
-    use valuable::Valuable;
-
-    use std::collections::HashMap;
-
     #[derive(Valuable)]
     struct S {
         _f: (),
