@@ -7,16 +7,103 @@ pub trait Structable: Valuable {
     fn definition(&self) -> StructDef<'_>;
 }
 
+/// Name, fields, and other struct-level information.
+///
+/// Returned by [`Structable::definition()`], `StructDef` provides the caller
+/// with information about the struct's definition.
+///
+/// [`Structable::definition()`]: Structable::definition
 #[non_exhaustive]
 pub enum StructDef<'a> {
+    /// The struct is statically-defined, all fields are known ahead of time.
+    ///
+    /// # Examples
+    ///
+    /// A statically defined struct
+    ///
+    /// ```
+    /// use valuable::{Fields, Valuable, Structable, StructDef};
+    ///
+    /// #[derive(Valuable)]
+    /// struct MyStruct {
+    ///     foo: &'static str,
+    /// }
+    ///
+    /// let my_struct = MyStruct { foo: "Hello" };
+    /// let fields = match my_struct.definition() {
+    ///     StructDef::Static { name, fields, ..} => {
+    ///         assert_eq!("MyStruct", name);
+    ///         fields
+    ///     }
+    ///     _ => unreachable!(),
+    /// };
+    ///
+    /// match fields {
+    ///     Fields::Named(named_fields) => {
+    ///         assert_eq!(1, named_fields.len());
+    ///         assert_eq!("foo", named_fields[0].name());
+    ///     }
+    ///     _ => unreachable!(),
+    /// }
+    /// ```
     #[non_exhaustive]
     Static {
+        /// The struct's name.
         name: &'static str,
+
+        /// The struct's fields.
         fields: Fields<'static>,
     },
 
+    /// The struct is dynamically-defined, not all fields are known ahead of time.
+    ///
+    /// # Examples
+    ///
+    /// The struct stores field values in a `HashMap`.
+    ///
+    /// ```
+    /// use valuable::{Fields, NamedField, NamedValues, Structable, StructDef, Value, Valuable, Visit};
+    /// use std::collections::HashMap;
+    ///
+    /// /// A dynamic struct
+    /// struct Dyn {
+    ///     // The struct name
+    ///     name: String,
+    ///
+    ///     // Named values.
+    ///     values: HashMap<String, Box<dyn Valuable>>,
+    /// }
+    ///
+    /// impl Valuable for Dyn {
+    ///     fn as_value(&self) -> Value<'_> {
+    ///         Value::Structable(self)
+    ///     }
+    ///
+    ///     fn visit(&self, visit: &mut dyn Visit) {
+    ///         // This could be optimized to batch some.
+    ///         for (field, value) in self.values.iter() {
+    ///             visit.visit_named_fields(&NamedValues::new(
+    ///                 &[NamedField::new(field)],
+    ///                 &[value.as_value()],
+    ///             ));
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// impl Structable for Dyn {
+    ///     fn definition(&self) -> StructDef<'_> {
+    ///         StructDef::new_dynamic(&self.name, Fields::Named(&[]))
+    ///     }
+    /// }
+    /// ```
     #[non_exhaustive]
-    Dynamic { name: &'a str, fields: Fields<'a> },
+    Dynamic {
+        /// The struct's name
+        name: &'a str,
+
+        /// The struct's fields.
+        fields: Fields<'a>,
+    },
 }
 
 impl fmt::Debug for dyn Structable + '_ {
@@ -68,14 +155,53 @@ impl fmt::Debug for dyn Structable + '_ {
 }
 
 impl<'a> StructDef<'a> {
+    /// Create a new `StructDef::Static` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// ```
     pub const fn new_static(name: &'static str, fields: Fields<'static>) -> StructDef<'a> {
         StructDef::Static { name, fields }
     }
 
+    /// Create a new `StructDef::Dyanmic` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// ```
     pub const fn new_dynamic(name: &'a str, fields: Fields<'a>) -> StructDef<'a> {
         StructDef::Dynamic { name, fields }
     }
 
+    /// Returns the struct's name
+    ///
+    /// # Examples
+    ///
+    /// With a static struct
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// assert_eq!("Foo", def.name());
+    /// ```
+    ///
+    /// With a dynamic struct
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// assert_eq!("Foo", def.name());
+    /// ```
     pub fn name(&self) -> &str {
         match self {
             StructDef::Static { name, .. } => name,
@@ -83,6 +209,27 @@ impl<'a> StructDef<'a> {
         }
     }
 
+    /// Returns the struct's fields
+    ///
+    /// # Examples
+    ///
+    /// With a static struct
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// assert!(matches!(def.fields(), Fields::Unnamed));
+    /// ```
+    ///
+    /// With a dynamic struct
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// assert!(matches!(def.fields(), Fields::Unnamed));
+    /// ```
     pub fn fields(&self) -> &Fields<'_> {
         match self {
             StructDef::Static { fields, .. } => fields,
@@ -90,10 +237,52 @@ impl<'a> StructDef<'a> {
         }
     }
 
+    /// Returns `true` if the struct is statically defined.
+    ///
+    /// # Examples
+    ///
+    /// With a static struct
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// assert!(def.is_static());
+    /// ```
+    ///
+    /// With a dynamic struct
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// assert!(!def.is_static());
+    /// ```
     pub fn is_static(&self) -> bool {
         matches!(self, StructDef::Static { .. })
     }
 
+    /// Returns `true` if the struct is dynamically defined.
+    ///
+    /// # Examples
+    ///
+    /// With a static struct
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// assert!(!def.is_dynamic());
+    /// ```
+    ///
+    /// With a dynamic struct
+    ///
+    /// ```
+    /// use valuable::{StructDef, Fields};
+    ///
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// assert!(def.is_dynamic());
+    /// ```
     pub fn is_dynamic(&self) -> bool {
         matches!(self, StructDef::Dynamic { .. })
     }
