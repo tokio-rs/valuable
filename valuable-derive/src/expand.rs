@@ -29,7 +29,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
             struct_def = quote! {
                 ::valuable::StructDef::new_static(
                     #name_literal,
-                    ::valuable::field::Fields::Named(#named_fields_static_name),
+                    ::valuable::Fields::Named(#named_fields_static_name),
                 )
             };
 
@@ -47,7 +47,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
             struct_def = quote! {
                 ::valuable::StructDef::new_static(
                     #name_literal,
-                    ::valuable::field::Fields::Unnamed,
+                    ::valuable::Fields::Unnamed,
                 )
             };
 
@@ -120,7 +120,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::field::Fields::Named(#named_fields_static_name),
+                        ::valuable::Fields::Named(#named_fields_static_name),
                     ),
                 });
 
@@ -154,7 +154,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::field::Fields::Unnamed,
+                        ::valuable::Fields::Unnamed,
                     ),
                 });
 
@@ -183,7 +183,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::field::Fields::Unnamed,
+                        ::valuable::Fields::Unnamed,
                     ),
                 });
 
@@ -261,11 +261,11 @@ fn named_fields_static(name: &Ident, fields: &syn::Fields) -> TokenStream {
     let named_fields = fields.iter().map(|field| {
         let field_name_literal = field.ident.as_ref().unwrap().to_string();
         quote! {
-            ::valuable::field::NamedField::new(#field_name_literal),
+            ::valuable::NamedField::new(#field_name_literal),
         }
     });
     quote! {
-        static #name: &[::valuable::field::NamedField<'static>] = &[
+        static #name: &[::valuable::NamedField<'static>] = &[
             #(#named_fields)*
         ];
     }

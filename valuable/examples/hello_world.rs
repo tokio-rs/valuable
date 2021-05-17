@@ -1,4 +1,3 @@
-use valuable::field::*;
 use valuable::*;
 
 struct HelloWorld {
