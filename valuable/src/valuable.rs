@@ -3,11 +3,47 @@ use crate::{Slice, Value, Visit};
 use core::fmt;
 use core::num::Wrapping;
 
+/// A type that can be converted to a [`Value`].
+///
+/// `Valuable` types are inspected by defining a [`Visit`] implementation and
+/// using it whewn calling [`Valuable::visit`]. See [`Visit`] documentation for
+/// more details.
+///
+/// The `Valuable` procedural macro makes implementing `Valuable` easy. Users
+/// can add add `#[derive(Valuable)]` to their types.
+///
+/// `Valuable` provides implementations for many Rust primitives and standard
+/// library types.
+///
+/// Types implementing `Valuable` may also implement one of the more specific
+/// traits: [`Structable`], [`Enumerable`], [`Listable`], and [`Mappable`].
 pub trait Valuable {
+    /// Converts self into a [`Value`] instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::Valuable;
+    ///
+    /// let _ = "hello".as_value();
+    /// ```
     fn as_value(&self) -> Value<'_>;
 
+    /// Calls the relevant method on [`Visit`] to extract data from `self`.
+    ///
+    /// This method is used to extract type-specific data from the value and is
+    /// intended to be an implementation detail. For example, `Vec` implements
+    /// `visit` by calling `visit_value` on each of its elements. Structs
+    /// implement `visit` by calling `visit_named_fields` or
+    /// `visit_unnamed_fields`.
+    ///
+    /// Usually, users will call the [`visit`] function instead.
     fn visit(&self, visit: &mut dyn Visit);
 
+    /// Calls `Visit::visit_primitive_slice` with `self`.
+    ///
+    /// This method is an implementation detail used to optimize visiting
+    /// primitive slices.
     fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
     where
         Self: Sized,
