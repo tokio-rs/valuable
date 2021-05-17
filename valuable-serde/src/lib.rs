@@ -32,8 +32,9 @@ use serde::ser::{
     SerializeTupleStruct, SerializeTupleVariant,
 };
 use serde::{Serialize, Serializer};
-use valuable::field::Fields;
-use valuable::{EnumDef, NamedValues, StructDef, Valuable, Value, Variant, VariantDef, Visit};
+use valuable::{
+    EnumDef, Fields, NamedValues, StructDef, Valuable, Value, Variant, VariantDef, Visit,
+};
 
 /// A wrapper around [`Value`] that implements [`Serialize`].
 pub struct Serializable<V>(V);

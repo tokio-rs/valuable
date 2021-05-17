@@ -28,6 +28,14 @@ impl<'a> NamedValues<'a> {
             values: self.values,
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
+    }
 }
 
 pub struct Entries<'a, 'b> {
@@ -54,14 +62,6 @@ impl DoubleEndedIterator for Entries<'_, '_> {
         self.iter
             .next_back()
             .map(move |(i, field)| (field, &self.values[i]))
-    }
-
-    pub fn len(&self) -> usize {
-        self.fields.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.fields.is_empty()
     }
 }
 
