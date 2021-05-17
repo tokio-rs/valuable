@@ -143,6 +143,7 @@ nonzero! {
     Usize(NonZeroUsize),
 }
 
+#[cfg(not(valuable_no_atomic))]
 macro_rules! atomic {
     (
         $(

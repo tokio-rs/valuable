@@ -25,9 +25,15 @@ jobs:
   no-std:
     strategy:
       matrix:
+        # riscv32i-unknown-none-elf does not support atomic at all.
+        # thumbv7m-none-eabi supports atomic CAS.
+        # thumbv6m-none-eabi supports atomic, but not atomic CAS.
+        # NOTE: Do not include tier 3 targets to CI because they have not been tested upstream.
+        # https://doc.rust-lang.org/nightly/rustc/platform-support.html
         target:
           - thumbv6m-none-eabi
           - thumbv7m-none-eabi
+          - riscv32i-unknown-none-elf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
