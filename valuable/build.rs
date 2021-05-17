@@ -28,7 +28,7 @@ fn main() {
     }
     if NO_ATOMIC.contains(&&*target) {
         println!("cargo:rustc-cfg=valuable_no_atomic");
-        println!("cargo:rustc-cfg=valuable_no_atomic_cas");
+        println!("cargo:rustc-cfg=valuable_no_atomic_64");
     } else if NO_ATOMIC_64.contains(&&*target) {
         println!("cargo:rustc-cfg=valuable_no_atomic_64");
     } else {
