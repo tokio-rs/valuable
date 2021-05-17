@@ -17,6 +17,14 @@ use core::num::Wrapping;
 ///
 /// Types implementing `Valuable` may also implement one of the more specific
 /// traits: [`Structable`], [`Enumerable`], [`Listable`], and [`Mappable`].
+///
+/// [`Value`]: Value
+/// [`Visit`]: Visit
+/// [`Valuable::visit`]: Valuable::visit
+/// [`Structable`]: crate::Structable
+/// [`Enumerable`]: crate::Enumerable
+/// [`Listable`]: crate::Listable
+/// [`Mappable`]: crate::Mappable
 pub trait Valuable {
     /// Converts self into a [`Value`] instance.
     ///
@@ -33,17 +41,25 @@ pub trait Valuable {
     ///
     /// This method is used to extract type-specific data from the value and is
     /// intended to be an implementation detail. For example, `Vec` implements
-    /// `visit` by calling `visit_value` on each of its elements. Structs
-    /// implement `visit` by calling `visit_named_fields` or
-    /// `visit_unnamed_fields`.
+    /// `visit` by calling [`visit_value()`] on each of its elements. Structs
+    /// implement `visit` by calling [`visit_named_fields()`] or
+    /// [`visit_unnamed_fields()`].
     ///
     /// Usually, users will call the [`visit`] function instead.
+    ///
+    /// [`Visit`]: Visit
+    /// [`visit`]: visit()
+    /// [`visit_value()`]: Visit::visit_value()
+    /// [`visit_named_fields()`]: Visit::visit_named_fields()
+    /// [`visit_unnamed_fields()`]: Visit::visit_unnamed_fields()
     fn visit(&self, visit: &mut dyn Visit);
 
-    /// Calls `Visit::visit_primitive_slice` with `self`.
+    /// Calls [`Visit::visit_primitive_slice()`] with `self`.
     ///
     /// This method is an implementation detail used to optimize visiting
     /// primitive slices.
+    ///
+    /// [`Visit::visit_primitive_slice()`]: Visit::visit_primitive_slice
     fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
     where
         Self: Sized,

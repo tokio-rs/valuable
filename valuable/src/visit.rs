@@ -337,8 +337,8 @@ pub trait Visit {
 /// # Examples
 ///
 /// Extract a single field from a struct. Note, if the same field is repeatedly
-/// extracted from a struct, it is preferable to obtain the associated [`Field`]
-/// once and use it repeatedly.
+/// extracted from a struct, it is preferable to obtain the associated
+/// [`NamedField`] once and use it repeatedly.
 ///
 /// ```
 /// use valuable::{NamedValues, Valuable, Value, Visit};
@@ -377,6 +377,9 @@ pub trait Visit {
 ///
 /// assert_eq!(123, get_foo.0);
 /// ```
+///
+/// [`Visit`]: Visit
+/// [`NamedField`]: crate::NamedField
 pub fn visit(value: &impl Valuable, visit: &mut dyn Visit) {
     visit.visit_value(value.as_value());
 }
