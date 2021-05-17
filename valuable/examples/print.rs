@@ -23,7 +23,7 @@ impl Visit for Print {
             Value::Enumerable(v) => {
                 let def = v.definition();
                 let variant = v.variant();
-                // Print the struct name
+                // Print the enum name
                 println!("{}{}::{}:", self.0, def.name(), variant.name());
 
                 // Visit fields
