@@ -105,6 +105,12 @@ impl<S: ?Sized + Structable> Structable for &S {
     }
 }
 
+impl<S: ?Sized + Structable> Structable for &mut S {
+    fn definition(&self) -> StructDef<'_> {
+        S::definition(&**self)
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl<S: ?Sized + Structable> Structable for alloc::boxed::Box<S> {
     fn definition(&self) -> StructDef<'_> {
