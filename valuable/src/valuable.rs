@@ -10,7 +10,7 @@ use core::num::Wrapping;
 /// more details.
 ///
 /// The `Valuable` procedural macro makes implementing `Valuable` easy. Users
-/// can add add `#[derive(Valuable)]` to their types.
+/// can add add [`#[derive(Valuable)]`][macro] to their types.
 ///
 /// `Valuable` provides implementations for many Rust primitives and standard
 /// library types.
@@ -26,6 +26,7 @@ use core::num::Wrapping;
 /// [`Enumerable`]: crate::Enumerable
 /// [`Listable`]: crate::Listable
 /// [`Mappable`]: crate::Mappable
+/// [macro]: macro@crate::Valuable
 pub trait Valuable {
     /// Converts self into a [`Value`] instance.
     ///
