@@ -5,6 +5,88 @@ use crate::*;
 use alloc::format;
 use core::fmt;
 
+/// An enum-like [`Valuable`] sub-type.
+///
+/// Implemented by [`Valuable`] types that have an enum-like shape. Fields may
+/// be named or unnamed (tuple). Values that implement `Enumerable` must return
+/// [`Value::Enumerable`] from their [`Valuable::as_value`] implementation.
+///
+/// # Inspecting
+///
+/// The [`variant()`] method returns the `Enumerable` instance's variant. The
+/// `Enumerable` may also have unnamed fields (tuple) or named fields.
+/// Inspecting the field values is done by visiting the enum. When visiting an
+/// `Enumerable`, either the [`visit_named_fields()`] or the
+/// [`visit_unnamed_fields()`] methods of [`Visit`] are called. Each method may
+/// be called multiple times per `Enumerable`, but the two methods are never
+/// mixed.
+///
+/// ```
+/// use valuable::{Valuable, Value, Visit};
+///
+/// #[derive(Valuable)]
+/// enum MyEnum {
+///     Foo,
+///     Bar(u32),
+/// }
+///
+/// struct PrintVariant;
+///
+/// impl Visit for PrintVariant {
+///     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
+///         for value in values {
+///             println!(" - {:?}", value);
+///         }
+///     }
+///
+///     fn visit_value(&mut self, value: Value<'_>) {
+///         match value {
+///             Value::Enumerable(v) => {
+///                 println!("{}", v.variant().name());
+///                 v.visit(self)
+///             }
+///             _ => {}
+///         }
+///     }
+/// }
+///
+/// let my_enum = MyEnum::Bar(123);
+///
+/// valuable::visit(&my_enum, &mut PrintVariant);
+/// ```
+///
+/// If the enum is **statically** defined, then all variants, and variant fields
+/// are known ahead of time and may be accessed via the [`EnumDef`] instance
+/// returned by [`definition()`].
+///
+/// # Implementing
+///
+/// Implementing `Enumerable` is usually done by adding `#[derive(Valuable)]` to
+/// a Rust `enum` definition.
+///
+/// ```
+/// use valuable::{Valuable, Enumerable, EnumDef};
+///
+/// #[derive(Valuable)]
+/// enum MyEnum {
+///     Foo,
+///     Bar(u32),
+/// }
+///
+/// let my_enum = MyEnum::Bar(123);
+///
+/// let variants = match my_enum.definition() {
+///     EnumDef::Static { name, variants, .. } => {
+///         assert_eq!("MyEnum", name);
+///         variants
+///     }
+///     _ => unreachable!(),
+/// };
+///
+/// assert_eq!(2, variants.len());
+/// assert_eq!("Foo", variants[0].name());
+/// assert!(variants[0].fields().is_unnamed());
+/// ```
 pub trait Enumerable: Valuable {
     fn definition(&self) -> EnumDef<'_>;
 
