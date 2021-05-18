@@ -66,7 +66,9 @@ fn test_str() {
     assert_ser_eq!("a".to_string(), &[Token::String("a")]);
 }
 
-// TODO
+// TODO:
+// - valuable treats Option<T> as T or unit
+// - serde treats Option<T> as Some(T) or None
 #[test]
 fn test_option() {
     assert_ser_tokens(&Serializable::new(None::<u8>), &[Token::Unit]);
@@ -80,7 +82,9 @@ fn test_unit() {
     assert_ser_eq!((), &[Token::Unit]);
 }
 
-// TODO
+// TODO:
+// - valuable treats unit struct as an empty tuple struct
+// - serde treats unit struct as unit struct
 #[test]
 fn test_unit_struct() {
     #[derive(Debug, PartialEq, Valuable, Serialize)]
@@ -96,7 +100,9 @@ fn test_unit_struct() {
     assert_ser_tokens(&S, &[Token::UnitStruct { name: "S" }]);
 }
 
-// TODO
+// TODO:
+// - valuable treats unit variant as an empty tuple variant
+// - serde treats unit variant as unit variant
 #[test]
 fn test_unit_variant() {
     #[derive(Debug, PartialEq, Valuable, Serialize)]
@@ -165,8 +171,9 @@ fn test_seq() {
     );
 }
 
-// TODO
-// https://github.com/tokio-rs/valuable/issues/21
+// TODO:
+// - valuable currently does not support tuple
+//   https://github.com/tokio-rs/valuable/issues/21
 #[test]
 fn test_tuple() {}
 
@@ -316,7 +323,9 @@ fn test_enum() {
         Struct { f: u8 },
     }
 
-    // TODO
+    // TODO:
+    // - valuable treats unit variant as an empty tuple variant
+    // - serde treats unit variant as unit variant
     assert_ser_tokens(
         &Serializable::new(E::Unit),
         &[
