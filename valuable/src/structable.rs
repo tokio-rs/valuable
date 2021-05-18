@@ -30,7 +30,7 @@ use core::fmt;
 ///
 /// impl Visit for PrintFields {
 ///     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-///         for (field, value) in named_values.entries() {
+///         for (field, value) in named_values.iter() {
 ///             println!("{}: {:?}", field.name(), value);
 ///         }
 ///     }
