@@ -50,7 +50,7 @@ impl Visit for Print {
     }
 
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-        for (field, value) in named_values.entries() {
+        for (field, value) in named_values {
             print!("{}- {}: ", self.0, field.name());
             value.visit(self);
         }
