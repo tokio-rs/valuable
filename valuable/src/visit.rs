@@ -157,21 +157,24 @@ pub trait Visit {
     ///
     /// impl Visit for PrintList {
     ///     fn visit_value(&mut self, value: Value<'_>) {
-    ///         if self.comma {
-    ///             println!(", {:?}", value);
-    ///         } else {
-    ///             print!("{:?}", value);
-    ///             self.comma = true;
+    ///         match value {
+    ///             Value::Listable(v) => v.visit(self),
+    ///             value => {
+    ///                 if self.comma {
+    ///                     println!(", {:?}", value);
+    ///                 } else {
+    ///                     print!("{:?}", value);
+    ///                     self.comma = true;
+    ///                 }
+    ///             }
     ///         }
     ///     }
     /// }
     ///
     /// let my_list = vec![1, 2, 3, 4, 5];
-    /// my_list.visit(&mut PrintList { comma: false });
+    /// valuable::visit(&my_list, &mut PrintList { comma: false });
     /// ```
-    fn visit_value(&mut self, value: Value<'_>) {
-        drop(value);
-    }
+    fn visit_value(&mut self, value: Value<'_>);
 
     /// Visit a struct or enum's named fields.
     ///
@@ -187,7 +190,7 @@ pub trait Visit {
     /// Visiting all fields in a struct.
     ///
     /// ```
-    /// use valuable::{NamedValues, Valuable, Visit};
+    /// use valuable::{NamedValues, Valuable, Value, Visit};
     ///
     /// #[derive(Valuable)]
     /// struct MyStruct {
@@ -203,6 +206,13 @@ pub trait Visit {
     ///             println!("{:?}: {:?}", field, value);
     ///         }
     ///     }
+    ///
+    ///     fn visit_value(&mut self, value: Value<'_>) {
+    ///         match value {
+    ///             Value::Structable(v) => v.visit(self),
+    ///             _ => {} // do nothing for other types
+    ///         }
+    ///     }
     /// }
     ///
     /// let my_struct = MyStruct {
@@ -210,7 +220,7 @@ pub trait Visit {
     ///     world: 42,
     /// };
     ///
-    /// my_struct.visit(&mut Print);
+    /// valuable::visit(&my_struct, &mut Print);
     /// ```
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
         drop(named_values);
@@ -243,11 +253,18 @@ pub trait Visit {
     ///             println!("{:?}", value);
     ///         }
     ///     }
+    ///
+    ///     fn visit_value(&mut self, value: Value<'_>) {
+    ///         match value {
+    ///             Value::Structable(v) => v.visit(self),
+    ///             _ => {} // do nothing for other types
+    ///         }
+    ///     }
     /// }
     ///
     /// let my_struct = MyStruct("Hello world".to_string(), 42);
     ///
-    /// my_struct.visit(&mut Print);
+    /// valuable::visit(&my_struct, &mut Print);
     /// ```
     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
         drop(values);
@@ -270,7 +287,7 @@ pub trait Visit {
     /// `visit_primitive_slice` twice.
     ///
     /// ```
-    /// use valuable::{Valuable, Visit, Slice};
+    /// use valuable::{Valuable, Value, Visit, Slice};
     /// use std::collections::VecDeque;
     ///
     /// struct Count(u32);
@@ -279,18 +296,25 @@ pub trait Visit {
     ///     fn visit_primitive_slice(&mut self, slice: Slice<'_>) {
     ///         self.0 += 1;
     ///     }
+    ///
+    ///     fn visit_value(&mut self, value: Value<'_>) {
+    ///         match value {
+    ///             Value::Listable(v) => v.visit(self),
+    ///             _ => {}
+    ///         }
+    ///     }
     /// }
     ///
     /// let vec = vec![1, 2, 3, 4, 5];
     ///
     /// let mut count = Count(0);
-    /// vec.visit(&mut count);
+    /// valuable::visit(&vec, &mut count);
     /// assert_eq!(1, count.0);
     ///
     /// let mut vec_deque = VecDeque::from(vec);
     ///
     /// let mut count = Count(0);
-    /// vec_deque.visit(&mut count);
+    /// valuable::visit(&vec_deque, &mut count);
     ///
     /// assert_eq!(2, count.0);
     /// ```
@@ -323,16 +347,27 @@ pub trait Visit {
     ///     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
     ///         println!("{:?} => {:?}", key, value);
     ///     }
+    ///
+    ///     fn visit_value(&mut self, value: Value<'_>) {
+    ///         match value {
+    ///             Value::Mappable(v) => v.visit(self),
+    ///             _ => {}
+    ///         }
+    ///     }
     /// }
+    ///
+    /// valuable::visit(&map, &mut Print);
     /// ```
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
         drop((key, value));
     }
 }
 
-/// Inspects a value by calling the relevant [`Visit`] methods with `value`'s data.
+/// Inspects a value by calling the relevant [`Visit`] methods with `value`'s
+/// data.
 ///
-/// See [`Visit`] documentation for more details.
+/// This method calls [`Visit::visit_value()`] with the provided [`Valuable`]
+/// instance. See [`Visit`] documentation for more details.
 ///
 /// # Examples
 ///
@@ -378,8 +413,7 @@ pub trait Visit {
 /// assert_eq!(123, get_foo.0);
 /// ```
 ///
-/// [`Visit`]: Visit
-/// [`NamedField`]: crate::NamedField
+/// [`Visit`]: Visit [`NamedField`]: crate::NamedField
 pub fn visit(value: &impl Valuable, visit: &mut dyn Visit) {
     visit.visit_value(value.as_value());
 }

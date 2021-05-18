@@ -130,6 +130,8 @@ impl fmt::Debug for dyn Enumerable + '_ {
                         self.fmt.field(field.name(), value);
                     }
                 }
+
+                fn visit_value(&mut self, _: Value<'_>) {}
             }
 
             self.visit(&mut debug);
@@ -150,6 +152,8 @@ impl fmt::Debug for dyn Enumerable + '_ {
                         self.fmt.field(value);
                     }
                 }
+
+                fn visit_value(&mut self, _: Value<'_>) {}
             }
 
             self.visit(&mut debug);
