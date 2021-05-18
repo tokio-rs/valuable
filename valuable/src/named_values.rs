@@ -22,6 +22,18 @@ impl<'a> NamedValues<'a> {
         self.values.get(idx)
     }
 
+    pub fn get_by_name(&self, name: impl AsRef<str>) -> Option<&Value<'_>> {
+        let name = name.as_ref();
+
+        for (index, field) in self.fields.iter().enumerate() {
+            if field.name() == name {
+                return Some(&self.values[index]);
+            }
+        }
+
+        None
+    }
+
     pub fn iter<'b>(&'b self) -> Iter<'a, 'b> {
         Iter {
             iter: self.fields.iter().enumerate(),

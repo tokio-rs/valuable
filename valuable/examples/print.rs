@@ -102,5 +102,5 @@ fn main() {
     };
 
     let mut print = Print("".to_string());
-    print.visit_value(person.as_value());
+    valuable::visit(&person, &mut print);
 }
