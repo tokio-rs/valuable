@@ -7,7 +7,7 @@ pub trait Structable: Valuable {
     fn definition(&self) -> StructDef<'_>;
 }
 
-/// Name, fields, and other struct-level information.
+/// A struct's name, fields, and other struct-level information.
 ///
 /// Returned by [`Structable::definition()`], `StructDef` provides the caller
 /// with information about the struct's definition.
@@ -16,6 +16,8 @@ pub trait Structable: Valuable {
 #[non_exhaustive]
 pub enum StructDef<'a> {
     /// The struct is statically-defined, all fields are known ahead of time.
+    ///
+    /// Most `Structable` definitions for Rust struct types will be `StructDef::Static`.
     ///
     /// # Examples
     ///
@@ -155,7 +157,9 @@ impl fmt::Debug for dyn Structable + '_ {
 }
 
 impl<'a> StructDef<'a> {
-    /// Create a new `StructDef::Static` instance.
+    /// Create a new [`StructDef::Static`] instance.
+    ///
+    /// This should be used when a struct's fields are fixed and known ahead of time.
     ///
     /// # Examples
     ///
@@ -168,8 +172,9 @@ impl<'a> StructDef<'a> {
         StructDef::Static { name, fields }
     }
 
-    /// Create a new `StructDef::Dyanmic` instance.
+    /// Create a new [`StructDef::Dyanmic`] instance.
     ///
+    /// This is used when the struct's fields may vary at runtime.
     /// # Examples
     ///
     /// ```
@@ -237,7 +242,7 @@ impl<'a> StructDef<'a> {
         }
     }
 
-    /// Returns `true` if the struct is statically defined.
+    /// Returns `true` if the struct is [statically defined](StructDef::Static).
     ///
     /// # Examples
     ///
@@ -262,7 +267,7 @@ impl<'a> StructDef<'a> {
         matches!(self, StructDef::Static { .. })
     }
 
-    /// Returns `true` if the struct is dynamically defined.
+    /// Returns `true` if the struct is [dynamically defined](StructDef::Static).
     ///
     /// # Examples
     ///
