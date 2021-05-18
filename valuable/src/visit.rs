@@ -330,13 +330,13 @@ pub trait Visit {
     }
 }
 
-/// Inspects a value by calling relevant `Visit` methods with `value`'s data.
+/// Inspects a value by calling the relevant [`Visit`] methods with `value`'s data.
 ///
 /// See [`Visit`] documentation for more details.
 ///
 /// # Examples
 ///
-/// Extract a single field from a struct. Note, if the same field is repeatedly
+/// Extract a single field from a struct. Note: if the same field is repeatedly
 /// extracted from a struct, it is preferable to obtain the associated
 /// [`NamedField`] once and use it repeatedly.
 ///

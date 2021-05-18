@@ -6,7 +6,7 @@ use core::num::Wrapping;
 /// A type that can be converted to a [`Value`].
 ///
 /// `Valuable` types are inspected by defining a [`Visit`] implementation and
-/// using it whewn calling [`Valuable::visit`]. See [`Visit`] documentation for
+/// using it when calling [`Valuable::visit`]. See [`Visit`] documentation for
 /// more details.
 ///
 /// The `Valuable` procedural macro makes implementing `Valuable` easy. Users
@@ -16,7 +16,8 @@ use core::num::Wrapping;
 /// library types.
 ///
 /// Types implementing `Valuable` may also implement one of the more specific
-/// traits: [`Structable`], [`Enumerable`], [`Listable`], and [`Mappable`].
+/// traits: [`Structable`], [`Enumerable`], [`Listable`], and [`Mappable`]. These traits
+/// should be implemented when the type is a nested container of other `Valuable` types.
 ///
 /// [`Value`]: Value
 /// [`Visit`]: Visit
