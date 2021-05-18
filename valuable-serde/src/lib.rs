@@ -112,7 +112,7 @@ where
             Value::F64(n) => serializer.serialize_f64(n),
             Value::Char(c) => serializer.serialize_char(c),
             Value::String(s) => serializer.serialize_str(s),
-            Value::Unit => serializer.serialize_none(),
+            Value::Unit => serializer.serialize_unit(),
             Value::Listable(l) => {
                 let size_hint = l.size_hint();
                 let mut ser = serializer.serialize_seq(Some(size_hint.1.unwrap_or(size_hint.0)))?;
