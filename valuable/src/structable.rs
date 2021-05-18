@@ -79,6 +79,8 @@ use core::fmt;
 ///     _ => unreachable!(),
 /// }
 /// ```
+///
+/// [`definition()`]: Structable::definition()
 pub trait Structable: Valuable {
     /// Returns the struct's definition.
     ///
@@ -152,7 +154,15 @@ pub enum StructDef<'a> {
         fields: Fields<'static>,
     },
 
-    /// The struct is dynamically-defined, not all fields are known ahead of time.
+    /// The struct is dynamically-defined, not all fields are known ahead of
+    /// time.
+    ///
+    /// A dynamically-defined struct **could** be represented using
+    /// [`Mappable`], though, using `Structable` offers benefits in a couple of
+    /// cases. For example, when serializing a `Value`, some formats will
+    /// serialize maps and structs differently. In this case, differentiating
+    /// the two is required. There also are times when **some** struct fields
+    /// are known statically, but not all of them (see second example).
     ///
     /// # Examples
     ///
@@ -190,6 +200,55 @@ pub enum StructDef<'a> {
     /// impl Structable for Dyn {
     ///     fn definition(&self) -> StructDef<'_> {
     ///         StructDef::new_dynamic(&self.name, Fields::Named(&[]))
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// Some fields are known statically.
+    ///
+    /// ```
+    /// use valuable::{Fields, NamedField, NamedValues, Structable, StructDef, Value, Valuable, Visit};
+    /// use std::collections::HashMap;
+    ///
+    /// struct HalfStatic {
+    ///     foo: u32,
+    ///     bar: u32,
+    ///     extra_values: HashMap<String, Box<dyn Valuable>>,
+    /// }
+    ///
+    /// impl Valuable for HalfStatic {
+    ///     fn as_value(&self) -> Value<'_> {
+    ///         Value::Structable(self)
+    ///     }
+    ///
+    ///     fn visit(&self, visit: &mut dyn Visit) {
+    ///         // First, visit static fields
+    ///         visit.visit_named_fields(&NamedValues::new(
+    ///             FIELDS,
+    ///             &[self.foo.as_value(), self.bar.as_value()],
+    ///         ));
+    ///
+    ///         // This could be optimized to batch some.
+    ///         for (field, value) in self.extra_values.iter() {
+    ///             visit.visit_named_fields(&NamedValues::new(
+    ///                 &[NamedField::new(field)],
+    ///                 &[value.as_value()],
+    ///             ));
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// static FIELDS: &[NamedField<'static>] = &[
+    ///     NamedField::new("foo"),
+    ///     NamedField::new("bar"),
+    /// ];
+    ///
+    /// impl Structable for HalfStatic {
+    ///     fn definition(&self) -> StructDef<'_> {
+    ///         // Include known fields.
+    ///         StructDef::new_dynamic(
+    ///             "HalfStatic",
+    ///             Fields::Named(FIELDS))
     ///     }
     /// }
     /// ```
@@ -267,7 +326,7 @@ impl<'a> StructDef<'a> {
         StructDef::Static { name, fields }
     }
 
-    /// Create a new [`StructDef::Dyanmic`] instance.
+    /// Create a new [`StructDef::Dynamic`] instance.
     ///
     /// This is used when the struct's fields may vary at runtime.
     /// # Examples
