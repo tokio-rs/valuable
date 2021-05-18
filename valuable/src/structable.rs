@@ -3,7 +3,102 @@ use crate::*;
 
 use core::fmt;
 
+/// A struct-like [`Valuable`] sub-type.
+///
+/// Implemented by [`Valuable`] types that have a struct-like shape. Fields may
+/// be named or unnamed (tuple). Values that implement `Structable` must return
+/// [`Value::Structable`] from their [`Valuable::as_value`] implementation.
+///
+/// # Inspecting
+///
+/// Inspecting fields contained by a `Structable` instance is done by visiting
+/// the struct. When visiting a `Structable`, either the `visit_named_fields()`
+/// or the `visit_unnamed_fields()` methods of `Visit` are called. Each method
+/// may be called multiple times per `Structable`, but the two methods are never
+/// mixed.
+///
+/// ```
+/// use valuable::{NamedValues, Valuable, Visit};
+///
+/// #[derive(Valuable)]
+/// struct MyStruct {
+///     foo: u32,
+///     bar: u32,
+/// }
+///
+/// struct PrintFields;
+///
+/// impl Visit for PrintFields {
+///     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
+///         for (field, value) in named_values.entries() {
+///             println!("{}: {:?}", field.name(), value);
+///         }
+///     }
+/// }
+///
+/// let my_struct = MyStruct {
+///     foo: 123,
+///     bar: 456,
+/// };
+///
+/// valuable::visit(&my_struct, &mut PrintFields);
+/// ```
+///
+/// If the struct is **statically** defined, then all fields are known ahead of
+/// time and may be accessed via the [`StructDef`] instance returned by
+/// [`definition()`]. [`NamedField`] instances returned by [`definition()`]
+/// maybe used to efficiently extract specific field values.
+///
+/// # Implementing
+///
+/// Implementing `Structable` is usually done by adding `#[derive(Valuable)]` to
+/// a Rust `struct` definition.
+///
+/// ```
+/// use valuable::{Fields, Valuable, Structable, StructDef};
+///
+/// #[derive(Valuable)]
+/// struct MyStruct {
+///     foo: &'static str,
+/// }
+///
+/// let my_struct = MyStruct { foo: "Hello" };
+/// let fields = match my_struct.definition() {
+///     StructDef::Static { name, fields, ..} => {
+///         assert_eq!("MyStruct", name);
+///         fields
+///     }
+///     _ => unreachable!(),
+/// };
+///
+/// match fields {
+///     Fields::Named(named_fields) => {
+///         assert_eq!(1, named_fields.len());
+///         assert_eq!("foo", named_fields[0].name());
+///     }
+///     _ => unreachable!(),
+/// }
+/// ```
 pub trait Structable: Valuable {
+    /// Returns the struct's definition.
+    ///
+    /// See [`StructDef`] documentation for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Structable, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// struct MyStruct {
+    ///     foo: u32,
+    /// }
+    ///
+    /// let my_struct = MyStruct {
+    ///     foo: 123,
+    /// };
+    ///
+    /// assert_eq!("MyStruct", my_struct.definition().name());
     fn definition(&self) -> StructDef<'_>;
 }
 
