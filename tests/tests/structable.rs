@@ -174,7 +174,7 @@ fn test_named_values() {
     assert!(matches!(vals.get(&fields[1]), Some(Value::String(v)) if *v == "hello"));
     assert!(vals.get(&other_field).is_none());
 
-    let e = vals.entries().collect::<Vec<_>>();
+    let e = vals.iter().collect::<Vec<_>>();
     assert_eq!(2, e.len());
 
     assert_eq!(e[0].0.name(), "foo");
