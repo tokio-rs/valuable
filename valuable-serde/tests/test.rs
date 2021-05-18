@@ -38,7 +38,7 @@ fn test_int() {
     assert_ser_eq!(u16::MAX, &[Token::U16(u16::MAX)]);
     assert_ser_eq!(u32::MAX, &[Token::U32(u32::MAX)]);
     assert_ser_eq!(u64::MAX, &[Token::U64(u64::MAX)]);
-    // serde_test doesn't have Token::I128.
+    // serde_test doesn't have Token::U128.
     // assert_ser_eq!(u128::MAX, &[Token::U128(u128::MAX)]);
     assert_ser_eq!(usize::MAX, &[Token::U64(usize::MAX as _)]);
 }
