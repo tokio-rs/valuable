@@ -289,7 +289,9 @@ impl fmt::Debug for dyn Structable + '_ {
                     }
                 }
 
-                fn visit_value(&mut self, _: Value<'_>) {}
+                fn visit_value(&mut self, _: Value<'_>) {
+                    unreachable!()
+                }
             }
 
             self.visit(&mut debug);
@@ -311,7 +313,9 @@ impl fmt::Debug for dyn Structable + '_ {
                     }
                 }
 
-                fn visit_value(&mut self, _: Value<'_>) {}
+                fn visit_value(&mut self, _: Value<'_>) {
+                    unreachable!();
+                }
             }
 
             self.visit(&mut debug);
