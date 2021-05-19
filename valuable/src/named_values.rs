@@ -22,8 +22,20 @@ impl<'a> NamedValues<'a> {
         self.values.get(idx)
     }
 
-    pub fn entries<'b>(&'b self) -> Entries<'a, 'b> {
-        Entries {
+    pub fn get_by_name(&self, name: impl AsRef<str>) -> Option<&Value<'_>> {
+        let name = name.as_ref();
+
+        for (index, field) in self.fields.iter().enumerate() {
+            if field.name() == name {
+                return Some(&self.values[index]);
+            }
+        }
+
+        None
+    }
+
+    pub fn iter<'b>(&'b self) -> Iter<'a, 'b> {
+        Iter {
             iter: self.fields.iter().enumerate(),
             values: self.values,
         }
@@ -38,12 +50,21 @@ impl<'a> NamedValues<'a> {
     }
 }
 
-pub struct Entries<'a, 'b> {
+impl<'a, 'b> IntoIterator for &'b NamedValues<'a> {
+    type Item = (&'b NamedField<'a>, &'b Value<'a>);
+    type IntoIter = Iter<'a, 'b>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+pub struct Iter<'a, 'b> {
     iter: iter::Enumerate<core::slice::Iter<'b, NamedField<'a>>>,
     values: &'a [Value<'a>],
 }
 
-impl<'a, 'b> Iterator for Entries<'a, 'b> {
+impl<'a, 'b> Iterator for Iter<'a, 'b> {
     type Item = (&'b NamedField<'a>, &'b Value<'a>);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -57,7 +78,7 @@ impl<'a, 'b> Iterator for Entries<'a, 'b> {
     }
 }
 
-impl DoubleEndedIterator for Entries<'_, '_> {
+impl DoubleEndedIterator for Iter<'_, '_> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter
             .next_back()
@@ -65,10 +86,10 @@ impl DoubleEndedIterator for Entries<'_, '_> {
     }
 }
 
-impl ExactSizeIterator for Entries<'_, '_> {
+impl ExactSizeIterator for Iter<'_, '_> {
     fn len(&self) -> usize {
         self.iter.len()
     }
 }
 
-impl FusedIterator for Entries<'_, '_> {}
+impl FusedIterator for Iter<'_, '_> {}

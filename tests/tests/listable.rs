@@ -60,6 +60,16 @@ macro_rules! test_default {
                         counts,
                         Default::default(),
                     );
+
+                    let mut counts = tests::VisitCount::default();
+                    valuable::visit(&empty, &mut counts);
+                    assert_eq!(
+                        counts,
+                        tests::VisitCount {
+                            visit_value: 1,
+                            ..Default::default()
+                        }
+                    );
                 }
 
                 #[test]
@@ -74,6 +84,16 @@ macro_rules! test_default {
                         counts,
                         tests::VisitCount {
                             visit_value: 4,
+                            ..Default::default()
+                        }
+                    );
+
+                    let mut counts = tests::VisitCount::default();
+                    valuable::visit(&hellos, &mut counts);
+                    assert_eq!(
+                        counts,
+                        tests::VisitCount {
+                            visit_value: 1,
                             ..Default::default()
                         }
                     );
@@ -99,6 +119,16 @@ macro_rules! test_default {
                         }
                     );
 
+                    let mut counts = tests::VisitCount::default();
+                    valuable::visit(&hellos, &mut counts);
+                    assert_eq!(
+                        counts,
+                        tests::VisitCount {
+                            visit_value: 1,
+                            ..Default::default()
+                        }
+                    );
+
                     let mut visit = VisitList::default();
                     hellos.visit(&mut visit);
                     assert_eq!(visit.0, 1024);
@@ -116,6 +146,16 @@ macro_rules! test_default {
                         counts,
                         tests::VisitCount {
                             visit_value: 63,
+                            ..Default::default()
+                        }
+                    );
+
+                    let mut counts = tests::VisitCount::default();
+                    valuable::visit(&hellos, &mut counts);
+                    assert_eq!(
+                        counts,
+                        tests::VisitCount {
+                            visit_value: 1,
                             ..Default::default()
                         }
                     );

@@ -130,7 +130,7 @@ impl fmt::Debug for dyn Enumerable + '_ {
 
             impl Visit for DebugEnum<'_, '_> {
                 fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-                    for (field, value) in named_values.entries() {
+                    for (field, value) in named_values {
                         self.fmt.field(field.name(), value);
                     }
                 }

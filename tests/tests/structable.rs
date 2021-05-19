@@ -72,6 +72,25 @@ fn test_manual_static_impl() {
         format!("{:?}", my_struct.as_value()),
         "MyStruct { num: 12, list: [\"hello\"], sub: SubStruct { message: \"world\" } }"
     );
+
+    let counts = tests::visit_counts(&my_struct);
+    assert_eq!(
+        counts,
+        tests::VisitCount {
+            visit_named_fields: 1,
+            ..Default::default()
+        }
+    );
+
+    let mut counts = tests::VisitCount::default();
+    valuable::visit(&my_struct, &mut counts);
+    assert_eq!(
+        counts,
+        tests::VisitCount {
+            visit_value: 1,
+            ..Default::default()
+        }
+    );
 }
 
 #[test]
@@ -155,7 +174,7 @@ fn test_named_values() {
     assert!(matches!(vals.get(&fields[1]), Some(Value::String(v)) if *v == "hello"));
     assert!(vals.get(&other_field).is_none());
 
-    let e = vals.entries().collect::<Vec<_>>();
+    let e = vals.iter().collect::<Vec<_>>();
     assert_eq!(2, e.len());
 
     assert_eq!(e[0].0.name(), "foo");

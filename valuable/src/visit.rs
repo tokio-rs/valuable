@@ -66,7 +66,7 @@ use crate::*;
 ///     }
 ///
 ///     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-///         for (field, value) in named_values.entries() {
+///         for (field, value) in named_values {
 ///             print!("{}- {}: ", self.0, field.name());
 ///             value.visit(self);
 ///         }
@@ -117,7 +117,7 @@ use crate::*;
 /// };
 ///
 /// let mut print = Print("".to_string());
-/// print.visit_value(person.as_value());
+/// valuable::visit(&person, &mut print);
 /// ```
 pub trait Visit {
     /// Visit a single value.
@@ -199,7 +199,7 @@ pub trait Visit {
     ///
     /// impl Visit for Print {
     ///     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-    ///         for (field, value) in named_values.entries() {
+    ///         for (field, value) in named_values {
     ///             println!("{:?}: {:?}", field, value);
     ///         }
     ///     }
@@ -328,4 +328,58 @@ pub trait Visit {
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
         drop((key, value));
     }
+}
+
+/// Inspects a value by calling the relevant [`Visit`] methods with `value`'s data.
+///
+/// See [`Visit`] documentation for more details.
+///
+/// # Examples
+///
+/// Extract a single field from a struct. Note: if the same field is repeatedly
+/// extracted from a struct, it is preferable to obtain the associated
+/// [`NamedField`] once and use it repeatedly.
+///
+/// ```
+/// use valuable::{NamedValues, Valuable, Value, Visit};
+///
+/// #[derive(Valuable)]
+/// struct MyStruct {
+///     foo: usize,
+///     bar: usize,
+/// }
+///
+/// struct GetFoo(usize);
+///
+/// impl Visit for GetFoo {
+///     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
+///         if let Some(foo) = named_values.get_by_name("foo") {
+///             if let Some(val) = foo.as_usize() {
+///                 self.0 = val;
+///             }
+///         }
+///     }
+///
+///     fn visit_value(&mut self, value: Value<'_>) {
+///         if let Value::Structable(v) = value {
+///             v.visit(self);
+///         }
+///     }
+/// }
+///
+/// let my_struct = MyStruct {
+///     foo: 123,
+///     bar: 456,
+/// };
+///
+/// let mut get_foo = GetFoo(0);
+/// valuable::visit(&my_struct, &mut get_foo);
+///
+/// assert_eq!(123, get_foo.0);
+/// ```
+///
+/// [`Visit`]: Visit
+/// [`NamedField`]: crate::NamedField
+pub fn visit(value: &impl Valuable, visit: &mut dyn Visit) {
+    visit.visit_value(value.as_value());
 }

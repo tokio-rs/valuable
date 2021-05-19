@@ -12,6 +12,17 @@ macro_rules! assert_visit_call {
                 ..Default::default()
             }
         );
+
+        let mut counts = tests::VisitCount::default();
+        valuable::visit(&$v, &mut counts);
+
+        assert_eq!(
+            counts,
+            tests::VisitCount {
+                visit_value: 1,
+                ..Default::default()
+            }
+        )
     };
 }
 
