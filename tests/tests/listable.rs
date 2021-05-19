@@ -9,6 +9,10 @@ impl Visit for VisitHello {
         assert_eq!("id", id.name());
         assert_eq!(Some(self.0), named_values.get(id).unwrap().as_u32());
     }
+
+    fn visit_value(&mut self, _: Value<'_>) {
+        unreachable!("not called in this test");
+    }
 }
 
 #[derive(Default)]
@@ -222,6 +226,10 @@ macro_rules! test_primitive {
                         test_iter(slice.iter(), &self.0);
                         test_iter(IntoIterator::into_iter(&slice), &self.0);
                         test_iter(IntoIterator::into_iter(slice), &self.0);
+                    }
+
+                    fn visit_value(&mut self, _: Value<'_>) {
+                        unreachable!("not called in this test");
                     }
                 }
 

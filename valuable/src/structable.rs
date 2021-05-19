@@ -18,7 +18,7 @@ use core::fmt;
 /// mixed.
 ///
 /// ```
-/// use valuable::{NamedValues, Valuable, Visit};
+/// use valuable::{NamedValues, Valuable, Value, Visit};
 ///
 /// #[derive(Valuable)]
 /// struct MyStruct {
@@ -32,6 +32,13 @@ use core::fmt;
 ///     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
 ///         for (field, value) in named_values.iter() {
 ///             println!("{}: {:?}", field.name(), value);
+///         }
+///     }
+///
+///     fn visit_value(&mut self, value: Value<'_>) {
+///         match value {
+///             Value::Structable(v) => v.visit(self),
+///             _ => {} // do nothing for other types
 ///         }
 ///     }
 /// }
@@ -282,6 +289,10 @@ impl fmt::Debug for dyn Structable + '_ {
                         self.fmt.field(field.name(), value);
                     }
                 }
+
+                fn visit_value(&mut self, _: Value<'_>) {
+                    unreachable!()
+                }
             }
 
             self.visit(&mut debug);
@@ -301,6 +312,10 @@ impl fmt::Debug for dyn Structable + '_ {
                     for value in values {
                         self.fmt.field(value);
                     }
+                }
+
+                fn visit_value(&mut self, _: Value<'_>) {
+                    unreachable!();
                 }
             }
 
