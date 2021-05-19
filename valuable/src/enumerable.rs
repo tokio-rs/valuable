@@ -21,6 +21,10 @@ use core::fmt;
 /// be called multiple times per `Enumerable`, but the two methods are never
 /// mixed.
 ///
+/// [`variant()`]: Enumerable::variant
+/// [`visit_named_fields()`]: Visit::visit_named_fields
+/// [`visit_unnamed_fields()`]: Visit::visit_unnamed_fields
+///
 /// ```
 /// use valuable::{Valuable, Value, Visit};
 ///
@@ -58,6 +62,8 @@ use core::fmt;
 /// If the enum is **statically** defined, then all variants, and variant fields
 /// are known ahead of time and may be accessed via the [`EnumDef`] instance
 /// returned by [`definition()`].
+///
+/// [`definition()`]: Enumerable::definition
 ///
 /// # Implementing
 ///
