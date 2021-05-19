@@ -93,34 +93,145 @@ pub trait Enumerable: Valuable {
     fn variant(&self) -> Variant<'_>;
 }
 
+/// An enum's variants, variant fields, and other enum-level information.
+///
+/// Returned by [`Enumerable::definition()`], `EnumDef` provides the caller with
+/// information about the enum's definition.
 #[non_exhaustive]
 pub enum EnumDef<'a> {
+    /// The enum is statically-defined, all variants and variant-level fields
+    /// are known ahead of time.
+    ///
+    /// Most `Enumerable` definitions for Rust enum types will be
+    /// `EnumDef::Static`.
+    ///
+    /// # Examples
+    ///
+    /// A statically defined enum
+    ///
+    /// ```
+    /// use valuable::{Valuable, Enumerable, EnumDef};
+    ///
+    /// #[derive(Valuable)]
+    /// enum MyEnum {
+    ///     Foo,
+    ///     Bar(u32),
+    /// }
+    ///
+    /// let my_enum = MyEnum::Bar(123);
+    ///
+    /// let variants = match my_enum.definition() {
+    ///     EnumDef::Static { name, variants, .. } => {
+    ///         assert_eq!("MyEnum", name);
+    ///         variants
+    ///     }
+    ///     _ => unreachable!(),
+    /// };
+    ///
+    /// assert_eq!(2, variants.len());
+    /// assert_eq!("Foo", variants[0].name());
+    /// assert_eq!("Bar", variants[1].name());
+    /// ```
     #[non_exhaustive]
     Static {
+        /// The enum's name
         name: &'static str,
+
+        /// The enum's variants
         variants: &'static [VariantDef<'static>],
     },
 
+    /// The enum is dynamically-defined, not all variants and fields are known
+    /// ahead of time.
+    ///
+    /// # Examples
+    ///
+    /// The enum variant is tracked as a string
+    ///
+    /// ```
+    /// use valuable::{Enumerable, EnumDef, Fields, VariantDef, Valuable, Value, Variant, Visit};
+    ///
+    /// /// A dynamic enum
+    /// struct DynEnum {
+    ///     // The enum name
+    ///     name: String,
+    ///
+    ///     // The current variant
+    ///     variant: String,
+    /// }
+    ///
+    /// impl Valuable for DynEnum {
+    ///     fn as_value(&self) -> Value<'_> {
+    ///         Value::Enumerable(self)
+    ///     }
+    ///
+    ///     fn visit(&self, _visit: &mut dyn Visit) {
+    ///         // No variant fields, so there is nothing to call here.
+    ///     }
+    /// }
+    ///
+    /// impl Enumerable for DynEnum {
+    ///     fn definition(&self) -> EnumDef<'_> {
+    ///         EnumDef::new_dynamic(&self.name, &[])
+    ///     }
+    ///
+    ///     fn variant(&self) -> Variant<'_> {
+    ///         Variant::Dynamic(VariantDef::new(&self.variant, Fields::Unnamed))
+    ///     }
+    /// }
+    /// ```
     #[non_exhaustive]
     Dynamic {
+        /// The enum's name
         name: &'a str,
+
+        /// The enum's variants
         variants: &'a [VariantDef<'a>],
     },
 }
 
+/// An enum variant definition.
+///
+/// Included with [`EnumDef`] returned by [`Enumerable::definition()`],
+/// `VariantDef` provides the caller with information about a specific variant.
 pub struct VariantDef<'a> {
     /// Variant name
     name: &'a str,
 
+    /// Variant fields
     fields: Fields<'a>,
 }
 
+/// An enum variant
+///
+/// Returned by [`Enumerable::variant()`], `Variant` represents a single enum
+/// variant.
 pub enum Variant<'a> {
+    /// The variant is statically defined by the associated enum.
     Static(&'static VariantDef<'static>),
+
+    /// The variant is dynamically defined and not included as part of
+    /// [`Enumerable::definition()`].
     Dynamic(VariantDef<'a>),
 }
 
 impl<'a> EnumDef<'a> {
+    /// Create a new [`EnumDef::Static`] instance.
+    ///
+    /// This should be used when an enum's variants are fixed and known ahead of
+    /// time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{EnumDef, Fields, VariantDef};
+    ///
+    /// static VARIANTS: &[VariantDef<'static>] = &[
+    ///     VariantDef::new("Bar", Fields::Unnamed),
+    /// ];
+    ///
+    /// let def = EnumDef::new_static( "Foo", VARIANTS);
+    /// ```
     pub const fn new_static(
         name: &'static str,
         variants: &'static [VariantDef<'static>],
@@ -128,10 +239,40 @@ impl<'a> EnumDef<'a> {
         EnumDef::Static { name, variants }
     }
 
+    /// Create a new [`EnumDef::Dynamic`] instance.
+    ///
+    /// This is used when the enum's variants may vary at runtime.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{EnumDef, Fields, VariantDef};
+    ///
+    /// let def = EnumDef::new_dynamic(
+    ///     "Foo",
+    ///     &[VariantDef::new("Bar", Fields::Unnamed)]
+    /// );
+    /// ```
     pub const fn new_dynamic(name: &'a str, variants: &'a [VariantDef<'a>]) -> EnumDef<'a> {
         EnumDef::Dynamic { name, variants }
     }
 
+    /// Returns the enum's name
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Enumerable, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// enum Foo {
+    ///     Bar,
+    ///     Baz,
+    /// }
+    ///
+    /// let def = Foo::Bar.definition();
+    /// assert_eq!("Foo", def.name());
+    /// ```
     pub fn name(&self) -> &str {
         match self {
             EnumDef::Static { name, .. } => name,
@@ -139,6 +280,25 @@ impl<'a> EnumDef<'a> {
         }
     }
 
+    /// Returns the enum's variants
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Enumerable, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// enum Foo {
+    ///     Bar,
+    ///     Baz,
+    /// }
+    ///
+    /// let def = Foo::Bar.definition();
+    /// let variants = def.variants();
+    ///
+    /// assert_eq!(2, variants.len());
+    /// assert_eq!("Bar", variants[0].name());
+    /// ```
     pub fn variants(&self) -> &[VariantDef<'_>] {
         match self {
             EnumDef::Static { variants, .. } => variants,
@@ -146,30 +306,126 @@ impl<'a> EnumDef<'a> {
         }
     }
 
+    /// Returns `true` if the enum is [statically defined](EnumDef::Static).
+    ///
+    /// # Examples
+    ///
+    /// With a static enum
+    ///
+    /// ```
+    /// use valuable::{Enumerable, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// enum Foo {
+    ///     Bar,
+    ///     Baz,
+    /// }
+    ///
+    /// let def = Foo::Bar.definition();
+    /// assert!(def.is_static());
+    /// ```
+    ///
+    /// With a dynamic enum
+    ///
+    /// ```
+    /// use valuable::{EnumDef, Fields, VariantDef};
+    ///
+    /// let def = EnumDef::new_dynamic("Foo", &[]);
+    /// assert!(!def.is_static());
+    /// ```
     pub fn is_static(&self) -> bool {
         matches!(self, EnumDef::Static { .. })
     }
 
+    /// Returns `true` if the enum is [dynamically defined](EnumDef::Dynamic).
+    ///
+    /// # Examples
+    ///
+    /// With a static enum
+    ///
+    /// ```
+    /// use valuable::{Enumerable, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// enum Foo {
+    ///     Bar,
+    ///     Baz,
+    /// }
+    ///
+    /// let def = Foo::Bar.definition();
+    /// assert!(!def.is_dynamic());
+    /// ```
+    ///
+    /// With a dynamic enum
+    ///
+    /// ```
+    /// use valuable::{EnumDef, Fields, VariantDef};
+    ///
+    /// let def = EnumDef::new_dynamic("Foo", &[]);
+    /// assert!(def.is_dynamic());
+    /// ```
     pub fn is_dynamic(&self) -> bool {
         matches!(self, EnumDef::Dynamic { .. })
     }
 }
 
 impl<'a> VariantDef<'a> {
+    /// Creates a new `VariantDef` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Fields, VariantDef};
+    ///
+    /// let def = VariantDef::new("Foo", Fields::Unnamed);
+    /// ```
     pub const fn new(name: &'a str, fields: Fields<'a>) -> VariantDef<'a> {
         VariantDef { name, fields }
     }
 
+    /// Returns the variant's name
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Fields, VariantDef};
+    ///
+    /// let def = VariantDef::new("Foo", Fields::Unnamed);
+    /// assert_eq!("Foo", def.name());
+    /// ```
     pub fn name(&self) -> &str {
         self.name
     }
 
+    /// Returns the variant's fields
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Fields, VariantDef};
+    ///
+    /// let def = VariantDef::new("Foo", Fields::Unnamed);
+    /// assert!(matches!(def.fields(), Fields::Unnamed));
+    /// ```
     pub fn fields(&self) -> &Fields<'_> {
         &self.fields
     }
 }
 
 impl Variant<'_> {
+    /// Returns the variant's name
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Fields, Variant, VariantDef};
+    ///
+    /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
+    ///     "Foo", Fields::Unnamed);
+    ///
+    /// let variant = Variant::Static(VARIANT);
+    /// assert_eq!("Foo", variant.name());
+    /// ```
     pub fn name(&self) -> &str {
         match self {
             Variant::Static(v) => v.name(),
@@ -177,6 +433,33 @@ impl Variant<'_> {
         }
     }
 
+    /// Returns `true` if the variant has associated named fields.
+    ///
+    /// # Examples
+    ///
+    /// With named fields
+    ///
+    /// ```
+    /// use valuable::{Fields, NamedField, Variant, VariantDef};
+    ///
+    /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
+    ///     "Foo", Fields::Named(&[NamedField::new("hello")]));
+    ///
+    /// let variant = Variant::Static(VARIANT);
+    /// assert!(variant.is_named_fields());
+    /// ```
+    ///
+    /// With unnamed fields
+    ///
+    /// ```
+    /// use valuable::{Fields, Variant, VariantDef};
+    ///
+    /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
+    ///     "Foo", Fields::Unnamed);
+    ///
+    /// let variant = Variant::Static(VARIANT);
+    /// assert!(!variant.is_named_fields());
+    /// ```
     pub fn is_named_fields(&self) -> bool {
         match self {
             Variant::Static(v) => v.fields().is_named(),
@@ -184,6 +467,33 @@ impl Variant<'_> {
         }
     }
 
+    /// Returns `true` if the variant has associated unnamed fields.
+    ///
+    /// # Examples
+    ///
+    /// With named fields
+    ///
+    /// ```
+    /// use valuable::{Fields, NamedField, Variant, VariantDef};
+    ///
+    /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
+    ///     "Foo", Fields::Named(&[NamedField::new("hello")]));
+    ///
+    /// let variant = Variant::Static(VARIANT);
+    /// assert!(!variant.is_unnamed_fields());
+    /// ```
+    ///
+    /// With unnamed fields
+    ///
+    /// ```
+    /// use valuable::{Fields, Variant, VariantDef};
+    ///
+    /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
+    ///     "Foo", Fields::Unnamed);
+    ///
+    /// let variant = Variant::Static(VARIANT);
+    /// assert!(variant.is_unnamed_fields());
+    /// ```
     pub fn is_unnamed_fields(&self) -> bool {
         !self.is_named_fields()
     }
