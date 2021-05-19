@@ -38,7 +38,7 @@ use core::fmt;
 ///     fn visit_value(&mut self, value: Value<'_>) {
 ///         match value {
 ///             Value::Structable(v) => v.visit(self),
-///             _ => {}
+///             _ => {} // do nothing for other types
 ///         }
 ///     }
 /// }

@@ -300,7 +300,7 @@ pub trait Visit {
     ///     fn visit_value(&mut self, value: Value<'_>) {
     ///         match value {
     ///             Value::Listable(v) => v.visit(self),
-    ///             _ => {}
+    ///             _ => {} // do nothing for other types
     ///         }
     ///     }
     /// }
@@ -351,7 +351,7 @@ pub trait Visit {
     ///     fn visit_value(&mut self, value: Value<'_>) {
     ///         match value {
     ///             Value::Mappable(v) => v.visit(self),
-    ///             _ => {}
+    ///             _ => {} // do nothing for other types
     ///         }
     ///     }
     /// }

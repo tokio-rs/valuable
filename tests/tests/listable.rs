@@ -10,7 +10,9 @@ impl Visit for VisitHello {
         assert_eq!(Some(self.0), named_values.get(id).unwrap().as_u32());
     }
 
-    fn visit_value(&mut self, _: Value<'_>) {}
+    fn visit_value(&mut self, _: Value<'_>) {
+        unreachable!("not called in this test");
+    }
 }
 
 #[derive(Default)]
@@ -227,6 +229,7 @@ macro_rules! test_primitive {
                     }
 
                     fn visit_value(&mut self, _: Value<'_>) {
+                        unreachable!("not called in this test");
                     }
                 }
 
