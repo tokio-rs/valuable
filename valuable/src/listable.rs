@@ -2,7 +2,103 @@ use crate::*;
 
 use core::fmt;
 
+/// A list-like [`Valuable`] sub-type.
+///
+/// Implemented by [`Valuable`] types that have a list-like shape. This includes
+/// [`Vec`] and other Rust [collection] types. `Listable` types may or may not
+/// store items in continguous memory. Any type that implements [`IntoIterator`]
+/// may implement `Listable`. Values that implement `Listable` must return
+/// [`Value::Listable`] from their [`Valuable::as_value`] implementation.
+///
+/// [collection]: https://doc.rust-lang.org/stable/std/collections/index.html
+/// [`IntoIterator`]:
+/// https://doc.rust-lang.org/stable/std/iter/trait.IntoIterator.html
+///
+/// # Inspecting
+///
+/// Inspecting `Listable` items is done by visiting the collection. When
+/// visiting a `Listable`, contained values are either passed one-by-one by
+/// repeatedly calling [`visit_value()`] or all at once by calling
+/// [`visit_primitive_slice()`]. The [`visit_primitive_slice()`] method has
+/// lower overhead but can only be used when the `Listable` type contains
+/// primitive values.
+///
+/// See [`Visit`] documentation for more details.
+///
+/// # Implementing
+///
+/// If the type stores values in slices internally, then those slices are passed
+/// to [`Valuable::visit_slice`], which handles calling
+/// [`visit_primitive_slice()`] if possible.
+///
+/// [`visit_value()`]: Visit::visit_value
+/// [`visit_primitive_slice()`]: Visit::visit_primitive_slice
+///
+/// ```
+/// use valuable::{Listable, Valuable, Value, Visit};
+///
+/// struct MyCollection<T> {
+///     chunks: Vec<Vec<T>>,
+/// }
+///
+/// impl<T: Valuable> Valuable for MyCollection<T> {
+///     fn as_value(&self) -> Value<'_> {
+///         Value::Listable(self)
+///     }
+///
+///     fn visit(&self, visit: &mut dyn Visit) {
+///         for chunk in &self.chunks {
+///             // Handles visiting the slice
+///             Valuable::visit_slice(chunk, visit);
+///         }
+///     }
+/// }
+///
+/// impl<T: Valuable> Listable for MyCollection<T> {
+///     fn size_hint(&self) -> (usize, Option<usize>) {
+///         let len = self.chunks.iter().map(|chunk| chunk.len()).sum();
+///         (len, Some(len))
+///     }
+/// }
+/// ```
 pub trait Listable: Valuable {
+    /// Returns the bounds on the remaining length of the `Listable`.
+    ///
+    /// Specifically, `size_hint()` returns a tuple where the first element
+    /// is the lower bound, and the second element is the upper bound.
+    ///
+    /// The second half of the tuple that is returned is an [`Option`]`<`[`usize`]`>`.
+    /// A [`None`] here means that either there is no known upper bound, or the
+    /// upper bound is larger than [`usize`].
+    ///
+    /// # Implementation notes
+    ///
+    /// It is not enforced that a `Listable` implementation yields the declared
+    /// number of elements. A buggy iterator may yield less than the lower bound
+    /// or more than the upper bound of elements.
+    ///
+    /// `size_hint()` is primarily intended to be used for optimizations such as
+    /// reserving space for the elements of the `Listable`, but must not be
+    /// trusted to e.g., omit bounds checks in unsafe code. An incorrect
+    /// implementation of `size_hint()` should not lead to memory safety
+    /// violations.
+    ///
+    /// That said, the implementation should provide a correct estimation,
+    /// because otherwise it would be a violation of the trait's protocol.
+    ///
+    /// [`usize`]: type@usize
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use valuable::Listable;
+    ///
+    /// let a = vec![1, 2, 3];
+    ///
+    /// assert_eq!((3, Some(3)), a.size_hint());
+    /// ```
     fn size_hint(&self) -> (usize, Option<usize>);
 }
 
