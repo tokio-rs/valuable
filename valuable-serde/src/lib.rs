@@ -289,7 +289,7 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
                 return;
             }
         };
-        for (i, (_, v)) in named_values.entries().enumerate() {
+        for (i, (_, v)) in named_values.iter().enumerate() {
             if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v)) {
                 *self = Self::End(Err(e));
                 return;
@@ -381,7 +381,7 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
             Fields::Named(fields) => fields,
             Fields::Unnamed => unreachable!(),
         };
-        for (i, (_, v)) in named_values.entries().enumerate() {
+        for (i, (_, v)) in named_values.iter().enumerate() {
             if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v)) {
                 *self = Self::End(Err(e));
                 return;
@@ -454,7 +454,7 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
             Self::Error(..) => return,
             _ => unreachable!(),
         };
-        for (f, v) in named_values.entries() {
+        for (f, v) in named_values {
             if let Err(e) = ser.serialize_entry(f.name(), &Serializable(v)) {
                 *self = Self::Error(e);
                 return;
