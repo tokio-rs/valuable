@@ -130,6 +130,10 @@ impl fmt::Debug for dyn Enumerable + '_ {
                         self.fmt.field(field.name(), value);
                     }
                 }
+
+                fn visit_value(&mut self, _: Value<'_>) {
+                    unreachable!();
+                }
             }
 
             self.visit(&mut debug);
@@ -149,6 +153,10 @@ impl fmt::Debug for dyn Enumerable + '_ {
                     for value in values {
                         self.fmt.field(value);
                     }
+                }
+
+                fn visit_value(&mut self, _: Value<'_>) {
+                    unreachable!();
                 }
             }
 
