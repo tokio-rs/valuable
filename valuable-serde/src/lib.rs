@@ -239,6 +239,18 @@ impl<S: Serializer> Visit for VisitList<'_, S> {
             }
         }
     }
+
+    fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
+        *self = Self::Error(S::Error::custom("visit_entry in list"));
+    }
+
+    fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
+        *self = Self::Error(S::Error::custom("visit_named_fields in list"));
+    }
+
+    fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
+        *self = Self::Error(S::Error::custom("visit_unnamed_fields in list"));
+    }
 }
 
 enum VisitMap<'a, S: Serializer> {
@@ -253,6 +265,18 @@ impl<S: Serializer> Visit for VisitMap<'_, S> {
                 *self = Self::Error(e);
             }
         }
+    }
+
+    fn visit_value(&mut self, _: Value<'_>) {
+        *self = Self::Error(S::Error::custom("visit_value in map"));
+    }
+
+    fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
+        *self = Self::Error(S::Error::custom("visit_named_fields in map"));
+    }
+
+    fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
+        *self = Self::Error(S::Error::custom("visit_unnamed_fields in map"));
     }
 }
 
@@ -331,6 +355,14 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
             }
         }
         *self = Self::End(ser.end());
+    }
+
+    fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
+        *self = Self::End(Err(S::Error::custom("visit_entry in struct")));
+    }
+
+    fn visit_value(&mut self, _: Value<'_>) {
+        *self = Self::End(Err(S::Error::custom("visit_value in struct")));
     }
 }
 
@@ -438,6 +470,14 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
         }
         *self = Self::End(ser.end());
     }
+
+    fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
+        *self = Self::End(Err(S::Error::custom("visit_entry in enum")));
+    }
+
+    fn visit_value(&mut self, _: Value<'_>) {
+        *self = Self::End(Err(S::Error::custom("visit_value in enum")));
+    }
 }
 
 // Dynamic struct and variant of dynamic enum will be serialized as map or seq.
@@ -452,7 +492,12 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
         let ser = match self {
             Self::NamedFields(ser) => ser,
             Self::Error(..) => return,
-            _ => unreachable!(),
+            Self::UnnamedFields(..) => {
+                *self = Self::Error(S::Error::custom(
+                    "visit_named_fields in unnamed dynamic struct/variant",
+                ));
+                return;
+            }
         };
         for (f, v) in named_values {
             if let Err(e) = ser.serialize_entry(f.name(), &Serializable(v)) {
@@ -466,7 +511,12 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
         let ser = match self {
             Self::UnnamedFields(ser) => ser,
             Self::Error(..) => return,
-            _ => unreachable!(),
+            Self::NamedFields(..) => {
+                *self = Self::Error(S::Error::custom(
+                    "visit_unnamed_fields in named dynamic struct/variant",
+                ));
+                return;
+            }
         };
         for v in values {
             if let Err(e) = ser.serialize_element(&Serializable(v)) {
@@ -474,5 +524,13 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
                 return;
             }
         }
+    }
+
+    fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
+        *self = Self::Error(S::Error::custom("visit_entry in dynamic struct/variant"));
+    }
+
+    fn visit_value(&mut self, _: Value<'_>) {
+        *self = Self::Error(S::Error::custom("visit_value in dynamic struct/variant"));
     }
 }
