@@ -117,6 +117,7 @@ pub trait Structable: Valuable {
 /// with information about the struct's definition.
 ///
 /// [`Structable::definition()`]: Structable::definition
+#[derive(Debug)]
 #[non_exhaustive]
 pub enum StructDef<'a> {
     /// The struct is statically-defined, all fields are known ahead of time.

@@ -94,8 +94,43 @@ use core::fmt;
 /// assert!(variants[0].fields().is_unnamed());
 /// ```
 pub trait Enumerable: Valuable {
+    /// Returns the enum's definition.
+    ///
+    /// See [`EnumDef`] documentation for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Enumerable, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// enum MyEnum {
+    ///     Foo,
+    ///     Bar(u32),
+    /// }
+    ///
+    /// let my_enum = MyEnum::Bar(123);
+    ///
+    /// assert_eq!("MyEnum", my_enum.definition().name());
+    /// ```
     fn definition(&self) -> EnumDef<'_>;
 
+    /// Returns the `enum`'s current variant.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Enumerable, Valuable};
+    ///
+    /// #[derive(Valuable)]
+    /// enum MyEnum {
+    ///     Foo,
+    ///     Bar(u32),
+    /// }
+    ///
+    /// let my_enum = MyEnum::Foo;
+    /// assert_eq!("Foo", my_enum.variant().name());
+    /// ```
     fn variant(&self) -> Variant<'_>;
 }
 
@@ -104,6 +139,7 @@ pub trait Enumerable: Valuable {
 /// Returned by [`Enumerable::definition()`], `EnumDef` provides the caller with
 /// information about the enum's definition.
 #[non_exhaustive]
+#[derive(Debug)]
 pub enum EnumDef<'a> {
     /// The enum is statically-defined, all variants and variant-level fields
     /// are known ahead of time.
@@ -200,6 +236,7 @@ pub enum EnumDef<'a> {
 ///
 /// Included with [`EnumDef`] returned by [`Enumerable::definition()`],
 /// `VariantDef` provides the caller with information about a specific variant.
+#[derive(Debug)]
 pub struct VariantDef<'a> {
     /// Variant name
     name: &'a str,
@@ -212,6 +249,7 @@ pub struct VariantDef<'a> {
 ///
 /// Returned by [`Enumerable::variant()`], `Variant` represents a single enum
 /// variant.
+#[derive(Debug)]
 pub enum Variant<'a> {
     /// The variant is statically defined by the associated enum.
     Static(&'static VariantDef<'static>),
