@@ -1,4 +1,4 @@
-//! [`serde::Serialize`] implementation for [`valuable::Value`].
+//! [`serde::Serialize`] implementation for [`Valuable`] types.
 //!
 //! # Examples
 //!
@@ -36,7 +36,7 @@ use valuable::{
     EnumDef, Fields, NamedValues, StructDef, Valuable, Value, Variant, VariantDef, Visit,
 };
 
-/// A wrapper around [`Value`] that implements [`Serialize`].
+/// A wrapper around [`Valuable`] types that implements [`Serialize`].
 pub struct Serializable<V>(V);
 
 impl<V> Serializable<V>
