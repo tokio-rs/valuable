@@ -90,6 +90,8 @@ impl fmt::Debug for dyn Mappable + '_ {
             fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
                 self.fmt.entry(&key, &value);
             }
+
+            fn visit_value(&mut self, _: Value<'_>) {}
         }
 
         let mut debug = DebugMappable {

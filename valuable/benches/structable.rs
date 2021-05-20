@@ -69,6 +69,10 @@ fn criterion_benchmark(c: &mut Criterion) {
                 _ => return,
             }
         }
+
+        fn visit_value(&mut self, _: Value<'_>) {
+            unimplemented!()
+        }
     }
 
     c.bench_function("struct", |b| {
