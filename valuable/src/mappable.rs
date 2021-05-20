@@ -20,7 +20,7 @@ use core::fmt;
 /// See [`Visit`] documentation for more details.
 ///
 /// [`visit_entry()`]: Visit::visit_entry
-/// [`HashMap`]: https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html
+/// [`HashMap`]: std::collections::HashMap
 ///
 /// # Implementing
 ///

@@ -6,13 +6,11 @@ use core::fmt;
 ///
 /// Implemented by [`Valuable`] types that have a list-like shape. This includes
 /// [`Vec`] and other Rust [collection] types. `Listable` types may or may not
-/// store items in continguous memory. Any type that implements [`IntoIterator`]
+/// store items in contiguous memory. Any type that implements [`IntoIterator`]
 /// may implement `Listable`. Values that implement `Listable` must return
 /// [`Value::Listable`] from their [`Valuable::as_value`] implementation.
 ///
 /// [collection]: https://doc.rust-lang.org/stable/std/collections/index.html
-/// [`IntoIterator`]:
-/// https://doc.rust-lang.org/stable/std/iter/trait.IntoIterator.html
 ///
 /// # Inspecting
 ///
