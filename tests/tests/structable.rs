@@ -183,3 +183,12 @@ fn test_named_values() {
     assert_eq!(e[1].0.name(), "bar");
     assert!(matches!(e[1].1, Value::String(v) if *v == "hello"));
 }
+
+#[test]
+#[should_panic]
+fn test_unbalanced_named_values() {
+    NamedValues::new(
+        &[NamedField::new("foo")],
+        &[Value::U32(123), Value::U32(123)],
+    );
+}

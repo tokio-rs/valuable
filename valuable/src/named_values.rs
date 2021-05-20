@@ -10,7 +10,13 @@ pub struct NamedValues<'a> {
 }
 
 impl<'a> NamedValues<'a> {
-    /// Create a new `NamedValues` instance
+    /// Create a new `NamedValues` instance.
+    ///
+    /// Both `fields` and `values` must be the same length.
+    ///
+    /// # Panics
+    ///
+    /// The method panics if `fields` and `values` are different lengths.
     ///
     /// # Examples
     ///
@@ -33,6 +39,10 @@ impl<'a> NamedValues<'a> {
     ///     Some(123));
     /// ```
     pub fn new(fields: &'a [NamedField<'a>], values: &'a [Value<'a>]) -> NamedValues<'a> {
+        assert!(
+            fields.len() == values.len(),
+            "`fields` and `values` must be the same length"
+        );
         NamedValues { fields, values }
     }
 
