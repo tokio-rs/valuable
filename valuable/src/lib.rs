@@ -1,3 +1,9 @@
+#![warn(
+    missing_debug_implementations,
+    missing_docs,
+    rust_2018_idioms,
+    unreachable_pub
+)]
 //! Valuable provides object-safe value inspection. Use cases include passing
 //! structured data to trait objects and object-safe serialization.
 //!
