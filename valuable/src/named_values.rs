@@ -3,17 +3,71 @@ use core::iter::{self, FusedIterator};
 use crate::field::*;
 use crate::*;
 
-/// Access values for a struct's static fields
+/// Set of values from a `Structable` or `Enumerable` with named fields.
 pub struct NamedValues<'a> {
     fields: &'a [NamedField<'a>],
     values: &'a [Value<'a>],
 }
 
 impl<'a> NamedValues<'a> {
+    /// Create a new `NamedValues` instance.
+    ///
+    /// Both `fields` and `values` must be the same length.
+    ///
+    /// # Panics
+    ///
+    /// The method panics if `fields` and `values` are different lengths.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{NamedField, NamedValues, Value};
+    ///
+    /// let fields = [
+    ///     NamedField::new("foo"),
+    ///     NamedField::new("bar")
+    /// ];
+    /// let values = [
+    ///     Value::U32(123),
+    ///     Value::U32(456),
+    /// ];
+    ///
+    /// let named_values = NamedValues::new(&fields, &values);
+    ///
+    /// assert_eq!(
+    ///     named_values.get(&fields[0]).unwrap().as_u32(),
+    ///     Some(123));
+    /// ```
     pub fn new(fields: &'a [NamedField<'a>], values: &'a [Value<'a>]) -> NamedValues<'a> {
+        assert!(
+            fields.len() == values.len(),
+            "`fields` and `values` must be the same length"
+        );
         NamedValues { fields, values }
     }
 
+    /// Get a value using a `NamedField` reference.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{NamedField, NamedValues, Value};
+    ///
+    /// let fields = [
+    ///     NamedField::new("foo"),
+    ///     NamedField::new("bar")
+    /// ];
+    /// let values = [
+    ///     Value::U32(123),
+    ///     Value::U32(456),
+    /// ];
+    ///
+    /// let named_values = NamedValues::new(&fields, &values);
+    ///
+    /// assert_eq!(
+    ///     named_values.get(&fields[0]).unwrap().as_u32(),
+    ///     Some(123));
+    /// ```
     pub fn get(&self, field: &NamedField<'_>) -> Option<&Value<'_>> {
         use core::mem;
 
@@ -22,6 +76,28 @@ impl<'a> NamedValues<'a> {
         self.values.get(idx)
     }
 
+    /// Get a value using string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{NamedField, NamedValues, Value};
+    ///
+    /// let fields = [
+    ///     NamedField::new("foo"),
+    ///     NamedField::new("bar")
+    /// ];
+    /// let values = [
+    ///     Value::U32(123),
+    ///     Value::U32(456),
+    /// ];
+    ///
+    /// let named_values = NamedValues::new(&fields, &values);
+    ///
+    /// assert_eq!(
+    ///     named_values.get_by_name("foo").unwrap().as_u32(),
+    ///     Some(123));
+    /// ```
     pub fn get_by_name(&self, name: impl AsRef<str>) -> Option<&Value<'_>> {
         let name = name.as_ref();
 
@@ -34,6 +110,28 @@ impl<'a> NamedValues<'a> {
         None
     }
 
+    /// Iterate all name-value pairs.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{NamedField, NamedValues, Value};
+    ///
+    /// let fields = [
+    ///     NamedField::new("foo"),
+    ///     NamedField::new("bar")
+    /// ];
+    /// let values = [
+    ///     Value::U32(123),
+    ///     Value::U32(456),
+    /// ];
+    ///
+    /// let named_values = NamedValues::new(&fields, &values);
+    ///
+    /// for (field, value) in named_values.iter() {
+    ///     println!("{:?}: {:?}", field, value);
+    /// }
+    /// ```
     pub fn iter<'b>(&'b self) -> Iter<'a, 'b> {
         Iter {
             iter: self.fields.iter().enumerate(),
@@ -59,6 +157,31 @@ impl<'a, 'b> IntoIterator for &'b NamedValues<'a> {
     }
 }
 
+/// An iterator of name-value pairs contained by [`NamedValues`].
+///
+/// Instances are created by the [`iter()`][NamedValues::iter] method on
+/// [`NamedValues`]. See its documentation for more.
+///
+/// # Examples
+///
+/// ```
+/// use valuable::{NamedField, NamedValues, Value};
+///
+/// let fields = [
+///     NamedField::new("foo"),
+///     NamedField::new("bar")
+/// ];
+/// let values = [
+///     Value::U32(123),
+///     Value::U32(456),
+/// ];
+///
+/// let named_values = NamedValues::new(&fields, &values);
+///
+/// for (field, value) in named_values.iter() {
+///     println!("{:?}: {:?}", field, value);
+/// }
+/// ```
 pub struct Iter<'a, 'b> {
     iter: iter::Enumerate<core::slice::Iter<'b, NamedField<'a>>>,
     values: &'a [Value<'a>],

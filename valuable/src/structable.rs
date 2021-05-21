@@ -71,7 +71,7 @@ use core::fmt;
 ///
 /// let my_struct = MyStruct { foo: "Hello" };
 /// let fields = match my_struct.definition() {
-///     StructDef::Static { name, fields, ..} => {
+///     StructDef::Static { name, fields, .. } => {
 ///         assert_eq!("MyStruct", name);
 ///         fields
 ///     }
@@ -121,7 +121,8 @@ pub trait Structable: Valuable {
 pub enum StructDef<'a> {
     /// The struct is statically-defined, all fields are known ahead of time.
     ///
-    /// Most `Structable` definitions for Rust struct types will be `StructDef::Static`.
+    /// Most `Structable` definitions for Rust struct types will be
+    /// `StructDef::Static`.
     ///
     /// # Examples
     ///
