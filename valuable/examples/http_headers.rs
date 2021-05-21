@@ -33,10 +33,12 @@ impl Visit for VisitHeaders {
 
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
         // We only care about `accept_encoding`
-        if let Some(Value::Listable(accept_encoding)) = named_values.get_by_name("accept_encoding")
-        {
-            let mut visit = VisitAcceptEncoding(&mut self.0);
-            accept_encoding.visit(&mut visit);
+        match named_values.get_by_name("accept_encoding") {
+            Some(Value::Listable(accept_encoding)) => {
+                let mut visit = VisitAcceptEncoding(&mut self.0);
+                accept_encoding.visit(&mut visit);
+            }
+            _ => {}
         }
     }
 }
