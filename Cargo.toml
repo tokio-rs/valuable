@@ -4,5 +4,6 @@ members = [
     "valuable",
     "valuable-derive",
     "valuable-json",
+    "valuable-serde",
     "tests",
 ]
