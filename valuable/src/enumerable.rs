@@ -439,6 +439,7 @@ impl Variant<'_> {
         }
     }
 
+    /// Returns the variant's fields
     pub fn fields(&self) -> &Fields<'_> {
         match self {
             Variant::Static(v) => v.fields(),

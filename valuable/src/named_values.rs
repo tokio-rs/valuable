@@ -139,10 +139,12 @@ impl<'a> NamedValues<'a> {
         }
     }
 
+    /// Returns the length of fields.
     pub fn len(&self) -> usize {
         self.fields.len()
     }
 
+    /// Returns `true` if fields have a length of 0.
     pub fn is_empty(&self) -> bool {
         self.fields.is_empty()
     }
