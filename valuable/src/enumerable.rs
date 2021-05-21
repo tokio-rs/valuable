@@ -439,6 +439,14 @@ impl Variant<'_> {
         }
     }
 
+    /// Returns the variant's fields
+    pub fn fields(&self) -> &Fields<'_> {
+        match self {
+            Variant::Static(v) => v.fields(),
+            Variant::Dynamic(v) => v.fields(),
+        }
+    }
+
     /// Returns `true` if the variant has associated named fields.
     ///
     /// # Examples
@@ -467,10 +475,7 @@ impl Variant<'_> {
     /// assert!(!variant.is_named_fields());
     /// ```
     pub fn is_named_fields(&self) -> bool {
-        match self {
-            Variant::Static(v) => v.fields().is_named(),
-            Variant::Dynamic(v) => v.fields().is_named(),
-        }
+        self.fields().is_named()
     }
 
     /// Returns `true` if the variant has associated unnamed fields.

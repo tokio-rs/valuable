@@ -138,6 +138,16 @@ impl<'a> NamedValues<'a> {
             values: self.values,
         }
     }
+
+    /// Returns the length of fields.
+    pub fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    /// Returns `true` if fields have a length of 0.
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
+    }
 }
 
 impl<'a, 'b> IntoIterator for &'b NamedValues<'a> {
