@@ -1,3 +1,11 @@
+#![warn(
+    missing_debug_implementations,
+    missing_docs,
+    rust_2018_idioms,
+    unreachable_pub
+)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
 //! [`serde::Serialize`] implementation for [`Valuable`] types.
 //!
 //! # Examples
@@ -21,9 +29,6 @@
 //!     r#"{"x":1,"y":2}"#,
 //! );
 //! ```
-
-#![cfg_attr(not(feature = "std"), no_std)]
-#![warn(missing_docs, rust_2018_idioms)]
 
 use core::{fmt, mem};
 
