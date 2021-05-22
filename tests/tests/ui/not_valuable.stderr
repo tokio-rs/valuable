@@ -1,0 +1,39 @@
+error[E0277]: the trait bound `S: Valuable` is not satisfied
+ --> $DIR/not_valuable.rs:7:8
+  |
+7 |     f: Option<S>,
+  |        ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+  |
+  = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+  = note: required by `as_value`
+
+error[E0277]: the trait bound `S: Valuable` is not satisfied
+  --> $DIR/not_valuable.rs:11:14
+   |
+11 | struct Tuple(Option<S>);
+   |              ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+   |
+   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+   = note: required by `as_value`
+
+error[E0277]: the trait bound `S: Valuable` is not satisfied
+  --> $DIR/not_valuable.rs:15:17
+   |
+15 |     Struct { f: Option<S> },
+   |                 ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+   |
+   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `Valuable` for `&Option<S>`
+   = note: required by `as_value`
+
+error[E0277]: the trait bound `S: Valuable` is not satisfied
+  --> $DIR/not_valuable.rs:16:11
+   |
+16 |     Tuple(Option<S>),
+   |           ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+   |
+   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `Valuable` for `&Option<S>`
+   = note: required by `as_value`
