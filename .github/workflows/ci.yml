@@ -45,8 +45,8 @@ jobs:
         working-directory: valuable
       - run: cargo hack build --target ${{ matrix.target }} --feature-powerset --skip std,default
         working-directory: valuable-serde
-      - run: cargo hack build --target ${{ matrix.target }} --feature-powerset --skip std,default
-        working-directory: valuable-json
+      # - run: cargo hack build --target ${{ matrix.target }} --feature-powerset --skip std,default
+      #   working-directory: valuable-json
 
   features:
     runs-on: ubuntu-latest
