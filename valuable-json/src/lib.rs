@@ -1,21 +1,53 @@
+#![warn(
+    missing_debug_implementations,
+    missing_docs,
+    rust_2018_idioms,
+    unreachable_pub
+)]
 #![cfg(feature = "std")]
-#![warn(rust_2018_idioms)]
+
+//! JSON support for Valuable.
+//!
+//! # Examples
+//!
+//! ```
+//! use valuable::Valuable;
+//!
+//! #[derive(Valuable)]
+//! struct Point {
+//!     x: i32,
+//!     y: i32,
+//! }
+//!
+//! let point = Point { x: 1, y: 2 };
+//!
+//! assert_eq!(
+//!     valuable_json::to_string(&point),
+//!     r#"{"x":1,"y":2}"#,
+//! );
+//! ```
 
 use std::io::Write;
 
 use valuable::*;
 
-pub fn to_string(v: &dyn Valuable, pretty: bool) -> String {
+/// Serialize the given value as a string of JSON.
+pub fn to_string(value: &impl Valuable) -> String {
     let mut out = Vec::with_capacity(128);
-    let mut ser = if pretty {
-        Serializer::new_pretty(&mut out)
-    } else {
-        Serializer::new(&mut out)
-    };
-    ser.visit_value(v.as_value());
+    let mut ser = Serializer::new(&mut out);
+    ser.visit_value(value.as_value());
     String::from_utf8(out).unwrap()
 }
 
+/// Serialize the given value as a pretty-printed string of JSON.
+pub fn to_string_pretty(value: &impl Valuable) -> String {
+    let mut out = Vec::with_capacity(128);
+    let mut ser = Serializer::new_pretty(&mut out);
+    ser.visit_value(value.as_value());
+    String::from_utf8(out).unwrap()
+}
+
+/// A JSON serializer.
 #[derive(Debug)]
 pub struct Serializer<W> {
     out: W,
@@ -29,10 +61,12 @@ struct Style {
 }
 
 impl<W: Write> Serializer<W> {
+    /// Creates a new JSON serializer.
     pub fn new(out: W) -> Self {
         Self { out, style: None }
     }
 
+    /// Creates a new JSON pretty print serializer.
     pub fn new_pretty(out: W) -> Self {
         Self {
             out,
@@ -86,108 +120,34 @@ impl<W: Write> Serializer<W> {
         }
     }
 
-    fn visit_map(&mut self, m: &dyn Mappable) {
-        struct MapVisitor<'a, W> {
-            first: bool,
-            inner: &'a mut Serializer<W>,
-        }
-        impl<W: Write> Visit for MapVisitor<'_, W> {
-            fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
-                assert!(!matches!(
-                    key,
-                    Value::Listable(..) | Value::Mappable(..) | Value::Structable(..)
-                ));
-                if self.first {
-                    self.first = false;
-                } else {
-                    self.inner.push_u8(b',');
-                    self.inner.push_newline();
-                }
-                self.inner.push_indent();
-                self.inner.visit_value_inner(key, true);
-                self.inner.push_u8(b':');
-                self.inner.push_space();
-                self.inner.visit_value_inner(value, false);
-            }
-
-            fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
-                unreachable!()
-            }
-
-            fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
-                unreachable!()
-            }
-
-            fn visit_value(&mut self, _: Value<'_>) {
-                unreachable!()
-            }
-        }
-
-        self.push_u8(b'{');
-        self.push_newline();
-        self.increment_ident();
-        m.visit(&mut MapVisitor {
-            first: true,
-            inner: self,
-        });
-        self.push_newline();
-        self.decrement_ident();
-        self.push_indent();
-        self.push_u8(b'}');
-    }
-
-    fn visit_list(&mut self, l: &dyn Listable) {
-        struct ListVisitor<'a, W> {
-            first: bool,
-            inner: &'a mut Serializer<W>,
-        }
-        impl<W: Write> Visit for ListVisitor<'_, W> {
-            fn visit_value(&mut self, value: Value<'_>) {
-                if self.first {
-                    self.first = false;
-                } else {
-                    self.inner.push_u8(b',');
-                    self.inner.push_newline();
-                }
-                self.inner.push_indent();
-                self.inner.visit_value_inner(value, false);
-            }
-
-            fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
-                unreachable!()
-            }
-
-            fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
-                unreachable!()
-            }
-
-            fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
-                unreachable!()
-            }
-        }
-
+    /// Starts serializing a JSON array.
+    fn start_array(&mut self) {
         self.push_u8(b'[');
         self.push_newline();
         self.increment_ident();
-        l.visit(&mut ListVisitor {
-            first: true,
-            inner: self,
-        });
+    }
+
+    /// Finishes serializing a JSON array.
+    fn end_array(&mut self) {
         self.push_newline();
         self.decrement_ident();
         self.push_indent();
         self.push_u8(b']');
     }
 
-    fn visit_field(&mut self, field: &NamedField<'_>, value: Value<'_>) {
-        self.push_indent();
-        self.push_u8(b'"');
-        self.push_bytes(field.name().as_bytes());
-        self.push_u8(b'"');
-        self.push_u8(b':');
-        self.push_space();
+    /// Starts serializing a JSON object.
+    fn start_object(&mut self) {
+        self.push_u8(b'{');
+        self.push_newline();
+        self.increment_ident();
+    }
 
-        self.visit_value_inner(value, false);
+    /// Finishes serializing a JSON object.
+    fn end_object(&mut self) {
+        self.push_newline();
+        self.decrement_ident();
+        self.push_indent();
+        self.push_u8(b'}');
     }
 
     // TODO: store is_field flag in serializer?
@@ -207,16 +167,60 @@ impl<W: Write> Serializer<W> {
         }
         match v {
             Value::Listable(l) => {
-                self.visit_list(l);
+                self.start_array();
+                l.visit(&mut VisitStructure {
+                    first: true,
+                    inner: self,
+                    kind: ValueKind::List,
+                });
+                self.end_array();
             }
             Value::Mappable(m) => {
-                self.visit_map(m);
+                self.start_object();
+                m.visit(&mut VisitStructure {
+                    first: true,
+                    inner: self,
+                    kind: ValueKind::Map,
+                });
+                self.end_object();
             }
             Value::Structable(s) => {
-                s.visit(self);
+                if s.definition().fields().is_named() {
+                    self.start_object();
+                    s.visit(&mut VisitStructure {
+                        first: true,
+                        inner: self,
+                        kind: ValueKind::Named,
+                    });
+                    self.end_object();
+                } else {
+                    self.start_array();
+                    s.visit(&mut VisitStructure {
+                        first: true,
+                        inner: self,
+                        kind: ValueKind::Unnamed,
+                    });
+                    self.end_array();
+                }
             }
             Value::Enumerable(e) => {
-                e.visit(self);
+                if e.variant().is_named_fields() {
+                    self.start_object();
+                    e.visit(&mut VisitStructure {
+                        first: true,
+                        inner: self,
+                        kind: ValueKind::Named,
+                    });
+                    self.end_object();
+                } else {
+                    self.start_array();
+                    e.visit(&mut VisitStructure {
+                        first: true,
+                        inner: self,
+                        kind: ValueKind::Unnamed,
+                    });
+                    self.end_array();
+                }
             }
             Value::String(s) => {
                 self.push_u8(b'"');
@@ -290,24 +294,8 @@ impl<W: Write> Visit for Serializer<W> {
         self.visit_value_inner(value, false)
     }
 
-    fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-        self.push_u8(b'{');
-        self.push_newline();
-        self.increment_ident();
-        let mut first = true;
-        for (f, v) in named_values {
-            if first {
-                first = false;
-            } else {
-                self.push_u8(b',');
-                self.push_newline();
-            }
-            self.visit_field(f, *v);
-        }
-        self.push_newline();
-        self.decrement_ident();
-        self.push_indent();
-        self.push_u8(b'}');
+    fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
+        unreachable!()
     }
 
     fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
@@ -316,5 +304,96 @@ impl<W: Write> Visit for Serializer<W> {
 
     fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
         unreachable!()
+    }
+}
+
+struct VisitStructure<'a, W> {
+    first: bool,
+    inner: &'a mut Serializer<W>,
+    kind: ValueKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ValueKind {
+    // `Value::Mappable`.
+    // Serialized as JSON object.
+    Map,
+    // `Value::Listable`.
+    // Serialized as JSON array.
+    List,
+    // `Structable` or `Enumerable` with named fields.
+    // Serialized as JSON object.
+    Named,
+    // `Structable` or `Enumerable` with unnamed fields.
+    // Serialized as JSON array.
+    Unnamed,
+}
+
+impl<W: Write> Visit for VisitStructure<'_, W> {
+    fn visit_value(&mut self, value: Value<'_>) {
+        assert_eq!(self.kind, ValueKind::List);
+        if self.first {
+            self.first = false;
+        } else {
+            self.inner.push_u8(b',');
+            self.inner.push_newline();
+        }
+        self.inner.push_indent();
+        self.inner.visit_value_inner(value, false);
+    }
+
+    fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
+        assert_eq!(self.kind, ValueKind::Map);
+        assert!(!matches!(
+            key,
+            Value::Listable(..)
+                | Value::Mappable(..)
+                | Value::Structable(..)
+                | Value::Enumerable(..)
+        ));
+        if self.first {
+            self.first = false;
+        } else {
+            self.inner.push_u8(b',');
+            self.inner.push_newline();
+        }
+        self.inner.push_indent();
+        self.inner.visit_value_inner(key, true);
+        self.inner.push_u8(b':');
+        self.inner.push_space();
+        self.inner.visit_value_inner(value, false);
+    }
+
+    fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
+        assert_eq!(self.kind, ValueKind::Named);
+        for (f, &v) in named_values {
+            if self.first {
+                self.first = false;
+            } else {
+                self.inner.push_u8(b',');
+                self.inner.push_newline();
+            }
+            self.inner.push_indent();
+            self.inner.push_u8(b'"');
+            self.inner.push_bytes(f.name().as_bytes());
+            self.inner.push_u8(b'"');
+            self.inner.push_u8(b':');
+            self.inner.push_space();
+            self.inner.visit_value_inner(v, false);
+        }
+    }
+
+    fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
+        assert_eq!(self.kind, ValueKind::Unnamed);
+        for &v in values {
+            if self.first {
+                self.first = false;
+            } else {
+                self.inner.push_u8(b',');
+                self.inner.push_newline();
+            }
+            self.inner.push_indent();
+            self.inner.visit_value_inner(v, false);
+        }
     }
 }

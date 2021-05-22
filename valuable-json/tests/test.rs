@@ -33,18 +33,18 @@ fn test() {
     };
 
     let value = Value::Structable(&hello_world);
-    println!("{}", valuable_json::to_string(&value, false));
+    println!("{}", valuable_json::to_string(&value));
     assert_eq!(
-        valuable_json::to_string(&value, false),
+        valuable_json::to_string(&value),
         r#"{"hello":"wut","world":{"answer":42},"list":[{"answer":1},{"answer":2}],"map":{"k":0},"bool_":false,"unit":null}"#
     );
     assert_eq!(
-        valuable_json::to_string(&value, false),
+        valuable_json::to_string(&value),
         serde_json::to_string(&hello_world).unwrap(),
     );
-    println!("{}", valuable_json::to_string(&value, true));
+    println!("{}", valuable_json::to_string_pretty(&value));
     assert_eq!(
-        valuable_json::to_string(&value, true),
+        valuable_json::to_string_pretty(&value),
         r#"{
   "hello": "wut",
   "world": {
@@ -66,7 +66,7 @@ fn test() {
 }"#
     );
     assert_eq!(
-        valuable_json::to_string(&value, true),
+        valuable_json::to_string_pretty(&value),
         serde_json::to_string_pretty(&hello_world).unwrap(),
     );
 }
