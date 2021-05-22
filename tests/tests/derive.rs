@@ -65,6 +65,7 @@ fn test_derive_mut() {
     }
 }
 
+#[rustversion::attr(not(stable), ignore)]
 #[test]
 fn ui() {
     // Do not require developers to manually set `TRYBUILD=overwrite`.
