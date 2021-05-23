@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{Enumerable, Listable, Mappable, Structable, Tuplable, Valuable, Visit};
 
 use core::fmt;
 
@@ -392,6 +392,18 @@ value! {
     /// let v = Value::Enumerable(&my_enum);
     /// ```
     Enumerable(&'a dyn Enumerable),
+
+    /// A tuple value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Value, Valuable};
+    ///
+    /// let my_tuple = (123, 456);
+    /// let v = Value::Tuplable(&my_tuple);
+    /// ```
+    Tuplable(&'a dyn Tuplable),
 }
 
 impl Valuable for Value<'_> {
@@ -656,6 +668,25 @@ macro_rules! convert {
             pub fn as_enumerable(&self) -> Option<&dyn Enumerable> {
                 match *self {
                     Value::Enumerable(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            /// Return a `&dyn Tuplable` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Value;
+            ///
+            /// let my_tuple = (123, 456);
+            ///
+            /// assert!(Value::Tuplable(&my_tuple).as_tuplable().is_some());
+            /// assert!(Value::Bool(true).as_tuplable().is_none());
+            /// ```
+            pub fn as_tuplable(&self) -> Option<&dyn Tuplable> {
+                match *self {
+                    Value::Tuplable(v) => Some(v),
                     _ => None,
                 }
             }

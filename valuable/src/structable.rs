@@ -438,7 +438,7 @@ impl<'a> StructDef<'a> {
         matches!(self, StructDef::Static { .. })
     }
 
-    /// Returns `true` if the struct is [dynamically defined](StructDef::Static).
+    /// Returns `true` if the struct is [dynamically defined](StructDef::Dynamic).
     ///
     /// # Examples
     ///
