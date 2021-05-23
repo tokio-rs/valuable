@@ -1,5 +1,5 @@
-use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use proc_macro2::{Span, TokenStream};
+use quote::{format_ident, quote, ToTokens};
 use syn::Ident;
 
 pub(crate) fn derive_valuable(input: &mut syn::DeriveInput) -> TokenStream {
@@ -33,12 +33,18 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 )
             };
 
-            let fields = data.fields.iter().map(|field| field.ident.as_ref());
+            let fields = data.fields.iter().map(|field| {
+                let f = field.ident.as_ref();
+                let tokens = quote! {
+                    &self.#f
+                };
+                respan(tokens, &field.ty)
+            });
             visit_fields = quote! {
                 visitor.visit_named_fields(&::valuable::NamedValues::new(
                     #named_fields_static_name,
                     &[
-                        #(::valuable::Valuable::as_value(&self.#fields),)*
+                        #(::valuable::Valuable::as_value(#fields),)*
                     ],
                 ));
             }
@@ -51,11 +57,17 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 )
             };
 
-            let indices = (0..data.fields.len()).map(syn::Index::from);
+            let indices = data.fields.iter().enumerate().map(|(i, field)| {
+                let index = syn::Index::from(i);
+                let tokens = quote! {
+                    &self.#index
+                };
+                respan(tokens, &field.ty)
+            });
             visit_fields = quote! {
                 visitor.visit_unnamed_fields(
                     &[
-                        #(::valuable::Valuable::as_value(&self.#indices),)*
+                        #(::valuable::Valuable::as_value(#indices),)*
                     ],
                 );
             };
@@ -135,13 +147,22 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                     .iter()
                     .map(|field| field.ident.as_ref())
                     .collect();
+                let as_value = variant.fields.iter().map(|field| {
+                    let f = field.ident.as_ref();
+                    let tokens = quote! {
+                        // HACK(taiki-e): This `&` is not actually needed to calling as_value,
+                        // but is needed to emulate multi-token span on stable Rust.
+                        &#f
+                    };
+                    respan(tokens, &field.ty)
+                });
                 visit_variants.push(quote! {
                     Self::#variant_name { #(#fields),* } => {
                         visitor.visit_named_fields(
                             &::valuable::NamedValues::new(
                                 #named_fields_static_name,
                                 &[
-                                    #(::valuable::Valuable::as_value(#fields),)*
+                                    #(::valuable::Valuable::as_value(#as_value),)*
                                 ],
                             ),
                         );
@@ -167,11 +188,22 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 let bindings: Vec<_> = (0..variant.fields.len())
                     .map(|i| format_ident!("__binding_{}", i))
                     .collect();
+                let as_value = bindings
+                    .iter()
+                    .zip(&variant.fields)
+                    .map(|(binding, field)| {
+                        let tokens = quote! {
+                            // HACK(taiki-e): This `&` is not actually needed to calling as_value,
+                            // but is needed to emulate multi-token span on stable Rust.
+                            &#binding
+                        };
+                        respan(tokens, &field.ty)
+                    });
                 visit_variants.push(quote! {
                     Self::#variant_name(#(#bindings),*) => {
                         visitor.visit_unnamed_fields(
                             &[
-                                #(::valuable::Valuable::as_value(#bindings),)*
+                                #(::valuable::Valuable::as_value(#as_value),)*
                             ],
                         );
                     }
@@ -278,4 +310,22 @@ fn allowed_lints() -> TokenStream {
         #[allow(clippy::unknown_clippy_lints)]
         #[allow(clippy::used_underscore_binding)]
     }
+}
+
+fn respan(tokens: TokenStream, span: &impl ToTokens) -> TokenStream {
+    let mut iter = span.to_token_stream().into_iter();
+    // `Span` on stable Rust has a limitation that only points to the first
+    // token, not the whole tokens. We can work around this limitation by
+    // using the first/last span of the tokens like `syn::Error::new_spanned` does.
+    let start_span = iter.next().map_or_else(Span::call_site, |t| t.span());
+    let end_span = iter.last().map_or(start_span, |t| t.span());
+
+    let mut tokens = tokens.into_iter().collect::<Vec<_>>();
+    if let Some(tt) = tokens.first_mut() {
+        tt.set_span(start_span);
+    }
+    for tt in tokens.iter_mut().skip(1) {
+        tt.set_span(end_span);
+    }
+    tokens.into_iter().collect()
 }

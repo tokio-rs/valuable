@@ -12,3 +12,7 @@ derive = ["valuable/derive"]
 
 [dependencies]
 valuable = { path = "../valuable", default-features = false }
+
+[dev-dependencies]
+rustversion = "1"
+trybuild = "1"

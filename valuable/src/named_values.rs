@@ -4,6 +4,7 @@ use crate::field::*;
 use crate::*;
 
 /// Set of values from a `Structable` or `Enumerable` with named fields.
+#[derive(Debug)]
 pub struct NamedValues<'a> {
     fields: &'a [NamedField<'a>],
     values: &'a [Value<'a>],
@@ -72,7 +73,7 @@ impl<'a> NamedValues<'a> {
         use core::mem;
 
         let idx = (field as *const _ as usize - &self.fields[0] as *const _ as usize)
-            / mem::size_of::<NamedField>();
+            / mem::size_of::<NamedField<'_>>();
         self.values.get(idx)
     }
 
@@ -184,6 +185,7 @@ impl<'a, 'b> IntoIterator for &'b NamedValues<'a> {
 ///     println!("{:?}: {:?}", field, value);
 /// }
 /// ```
+#[derive(Debug)]
 pub struct Iter<'a, 'b> {
     iter: iter::Enumerate<core::slice::Iter<'b, NamedField<'a>>>,
     values: &'a [Value<'a>],

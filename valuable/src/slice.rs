@@ -43,8 +43,10 @@ macro_rules! slice {
         ///     println!("{:?}", value);
         /// }
         /// ```
+        #[derive(Debug)]
         pub struct Iter<'a>(IterKind<'a>);
 
+        #[derive(Debug)]
         enum IterKind<'a> {
             $(
                 $(#[$attrs])*

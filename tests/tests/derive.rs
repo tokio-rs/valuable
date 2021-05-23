@@ -3,6 +3,7 @@
 use valuable::Valuable;
 
 use std::collections::HashMap;
+use std::env;
 
 #[test]
 fn test_derive_struct() {
@@ -62,4 +63,16 @@ fn test_derive_mut() {
         struct_: &'a mut S,
         enum_: &'a mut E,
     }
+}
+
+#[rustversion::attr(not(stable), ignore)]
+#[test]
+fn ui() {
+    // Do not require developers to manually set `TRYBUILD=overwrite`.
+    if env::var_os("CI").is_none() {
+        env::set_var("TRYBUILD", "overwrite");
+    }
+
+    let t = trybuild::TestCases::new();
+    t.compile_fail("tests/ui/*.rs");
 }
