@@ -107,11 +107,23 @@ impl fmt::Debug for dyn Tuplable + '_ {
 }
 
 impl TupleDef {
-    /// TODO
+    /// Create a new [`TupleDef::Static`] instance
+    ///
+    /// This should be used when the tuple's fields are fixed and known ahead of time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::TupleDef;
+    ///
+    /// let def = TupleDef::new_static(2);
+    /// ```
     pub const fn new_static(fields: usize) -> TupleDef {
         TupleDef::Static { fields }
     }
 
+    /// Create a new [`TupleDef::Dynamic`] instance.
+    ///
     /// TODO
     pub const fn new_dynamic(fields: (usize, Option<usize>)) -> TupleDef {
         TupleDef::Dynamic { fields }
