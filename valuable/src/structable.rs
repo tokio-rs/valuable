@@ -346,6 +346,7 @@ impl<'a> StructDef<'a> {
     /// Create a new [`StructDef::Dynamic`] instance.
     ///
     /// This is used when the struct's fields may vary at runtime.
+    ///
     /// # Examples
     ///
     /// ```

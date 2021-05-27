@@ -88,7 +88,7 @@ macro_rules! value {
 
         impl<'a> From<()> for Value<'a> {
             fn from(_: ()) -> Value<'a> {
-                Value::Unit
+                Value::Tuplable(&())
             }
         }
 
