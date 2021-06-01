@@ -221,6 +221,13 @@ where
                 }
                 _ => unreachable!(),
             },
+            Value::Tuplable(t) => {
+                if t.definition().is_unit() {
+                    serializer.serialize_unit()
+                } else {
+                    unimplemented!()
+                }
+            }
             #[cfg(feature = "std")]
             Value::Path(p) => Serialize::serialize(p, serializer),
             #[cfg(feature = "std")]

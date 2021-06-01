@@ -262,18 +262,11 @@ impl<T: Valuable> Valuable for Wrapping<T> {
 
 impl Valuable for () {
     fn as_value(&self) -> Value<'_> {
-        Value::Unit
+        Value::Tuplable(self)
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_value(Value::Unit);
-    }
-
-    fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
-    where
-        Self: Sized,
-    {
-        visit.visit_primitive_slice(Slice::Unit(slice));
+        visit.visit_unnamed_fields(&[]);
     }
 }
 

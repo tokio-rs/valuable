@@ -346,6 +346,7 @@ impl<'a> StructDef<'a> {
     /// Create a new [`StructDef::Dynamic`] instance.
     ///
     /// This is used when the struct's fields may vary at runtime.
+    ///
     /// # Examples
     ///
     /// ```
@@ -438,7 +439,7 @@ impl<'a> StructDef<'a> {
         matches!(self, StructDef::Static { .. })
     }
 
-    /// Returns `true` if the struct is [dynamically defined](StructDef::Static).
+    /// Returns `true` if the struct is [dynamically defined](StructDef::Dynamic).
     ///
     /// # Examples
     ///

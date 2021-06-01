@@ -121,6 +121,9 @@ pub use slice::Slice;
 mod structable;
 pub use structable::{StructDef, Structable};
 
+mod tuplable;
+pub use tuplable::{Tuplable, TupleDef};
+
 mod valuable;
 pub use crate::valuable::Valuable;
 

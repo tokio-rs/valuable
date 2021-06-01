@@ -248,40 +248,6 @@ fn test_error() {
     assert_value!(&'a dyn error::Error: Error, as_error, yes => error);
 }
 
-#[test]
-fn test_unit() {
-    use Value::Unit;
-
-    struct VisitValue;
-
-    impl Visit for VisitValue {
-        fn visit_value(&mut self, val: Value<'_>) {
-            assert!(matches!(val, Unit));
-        }
-    }
-
-    // Visit the raw value once
-    assert_visit_call!(&());
-    let mut visit = VisitValue;
-    ().visit(&mut visit);
-
-    let val = Value::from(());
-
-    // Visit the converted value
-    assert_visit_call!(&());
-    let mut visit = VisitValue;
-    val.visit(&mut visit);
-
-    // Test conversion
-    assert!(matches!(val, Unit));
-
-    // Test `as_value()`
-    assert!(matches!(Valuable::as_value(&()), Unit));
-
-    // Test clone()
-    assert!(matches!(val.clone(), Unit));
-}
-
 test_num! {
     test_u8(as_u8, u8, U8);
     test_u16(as_u16, u16, U16);
