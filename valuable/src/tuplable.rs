@@ -229,7 +229,7 @@ impl TupleDef {
         TupleDef::Dynamic { fields }
     }
 
-    /// Returns `true` if `self` represents the [unit][()] tuple.
+    /// Returns `true` if `self` represents the [unit][primitive@unit] tuple.
     ///
     /// # Examples
     ///
