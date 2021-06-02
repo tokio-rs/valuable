@@ -33,12 +33,12 @@
 use core::{fmt, mem};
 
 use serde::ser::{
-    Error, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
+    Error, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTuple,
     SerializeTupleStruct, SerializeTupleVariant,
 };
 use serde::{Serialize, Serializer};
 use valuable::{
-    EnumDef, Fields, NamedValues, StructDef, Valuable, Value, Variant, VariantDef, Visit,
+    EnumDef, Fields, NamedValues, StructDef, TupleDef, Valuable, Value, Variant, VariantDef, Visit,
 };
 
 /// A wrapper around [`Valuable`] types that implements [`Serialize`].
@@ -172,7 +172,7 @@ where
                         ser.end()
                     }
                 }
-                _ => unreachable!(),
+                def => unreachable!("{:?}", def),
             },
             Value::Enumerable(e) => match (e.definition(), e.variant()) {
                 (
@@ -219,13 +219,35 @@ where
                 (EnumDef::Static { .. }, Variant::Dynamic(..)) => {
                     Err(S::Error::custom("dynamic variant in static enum"))
                 }
-                _ => unreachable!(),
+                def => unreachable!("{:?}", def),
             },
             Value::Tuplable(t) => {
-                if t.definition().is_unit() {
-                    serializer.serialize_unit()
-                } else {
-                    unimplemented!()
+                let def = t.definition();
+                if def.is_unit() {
+                    return serializer.serialize_unit();
+                }
+                match def {
+                    TupleDef::Static { fields: len, .. } => {
+                        let ser = serializer.serialize_tuple(len)?;
+                        let mut visitor = VisitStaticTuple::<S>::Start(ser);
+                        t.visit(&mut visitor);
+                        match visitor {
+                            VisitStaticTuple::End(res) => res,
+                            _ => unreachable!(),
+                        }
+                    }
+                    TupleDef::Dynamic {
+                        fields: size_hint, ..
+                    } => {
+                        let mut ser = serializer.serialize_seq(size_hint.1)?;
+                        let mut visitor = VisitDynamic::<S>::UnnamedFields(&mut ser);
+                        t.visit(&mut visitor);
+                        if let VisitDynamic::Error(e) = visitor {
+                            return Err(e);
+                        }
+                        ser.end()
+                    }
+                    def => unreachable!("{:?}", def),
                 }
             }
             #[cfg(feature = "std")]
@@ -253,15 +275,21 @@ impl<S: Serializer> Visit for VisitList<'_, S> {
     }
 
     fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
-        *self = Self::Error(S::Error::custom("visit_entry in list"));
+        if !matches!(self, Self::Error(..)) {
+            *self = Self::Error(S::Error::custom("visit_entry in list"));
+        }
     }
 
     fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
-        *self = Self::Error(S::Error::custom("visit_named_fields in list"));
+        if !matches!(self, Self::Error(..)) {
+            *self = Self::Error(S::Error::custom("visit_named_fields in list"));
+        }
     }
 
     fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
-        *self = Self::Error(S::Error::custom("visit_unnamed_fields in list"));
+        if !matches!(self, Self::Error(..)) {
+            *self = Self::Error(S::Error::custom("visit_unnamed_fields in list"));
+        }
     }
 }
 
@@ -280,15 +308,21 @@ impl<S: Serializer> Visit for VisitMap<'_, S> {
     }
 
     fn visit_value(&mut self, _: Value<'_>) {
-        *self = Self::Error(S::Error::custom("visit_value in map"));
+        if !matches!(self, Self::Error(..)) {
+            *self = Self::Error(S::Error::custom("visit_value in map"));
+        }
     }
 
     fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
-        *self = Self::Error(S::Error::custom("visit_named_fields in map"));
+        if !matches!(self, Self::Error(..)) {
+            *self = Self::Error(S::Error::custom("visit_named_fields in map"));
+        }
     }
 
     fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
-        *self = Self::Error(S::Error::custom("visit_unnamed_fields in map"));
+        if !matches!(self, Self::Error(..)) {
+            *self = Self::Error(S::Error::custom("visit_unnamed_fields in map"));
+        }
     }
 }
 
@@ -310,10 +344,13 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
                 fields: Fields::Named(fields),
                 serializer,
             } => (name, fields, serializer),
-            Self::End(..) => {
-                *self = Self::End(Err(S::Error::custom(
-                    "visit_named_fields called multiple times in static struct",
-                )));
+            mut res @ Self::End(..) => {
+                if matches!(res, Self::End(Ok(..))) {
+                    res = Self::End(Err(S::Error::custom(
+                        "visit_named_fields called multiple times in static struct",
+                    )));
+                }
+                *self = res;
                 return;
             }
             _ => unreachable!(),
@@ -341,10 +378,13 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
                 fields: Fields::Unnamed,
                 serializer,
             } => (name, serializer),
-            Self::End(..) => {
-                *self = Self::End(Err(S::Error::custom(
-                    "visit_unnamed_fields called multiple times in static struct",
-                )));
+            mut res @ Self::End(..) => {
+                if matches!(res, Self::End(Ok(..))) {
+                    res = Self::End(Err(S::Error::custom(
+                        "visit_unnamed_fields called multiple times in static struct",
+                    )));
+                }
+                *self = res;
                 return;
             }
             _ => unreachable!(),
@@ -370,11 +410,15 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
     }
 
     fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
-        *self = Self::End(Err(S::Error::custom("visit_entry in struct")));
+        if !matches!(self, Self::End(Err(..))) {
+            *self = Self::End(Err(S::Error::custom("visit_entry in struct")));
+        }
     }
 
     fn visit_value(&mut self, _: Value<'_>) {
-        *self = Self::End(Err(S::Error::custom("visit_value in struct")));
+        if !matches!(self, Self::End(Err(..))) {
+            *self = Self::End(Err(S::Error::custom("visit_value in struct")));
+        }
     }
 }
 
@@ -398,10 +442,13 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
                 variant,
                 serializer,
             } => (name, def, variant, serializer),
-            Self::End(..) => {
-                *self = Self::End(Err(S::Error::custom(
-                    "visit_named_fields called multiple times in static enum",
-                )));
+            mut res @ Self::End(..) => {
+                if matches!(res, Self::End(Ok(..))) {
+                    res = Self::End(Err(S::Error::custom(
+                        "visit_named_fields called multiple times in static enum",
+                    )));
+                }
+                *self = res;
                 return;
             }
             _ => unreachable!(),
@@ -442,10 +489,13 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
                 variant,
                 serializer,
             } => (name, def, variant, serializer),
-            Self::End(..) => {
-                *self = Self::End(Err(S::Error::custom(
-                    "visit_unnamed_fields called multiple times in static enum",
-                )));
+            mut res @ Self::End(..) => {
+                if matches!(res, Self::End(Ok(..))) {
+                    res = Self::End(Err(S::Error::custom(
+                        "visit_unnamed_fields called multiple times in static enum",
+                    )));
+                }
+                *self = res;
                 return;
             }
             _ => unreachable!(),
@@ -484,17 +534,74 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
     }
 
     fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
-        *self = Self::End(Err(S::Error::custom("visit_entry in enum")));
+        if !matches!(self, Self::End(Err(..))) {
+            *self = Self::End(Err(S::Error::custom("visit_entry in enum")));
+        }
     }
 
     fn visit_value(&mut self, _: Value<'_>) {
-        *self = Self::End(Err(S::Error::custom("visit_value in enum")));
+        if !matches!(self, Self::End(Err(..))) {
+            *self = Self::End(Err(S::Error::custom("visit_value in enum")));
+        }
     }
 }
 
-// Dynamic struct and variant of dynamic enum will be serialized as map or seq.
+enum VisitStaticTuple<S: Serializer> {
+    Start(S::SerializeTuple),
+    End(Result<S::Ok, S::Error>),
+    Tmp,
+}
+
+impl<S: Serializer> Visit for VisitStaticTuple<S> {
+    fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
+        let mut ser = match mem::replace(self, Self::Tmp) {
+            Self::Start(ser) => ser,
+            mut res @ Self::End(..) => {
+                if matches!(res, Self::End(Ok(..))) {
+                    res = Self::End(Err(S::Error::custom(
+                        "visit_unnamed_fields called multiple times in static tuple",
+                    )));
+                }
+                *self = res;
+                return;
+            }
+            _ => unreachable!(),
+        };
+        for v in values {
+            if let Err(e) = ser.serialize_element(&Serializable(v)) {
+                *self = Self::End(Err(e));
+                return;
+            }
+        }
+        *self = Self::End(ser.end());
+    }
+
+    fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
+        if !matches!(self, Self::End(Err(..))) {
+            *self = Self::End(Err(S::Error::custom("visit_named_fields in tuple")));
+        }
+    }
+
+    fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
+        if !matches!(self, Self::End(Err(..))) {
+            *self = Self::End(Err(S::Error::custom("visit_entry in tuple")));
+        }
+    }
+
+    fn visit_value(&mut self, _: Value<'_>) {
+        if !matches!(self, Self::End(Err(..))) {
+            *self = Self::End(Err(S::Error::custom("visit_value in tuple")));
+        }
+    }
+}
+
+// Dynamic struct, variant of dynamic enum, and dynamic tuple will be serialized as map or sequence.
 enum VisitDynamic<'a, S: Serializer> {
+    // `Structable` or `Enumerable` with named fields.
+    // Serialized as map.
     NamedFields(&'a mut S::SerializeMap),
+    // `Structable` or `Enumerable` with unnamed fields, or `Tuplable`.
+    // Serialized as sequence.
     UnnamedFields(&'a mut S::SerializeSeq),
     Error(S::Error),
 }
@@ -539,10 +646,14 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
     }
 
     fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
-        *self = Self::Error(S::Error::custom("visit_entry in dynamic struct/variant"));
+        if !matches!(self, Self::Error(..)) {
+            *self = Self::Error(S::Error::custom("visit_entry in dynamic struct/variant"));
+        }
     }
 
     fn visit_value(&mut self, _: Value<'_>) {
-        *self = Self::Error(S::Error::custom("visit_value in dynamic struct/variant"));
+        if !matches!(self, Self::Error(..)) {
+            *self = Self::Error(S::Error::custom("visit_value in dynamic struct/variant"));
+        }
     }
 }
