@@ -282,7 +282,7 @@ impl<W: io::Write> Serializer<W> {
     }
 
     // TODO: store is_field flag in serializer?
-    fn visit_value_inner(&mut self, v: Value<'_>, is_field: bool) -> io::Result<()> {
+    fn visit_value_inner(&mut self, value: Value<'_>, is_field: bool) -> io::Result<()> {
         macro_rules! visit_num {
             ($n:expr) => {
                 if is_field {
@@ -294,7 +294,7 @@ impl<W: io::Write> Serializer<W> {
                 }
             };
         }
-        match v {
+        match value {
             Value::Listable(l) => {
                 if is_field {
                     return Err(invalid_data("list cannot be a key"));
@@ -469,7 +469,12 @@ impl<W: io::Write> Serializer<W> {
                     return Err(invalid_data(msg));
                 }
             }
-            _ => {}
+            Value::Unit => {
+                self.push_null()?;
+            }
+            v => {
+                return Err(invalid_data(&format!("unsupported value kind: {:?}", v)));
+            }
         }
         Ok(())
     }
@@ -537,7 +542,7 @@ impl<W: io::Write> Visit for VisitStructure<'_, W> {
         if self.inner.error.is_some() {
             return;
         }
-        if self.kind == ValueKind::List {
+        if self.kind != ValueKind::List {
             self.inner.error = Some(invalid_data(&format!(
                 "visit_value in {}",
                 self.kind.as_str()
@@ -563,7 +568,7 @@ impl<W: io::Write> Visit for VisitStructure<'_, W> {
         if self.inner.error.is_some() {
             return;
         }
-        if self.kind == ValueKind::Map {
+        if self.kind != ValueKind::Map {
             self.inner.error = Some(invalid_data(&format!(
                 "visit_entry in {}",
                 self.kind.as_str()
@@ -592,7 +597,7 @@ impl<W: io::Write> Visit for VisitStructure<'_, W> {
         if self.inner.error.is_some() {
             return;
         }
-        if self.kind == ValueKind::Named {
+        if self.kind != ValueKind::Named {
             self.inner.error = Some(invalid_data(&format!(
                 "visit_named_fields in {}",
                 self.kind.as_str()
@@ -625,7 +630,7 @@ impl<W: io::Write> Visit for VisitStructure<'_, W> {
         if self.inner.error.is_some() {
             return;
         }
-        if self.kind == ValueKind::Unnamed {
+        if self.kind != ValueKind::Unnamed {
             self.inner.error = Some(invalid_data(&format!(
                 "visit_unnamed_fields in {}",
                 self.kind.as_str()
