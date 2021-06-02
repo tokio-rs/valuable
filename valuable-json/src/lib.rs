@@ -22,7 +22,7 @@
 //! let point = Point { x: 1, y: 2 };
 //!
 //! assert_eq!(
-//!     valuable_json::to_string(&point),
+//!     valuable_json::to_string(&point).unwrap(),
 //!     r#"{"x":1,"y":2}"#,
 //! );
 //! ```
@@ -46,17 +46,41 @@ fn invalid_data(msg: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, msg)
 }
 
+/// Serialize the given value JSON into the IO stream.
+pub fn to_writer<W, V>(writer: W, value: &V) -> io::Result<()>
+where
+    W: io::Write,
+    V: ?Sized + Valuable,
+{
+    let mut ser = Serializer::new(writer);
+    valuable::visit(value, &mut ser);
+    if let Some(e) = ser.error.take() {
+        return Err(e);
+    }
+    Ok(())
+}
+
+/// Serialize the given value as pretty-printed JSON into the IO stream.
+pub fn to_writer_pretty<W, V>(writer: W, value: &V) -> io::Result<()>
+where
+    W: io::Write,
+    V: ?Sized + Valuable,
+{
+    let mut ser = Serializer::new_pretty(writer);
+    valuable::visit(value, &mut ser);
+    if let Some(e) = ser.error.take() {
+        return Err(e);
+    }
+    Ok(())
+}
+
 /// Serialize the given value as a byte vector of JSON.
 pub fn to_vec<V>(value: &V) -> io::Result<Vec<u8>>
 where
     V: ?Sized + Valuable,
 {
     let mut out = Vec::with_capacity(128);
-    let mut ser = Serializer::new(&mut out);
-    valuable::visit(value, &mut ser);
-    if let Some(e) = ser.error.take() {
-        return Err(e);
-    }
+    to_writer(&mut out, value)?;
     Ok(out)
 }
 
@@ -66,11 +90,7 @@ where
     V: ?Sized + Valuable,
 {
     let mut out = Vec::with_capacity(128);
-    let mut ser = Serializer::new_pretty(&mut out);
-    valuable::visit(value, &mut ser);
-    if let Some(e) = ser.error.take() {
-        return Err(e);
-    }
+    to_writer_pretty(&mut out, value)?;
     Ok(out)
 }
 
