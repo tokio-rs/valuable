@@ -27,31 +27,78 @@
 //! );
 //! ```
 
-use std::io::Write;
+use std::io;
 
 use valuable::*;
 
-/// Serialize the given value as a string of JSON.
-pub fn to_string(value: &impl Valuable) -> String {
+macro_rules! try_block {
+    ($expr:expr) => {
+        (|| -> io::Result<_> {
+            $expr;
+            Ok(())
+        })()
+    };
+}
+
+// TODO: should we define our own error type?
+#[cold]
+fn invalid_data(msg: &str) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, msg)
+}
+
+/// Serialize the given value as a byte vector of JSON.
+pub fn to_vec<V>(value: &V) -> io::Result<Vec<u8>>
+where
+    V: ?Sized + Valuable,
+{
     let mut out = Vec::with_capacity(128);
     let mut ser = Serializer::new(&mut out);
-    ser.visit_value(value.as_value());
-    String::from_utf8(out).unwrap()
+    valuable::visit(value, &mut ser);
+    if let Some(e) = ser.error.take() {
+        return Err(e);
+    }
+    Ok(out)
+}
+
+/// Serialize the given value as a pretty-printed byte vector of JSON.
+pub fn to_vec_pretty<V>(value: &V) -> io::Result<Vec<u8>>
+where
+    V: ?Sized + Valuable,
+{
+    let mut out = Vec::with_capacity(128);
+    let mut ser = Serializer::new_pretty(&mut out);
+    valuable::visit(value, &mut ser);
+    if let Some(e) = ser.error.take() {
+        return Err(e);
+    }
+    Ok(out)
+}
+
+/// Serialize the given value as a string of JSON.
+pub fn to_string<V>(value: &V) -> io::Result<String>
+where
+    V: ?Sized + Valuable,
+{
+    let vec = to_vec(value)?;
+    Ok(String::from_utf8(vec).unwrap())
 }
 
 /// Serialize the given value as a pretty-printed string of JSON.
-pub fn to_string_pretty(value: &impl Valuable) -> String {
-    let mut out = Vec::with_capacity(128);
-    let mut ser = Serializer::new_pretty(&mut out);
-    ser.visit_value(value.as_value());
-    String::from_utf8(out).unwrap()
+pub fn to_string_pretty<V>(value: &V) -> io::Result<String>
+where
+    V: ?Sized + Valuable,
+{
+    let vec = to_vec_pretty(value)?;
+    Ok(String::from_utf8(vec).unwrap())
 }
 
 /// A JSON serializer.
 #[derive(Debug)]
-pub struct Serializer<W> {
+struct Serializer<W> {
     out: W,
     style: Option<Style>,
+    option: SerializerOption,
+    error: Option<io::Error>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -60,20 +107,43 @@ struct Style {
     indent_size: usize,
 }
 
-impl<W: Write> Serializer<W> {
+#[derive(Debug)]
+struct SerializerOption {
+    ignore_nan: bool,
+    escape_solidus: bool,
+}
+
+impl Default for SerializerOption {
+    fn default() -> Self {
+        Self {
+            // Default behavior match serde_json.
+            ignore_nan: true,
+            escape_solidus: false,
+        }
+    }
+}
+
+impl<W: io::Write> Serializer<W> {
     /// Creates a new JSON serializer.
-    pub fn new(out: W) -> Self {
-        Self { out, style: None }
+    fn new(out: W) -> Self {
+        Self {
+            out,
+            style: None,
+            option: SerializerOption::default(),
+            error: None,
+        }
     }
 
     /// Creates a new JSON pretty print serializer.
-    pub fn new_pretty(out: W) -> Self {
+    fn new_pretty(out: W) -> Self {
         Self {
             out,
             style: Some(Style {
                 indent_size: 2,
                 indent: 0,
             }),
+            option: SerializerOption::default(),
+            error: None,
         }
     }
 
@@ -89,160 +159,225 @@ impl<W: Write> Serializer<W> {
         }
     }
 
-    fn push_u8(&mut self, byte: u8) {
-        self.push_bytes(&[byte]);
-    }
-
-    fn push_bytes(&mut self, bytes: &[u8]) {
-        // TODO: remove unwrap
-        self.out.write_all(bytes).unwrap();
-    }
-
-    fn push_indent(&mut self) {
+    fn push_indent(&mut self) -> io::Result<()> {
         if let Some(style) = self.style {
-            for _ in 0..style.indent {
-                for _ in 0..style.indent_size {
-                    self.push_u8(b' ');
-                }
+            for _ in 0..style.indent * style.indent_size {
+                self.push_u8(b' ')?;
             }
         }
+        Ok(())
     }
 
-    fn push_newline(&mut self) {
+    fn push_newline(&mut self) -> io::Result<()> {
         if self.style.is_some() {
-            self.push_u8(b'\n');
+            self.push_u8(b'\n')?;
         }
+        Ok(())
     }
 
-    fn push_space(&mut self) {
+    fn push_space(&mut self) -> io::Result<()> {
         if self.style.is_some() {
-            self.push_u8(b' ');
+            self.push_u8(b' ')?;
         }
+        Ok(())
+    }
+
+    fn push_u8(&mut self, byte: u8) -> io::Result<()> {
+        self.push_bytes(&[byte])
+    }
+
+    fn push_bytes(&mut self, bytes: &[u8]) -> io::Result<()> {
+        self.out.write_all(bytes)
+    }
+
+    fn push_finite_float(&mut self, n: impl ryu::Float) -> io::Result<()> {
+        let mut buffer = ryu::Buffer::new();
+        let s = buffer.format_finite(n);
+        self.push_bytes(s.as_bytes())
+    }
+
+    fn push_null(&mut self) -> io::Result<()> {
+        self.push_bytes(b"null")
+    }
+
+    fn push_escaped_str(&mut self, value: &str) -> io::Result<()> {
+        self.start_string()?;
+        // TODO: escape
+        self.push_bytes(value.as_bytes())?;
+        self.end_string()
+    }
+
+    fn start_string(&mut self) -> io::Result<()> {
+        self.push_u8(b'"')
+    }
+
+    fn end_string(&mut self) -> io::Result<()> {
+        self.push_u8(b'"')
     }
 
     /// Starts serializing a JSON array.
-    fn start_array(&mut self) {
-        self.push_u8(b'[');
-        self.push_newline();
+    fn start_array(&mut self) -> io::Result<()> {
+        self.push_u8(b'[')?;
+        self.push_newline()?;
         self.increment_ident();
+        Ok(())
     }
 
     /// Finishes serializing a JSON array.
-    fn end_array(&mut self) {
-        self.push_newline();
-        self.decrement_ident();
-        self.push_indent();
-        self.push_u8(b']');
+    fn end_array(&mut self, is_empty: bool) -> io::Result<()> {
+        if let Some(e) = self.error.take() {
+            return Err(e);
+        }
+        if is_empty {
+            self.push_u8(b'[')?;
+        } else {
+            self.push_newline()?;
+            self.decrement_ident();
+            self.push_indent()?;
+        }
+        self.push_u8(b']')
     }
 
     /// Starts serializing a JSON object.
-    fn start_object(&mut self) {
-        self.push_u8(b'{');
-        self.push_newline();
+    fn start_object(&mut self) -> io::Result<()> {
+        self.push_u8(b'{')?;
+        self.push_newline()?;
         self.increment_ident();
+        Ok(())
     }
 
     /// Finishes serializing a JSON object.
-    fn end_object(&mut self) {
-        self.push_newline();
-        self.decrement_ident();
-        self.push_indent();
-        self.push_u8(b'}');
+    fn end_object(&mut self, is_empty: bool) -> io::Result<()> {
+        if let Some(e) = self.error.take() {
+            return Err(e);
+        }
+        if is_empty {
+            self.push_u8(b'{')?;
+        } else {
+            self.push_newline()?;
+            self.decrement_ident();
+            self.push_indent()?;
+        }
+        self.push_u8(b'}')
     }
 
     // TODO: store is_field flag in serializer?
-    fn visit_value_inner(&mut self, v: Value<'_>, is_field: bool) {
+    fn visit_value_inner(&mut self, v: Value<'_>, is_field: bool) -> io::Result<()> {
         macro_rules! visit_num {
             ($n:expr) => {
                 if is_field {
-                    self.push_u8(b'"');
-                    // TODO: remove unwrap
-                    write!(self.out, "{}", $n).unwrap();
-                    self.push_u8(b'"');
+                    self.start_string()?;
+                    write!(self.out, "{}", $n)?;
+                    self.end_string()?;
                 } else {
-                    // TODO: remove unwrap
-                    write!(self.out, "{}", $n).unwrap();
+                    write!(self.out, "{}", $n)?;
                 }
             };
         }
         match v {
             Value::Listable(l) => {
-                self.start_array();
-                l.visit(&mut VisitStructure {
+                if is_field {
+                    return Err(invalid_data("list cannot be a key"));
+                }
+                let mut v = VisitStructure {
                     first: true,
                     inner: self,
                     kind: ValueKind::List,
-                });
-                self.end_array();
+                };
+                l.visit(&mut v);
+                v.inner.end_array(v.first)?;
             }
             Value::Mappable(m) => {
-                self.start_object();
-                m.visit(&mut VisitStructure {
+                if is_field {
+                    return Err(invalid_data("map cannot be a key"));
+                }
+                let mut v = VisitStructure {
                     first: true,
                     inner: self,
                     kind: ValueKind::Map,
-                });
-                self.end_object();
+                };
+                m.visit(&mut v);
+                v.inner.end_object(v.first)?;
             }
             Value::Structable(s) => {
+                if is_field {
+                    return Err(invalid_data("struct cannot be a key"));
+                }
                 if s.definition().fields().is_named() {
-                    self.start_object();
-                    s.visit(&mut VisitStructure {
+                    let mut v = VisitStructure {
                         first: true,
                         inner: self,
                         kind: ValueKind::Named,
-                    });
-                    self.end_object();
+                    };
+                    s.visit(&mut v);
+                    v.inner.end_object(v.first)?;
                 } else {
-                    self.start_array();
-                    s.visit(&mut VisitStructure {
+                    let mut v = VisitStructure {
                         first: true,
                         inner: self,
                         kind: ValueKind::Unnamed,
-                    });
-                    self.end_array();
+                    };
+                    s.visit(&mut v);
+                    v.inner.end_array(v.first)?;
                 }
             }
             Value::Enumerable(e) => {
+                if is_field {
+                    return Err(invalid_data("enum cannot be a key"));
+                }
                 if e.variant().is_named_fields() {
-                    self.start_object();
-                    e.visit(&mut VisitStructure {
+                    let mut v = VisitStructure {
                         first: true,
                         inner: self,
                         kind: ValueKind::Named,
-                    });
-                    self.end_object();
+                    };
+                    e.visit(&mut v);
+                    v.inner.end_object(v.first)?;
                 } else {
-                    self.start_array();
-                    e.visit(&mut VisitStructure {
+                    let mut v = VisitStructure {
                         first: true,
                         inner: self,
                         kind: ValueKind::Unnamed,
-                    });
-                    self.end_array();
+                    };
+                    e.visit(&mut v);
+                    v.inner.end_array(v.first)?;
+                }
+            }
+            Value::Tuplable(t) => {
+                if is_field {
+                    let msg = if t.definition().is_unit() {
+                        "unit cannot be a key"
+                    } else {
+                        "tuple cannot be a key"
+                    };
+                    return Err(invalid_data(msg));
+                }
+                if t.definition().is_unit() {
+                    self.push_null()?;
+                } else {
+                    let mut v = VisitStructure {
+                        first: true,
+                        inner: self,
+                        kind: ValueKind::Unnamed,
+                    };
+                    t.visit(&mut v);
+                    v.inner.end_array(v.first)?;
                 }
             }
             Value::String(s) => {
-                self.push_u8(b'"');
-                // TODO: escape
-                self.push_bytes(s.as_bytes());
-                self.push_u8(b'"');
+                self.push_escaped_str(s)?;
             }
             Value::Char(c) => {
-                self.push_u8(b'"');
-                // TODO: escape
-                write!(self.out, "{}", c).unwrap();
-                self.push_u8(b'"');
+                self.push_escaped_str(&c.to_string())?;
             }
             Value::Path(p) => {
-                self.push_u8(b'"');
-                // TODO: escape?
-                write!(self.out, "{}", p.display()).unwrap();
-                self.push_u8(b'"');
+                self.push_escaped_str(&p.display().to_string())?;
             }
             Value::Bool(b) => {
-                // TODO: how to handle if it it field
-                visit_num!(b);
+                if is_field {
+                    return Err(invalid_data("bool cannot be a key"));
+                }
+                write!(self.out, "{}", b)?;
             }
             Value::I8(n) => {
                 visit_num!(n);
@@ -280,18 +415,54 @@ impl<W: Write> Serializer<W> {
             Value::Usize(n) => {
                 visit_num!(n);
             }
-            Value::Unit => {
-                assert!(!is_field);
-                self.push_bytes(b"null");
+            Value::F32(n) => {
+                if is_field {
+                    return Err(invalid_data("float cannot be a key"));
+                }
+                if n.is_finite() {
+                    self.push_finite_float(n)?;
+                } else if self.option.ignore_nan {
+                    self.push_null()?;
+                } else {
+                    let msg = if n.is_nan() {
+                        "NaN cannot be a JSON value"
+                    } else {
+                        "infinity cannot be a JSON value"
+                    };
+                    return Err(invalid_data(msg));
+                }
+            }
+            Value::F64(n) => {
+                if is_field {
+                    return Err(invalid_data("float cannot be a key"));
+                }
+                if n.is_finite() {
+                    self.push_finite_float(n)?;
+                } else if self.option.ignore_nan {
+                    self.push_null()?;
+                } else {
+                    let msg = if n.is_nan() {
+                        "NaN cannot be a JSON value"
+                    } else {
+                        "infinity cannot be a JSON value"
+                    };
+                    return Err(invalid_data(msg));
+                }
             }
             _ => {}
         }
+        Ok(())
     }
 }
 
-impl<W: Write> Visit for Serializer<W> {
+impl<W: io::Write> Visit for Serializer<W> {
     fn visit_value(&mut self, value: Value<'_>) {
-        self.visit_value_inner(value, false)
+        if self.error.is_some() {
+            return;
+        }
+        if let Err(e) = self.visit_value_inner(value, false) {
+            self.error = Some(e);
+        }
     }
 
     fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
@@ -324,76 +495,137 @@ enum ValueKind {
     // `Structable` or `Enumerable` with named fields.
     // Serialized as JSON object.
     Named,
-    // `Structable` or `Enumerable` with unnamed fields.
+    // `Structable` or `Enumerable` with unnamed fields, or `Tuplable`.
     // Serialized as JSON array.
     Unnamed,
 }
 
-impl<W: Write> Visit for VisitStructure<'_, W> {
-    fn visit_value(&mut self, value: Value<'_>) {
-        assert_eq!(self.kind, ValueKind::List);
-        if self.first {
-            self.first = false;
-        } else {
-            self.inner.push_u8(b',');
-            self.inner.push_newline();
+impl ValueKind {
+    #[cold]
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Map => "map",
+            Self::List => "list",
+            Self::Named => "named struct/variant",
+            Self::Unnamed => "unnamed struct/variant",
         }
-        self.inner.push_indent();
-        self.inner.visit_value_inner(value, false);
+    }
+}
+
+impl<W: io::Write> Visit for VisitStructure<'_, W> {
+    fn visit_value(&mut self, value: Value<'_>) {
+        if self.inner.error.is_some() {
+            return;
+        }
+        if self.kind == ValueKind::List {
+            self.inner.error = Some(invalid_data(&format!(
+                "visit_value in {}",
+                self.kind.as_str()
+            )));
+            return;
+        }
+        if let Err(e) = try_block!({
+            if self.first {
+                self.inner.start_array()?;
+                self.first = false;
+            } else {
+                self.inner.push_u8(b',')?;
+                self.inner.push_newline()?;
+            }
+            self.inner.push_indent()?;
+            self.inner.visit_value_inner(value, false)?;
+        }) {
+            self.inner.error = Some(e);
+        }
     }
 
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
-        assert_eq!(self.kind, ValueKind::Map);
-        assert!(!matches!(
-            key,
-            Value::Listable(..)
-                | Value::Mappable(..)
-                | Value::Structable(..)
-                | Value::Enumerable(..)
-        ));
-        if self.first {
-            self.first = false;
-        } else {
-            self.inner.push_u8(b',');
-            self.inner.push_newline();
+        if self.inner.error.is_some() {
+            return;
         }
-        self.inner.push_indent();
-        self.inner.visit_value_inner(key, true);
-        self.inner.push_u8(b':');
-        self.inner.push_space();
-        self.inner.visit_value_inner(value, false);
+        if self.kind == ValueKind::Map {
+            self.inner.error = Some(invalid_data(&format!(
+                "visit_entry in {}",
+                self.kind.as_str()
+            )));
+            return;
+        }
+        if let Err(e) = try_block!({
+            if self.first {
+                self.inner.start_object()?;
+                self.first = false;
+            } else {
+                self.inner.push_u8(b',')?;
+                self.inner.push_newline()?;
+            }
+            self.inner.push_indent()?;
+            self.inner.visit_value_inner(key, true)?;
+            self.inner.push_u8(b':')?;
+            self.inner.push_space()?;
+            self.inner.visit_value_inner(value, false)?;
+        }) {
+            self.inner.error = Some(e);
+        }
     }
 
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-        assert_eq!(self.kind, ValueKind::Named);
-        for (f, &v) in named_values {
-            if self.first {
-                self.first = false;
-            } else {
-                self.inner.push_u8(b',');
-                self.inner.push_newline();
+        if self.inner.error.is_some() {
+            return;
+        }
+        if self.kind == ValueKind::Named {
+            self.inner.error = Some(invalid_data(&format!(
+                "visit_named_fields in {}",
+                self.kind.as_str()
+            )));
+            return;
+        }
+        if let Err(e) = try_block!({
+            for (f, &v) in named_values {
+                if self.first {
+                    self.inner.start_object()?;
+                    self.first = false;
+                } else {
+                    self.inner.push_u8(b',')?;
+                    self.inner.push_newline()?;
+                }
+                self.inner.push_indent()?;
+                self.inner.push_u8(b'"')?;
+                self.inner.push_bytes(f.name().as_bytes())?;
+                self.inner.push_u8(b'"')?;
+                self.inner.push_u8(b':')?;
+                self.inner.push_space()?;
+                self.inner.visit_value_inner(v, false)?;
             }
-            self.inner.push_indent();
-            self.inner.push_u8(b'"');
-            self.inner.push_bytes(f.name().as_bytes());
-            self.inner.push_u8(b'"');
-            self.inner.push_u8(b':');
-            self.inner.push_space();
-            self.inner.visit_value_inner(v, false);
+        }) {
+            self.inner.error = Some(e);
         }
     }
 
     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
-        assert_eq!(self.kind, ValueKind::Unnamed);
-        for &v in values {
-            if self.first {
-                self.first = false;
-            } else {
-                self.inner.push_u8(b',');
-                self.inner.push_newline();
+        if self.inner.error.is_some() {
+            return;
+        }
+        if self.kind == ValueKind::Unnamed {
+            self.inner.error = Some(invalid_data(&format!(
+                "visit_unnamed_fields in {}",
+                self.kind.as_str()
+            )));
+            return;
+        }
+        if let Err(e) = try_block!({
+            for &v in values {
+                if self.first {
+                    self.inner.start_array()?;
+                    self.first = false;
+                } else {
+                    self.inner.push_u8(b',')?;
+                    self.inner.push_newline()?;
+                }
+                self.inner.push_indent()?;
+                self.inner.visit_value_inner(v, false)?;
             }
-            self.inner.push_indent();
-            self.inner.visit_value_inner(v, false);
+        }) {
+            self.inner.error = Some(e);
         }
     }
 }
