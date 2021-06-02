@@ -171,11 +171,22 @@ fn test_seq() {
     );
 }
 
-// TODO:
-// - valuable currently does not support tuple
-//   https://github.com/tokio-rs/valuable/issues/21
 #[test]
-fn test_tuple() {}
+fn test_tuple() {
+    assert_ser_eq!(
+        (1,),
+        &[Token::Tuple { len: 1 }, Token::I32(1), Token::TupleEnd]
+    );
+    assert_ser_eq!(
+        ("a", 'b'),
+        &[
+            Token::Tuple { len: 2 },
+            Token::Str("a"),
+            Token::Char('b'),
+            Token::TupleEnd
+        ]
+    );
+}
 
 #[test]
 fn test_tuple_struct() {
