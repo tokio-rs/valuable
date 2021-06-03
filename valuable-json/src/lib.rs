@@ -52,12 +52,7 @@ where
     W: io::Write,
     V: ?Sized + Valuable,
 {
-    let mut ser = Serializer::new(writer);
-    valuable::visit(value, &mut ser);
-    if let Some(e) = ser.error.take() {
-        return Err(e);
-    }
-    Ok(())
+    Serializer::new(writer).serialize(value)
 }
 
 /// Serialize the given value as pretty-printed JSON into the IO stream.
@@ -66,12 +61,7 @@ where
     W: io::Write,
     V: ?Sized + Valuable,
 {
-    let mut ser = Serializer::new_pretty(writer);
-    valuable::visit(value, &mut ser);
-    if let Some(e) = ser.error.take() {
-        return Err(e);
-    }
-    Ok(())
+    Serializer::pretty(writer).serialize(value)
 }
 
 /// Serialize the given value as a byte vector of JSON.
@@ -114,28 +104,29 @@ where
 
 /// A JSON serializer.
 #[derive(Debug)]
-struct Serializer<W> {
+pub struct Serializer<W> {
     out: W,
-    style: Option<Style>,
     option: SerializerOption,
     error: Option<io::Error>,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct Style {
-    indent: usize,
-    indent_size: usize,
 }
 
 #[derive(Debug)]
 struct SerializerOption {
     ignore_nan: bool,
     escape_solidus: bool,
+    style: Option<Style>,
 }
 
-impl Default for SerializerOption {
-    fn default() -> Self {
+#[derive(Debug, Clone, Copy)]
+struct Style {
+    current_indent: usize,
+    indent_size: usize,
+}
+
+impl SerializerOption {
+    fn new(style: Option<Style>) -> Self {
         Self {
+            style,
             // Default behavior match serde_json.
             ignore_nan: true,
             escape_solidus: false,
@@ -145,43 +136,69 @@ impl Default for SerializerOption {
 
 impl<W: io::Write> Serializer<W> {
     /// Creates a new JSON serializer.
-    fn new(out: W) -> Self {
+    pub fn new(out: W) -> Self {
         Self {
             out,
-            style: None,
-            option: SerializerOption::default(),
+            option: SerializerOption::new(None),
             error: None,
         }
     }
 
     /// Creates a new JSON pretty print serializer.
-    fn new_pretty(out: W) -> Self {
+    pub fn pretty(out: W) -> Self {
         Self {
             out,
-            style: Some(Style {
+            option: SerializerOption::new(Some(Style {
                 indent_size: 2,
-                indent: 0,
-            }),
-            option: SerializerOption::default(),
+                current_indent: 0,
+            })),
             error: None,
         }
     }
 
+    /// If true, serialize NaN and infinity as null.
+    /// If false, return an error when encountered to NaN or infinity.
+    /// Default to true.
+    pub fn ignore_nan(&mut self, value: bool) -> &mut Self {
+        self.option.ignore_nan = value;
+        self
+    }
+
+    /// If true, escape solidus (`/`).
+    /// If false, serialize solidus without escape.
+    /// Default to false.
+    pub fn escape_solidus(&mut self, value: bool) -> &mut Self {
+        self.option.escape_solidus = value;
+        self
+    }
+
+    /// Serializes the given value as a JSON.
+    pub fn serialize<V>(&mut self, value: &V) -> io::Result<()>
+    where
+        V: ?Sized + Valuable,
+    {
+        valuable::visit(value, self);
+        if let Some(e) = self.error.take() {
+            return Err(e);
+        }
+        Ok(())
+    }
+
     fn increment_ident(&mut self) {
-        if let Some(style) = &mut self.style {
-            style.indent += 1;
+        if let Some(style) = &mut self.option.style {
+            style.current_indent += 1;
         }
     }
 
     fn decrement_ident(&mut self) {
-        if let Some(style) = &mut self.style {
-            style.indent -= 1;
+        if let Some(style) = &mut self.option.style {
+            style.current_indent -= 1;
         }
     }
 
     fn push_indent(&mut self) -> io::Result<()> {
-        if let Some(style) = self.style {
-            for _ in 0..style.indent * style.indent_size {
+        if let Some(style) = self.option.style {
+            for _ in 0..style.current_indent * style.indent_size {
                 self.push_u8(b' ')?;
             }
         }
@@ -189,14 +206,14 @@ impl<W: io::Write> Serializer<W> {
     }
 
     fn push_newline(&mut self) -> io::Result<()> {
-        if self.style.is_some() {
+        if self.option.style.is_some() {
             self.push_u8(b'\n')?;
         }
         Ok(())
     }
 
     fn push_space(&mut self) -> io::Result<()> {
-        if self.style.is_some() {
+        if self.option.style.is_some() {
             self.push_u8(b' ')?;
         }
         Ok(())
