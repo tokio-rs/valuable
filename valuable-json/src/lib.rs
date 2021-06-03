@@ -372,6 +372,9 @@ impl<W: io::Write> Serializer<W> {
                 if is_field {
                     return Err(invalid_data("enum cannot be a key"));
                 }
+
+                self.visit_key(&mut true, Value::String(e.variant().name()))?;
+
                 if e.variant().is_named_fields() {
                     let mut v = VisitStructure {
                         first: true,
@@ -389,6 +392,8 @@ impl<W: io::Write> Serializer<W> {
                     e.visit(&mut v);
                     v.inner.end_array(v.first)?;
                 }
+
+                self.end_object(false)?;
             }
             Value::Tuplable(t) => {
                 if is_field {
@@ -505,6 +510,20 @@ impl<W: io::Write> Serializer<W> {
         }
         Ok(())
     }
+
+    fn visit_key(&mut self, first: &mut bool, key: Value<'_>) -> io::Result<()> {
+        if *first {
+            self.start_object()?;
+            *first = false;
+        } else {
+            self.push_u8(b',')?;
+            self.push_newline()?;
+        }
+        self.push_indent()?;
+        self.visit_value_inner(key, true)?;
+        self.push_u8(b':')?;
+        self.push_space()
+    }
 }
 
 impl<W: io::Write> Visit for Serializer<W> {
@@ -614,18 +633,9 @@ impl<W: io::Write> Visit for VisitStructure<'_, W> {
             )));
             return;
         }
+
         if let Err(e) = try_block!({
-            if self.first {
-                self.inner.start_object()?;
-                self.first = false;
-            } else {
-                self.inner.push_u8(b',')?;
-                self.inner.push_newline()?;
-            }
-            self.inner.push_indent()?;
-            self.inner.visit_value_inner(key, true)?;
-            self.inner.push_u8(b':')?;
-            self.inner.push_space()?;
+            self.inner.visit_key(&mut self.first, key)?;
             self.inner.visit_value_inner(value, false)?;
         }) {
             self.inner.error = Some(e);
@@ -645,19 +655,8 @@ impl<W: io::Write> Visit for VisitStructure<'_, W> {
         }
         if let Err(e) = try_block!({
             for (f, &v) in named_values {
-                if self.first {
-                    self.inner.start_object()?;
-                    self.first = false;
-                } else {
-                    self.inner.push_u8(b',')?;
-                    self.inner.push_newline()?;
-                }
-                self.inner.push_indent()?;
-                self.inner.push_u8(b'"')?;
-                self.inner.push_bytes(f.name().as_bytes())?;
-                self.inner.push_u8(b'"')?;
-                self.inner.push_u8(b':')?;
-                self.inner.push_space()?;
+                self.inner
+                    .visit_key(&mut self.first, Value::String(f.name()))?;
                 self.inner.visit_value_inner(v, false)?;
             }
         }) {
