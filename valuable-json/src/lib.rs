@@ -220,10 +220,37 @@ impl<W: io::Write> Serializer<W> {
         self.push_bytes(b"null")
     }
 
-    fn push_escaped_str(&mut self, value: &str) -> io::Result<()> {
+    fn push_escaped_string(&mut self, s: &str) -> io::Result<()> {
         self.start_string()?;
-        // TODO: escape
-        self.push_bytes(value.as_bytes())?;
+
+        let bytes = s.as_bytes();
+
+        let mut start = 0;
+
+        for (i, &byte) in bytes.iter().enumerate() {
+            let escape = escape(byte, self.option.escape_solidus);
+
+            if matches!(escape, Escape::None) {
+                continue;
+            }
+
+            if start < i {
+                self.push_bytes(&bytes[start..i])?;
+            }
+
+            match escape {
+                Escape::Char(bytes) => self.push_bytes(&bytes)?,
+                Escape::Control(bytes) => self.push_bytes(&bytes)?,
+                Escape::None => unreachable!(),
+            }
+
+            start = i + 1;
+        }
+
+        if start != bytes.len() {
+            self.push_bytes(&bytes[start..])?;
+        }
+
         self.end_string()
     }
 
@@ -385,13 +412,13 @@ impl<W: io::Write> Serializer<W> {
                 }
             }
             Value::String(s) => {
-                self.push_escaped_str(s)?;
+                self.push_escaped_string(s)?;
             }
             Value::Char(c) => {
-                self.push_escaped_str(&c.to_string())?;
+                self.push_escaped_string(&c.to_string())?;
             }
             Value::Path(p) => {
-                self.push_escaped_str(&p.display().to_string())?;
+                self.push_escaped_string(&p.display().to_string())?;
             }
             Value::Bool(b) => {
                 if is_field {
@@ -491,15 +518,27 @@ impl<W: io::Write> Visit for Serializer<W> {
     }
 
     fn visit_named_fields(&mut self, _: &NamedValues<'_>) {
-        unreachable!()
+        if self.error.is_none() {
+            self.error = Some(invalid_data("value needs to call visit_value first"));
+        }
     }
 
     fn visit_unnamed_fields(&mut self, _: &[Value<'_>]) {
-        unreachable!()
+        if self.error.is_none() {
+            self.error = Some(invalid_data("value needs to call visit_value first"));
+        }
     }
 
     fn visit_entry(&mut self, _: Value<'_>, _: Value<'_>) {
-        unreachable!()
+        if self.error.is_none() {
+            self.error = Some(invalid_data("value needs to call visit_value first"));
+        }
+    }
+
+    fn visit_primitive_slice(&mut self, _: Slice<'_>) {
+        if self.error.is_none() {
+            self.error = Some(invalid_data("value needs to call visit_value first"));
+        }
     }
 }
 
@@ -653,4 +692,50 @@ impl<W: io::Write> Visit for VisitStructure<'_, W> {
             self.inner.error = Some(e);
         }
     }
+}
+
+enum Escape {
+    Char([u8; 2]),
+    Control([u8; 6]),
+    None,
+}
+
+fn escape(byte: u8, escape_solidus: bool) -> Escape {
+    Escape::Char(*match byte {
+        // quote (`"`)
+        b'"' => b"\\\"",
+        // reverse solidus (`\`)
+        b'\\' => b"\\\\",
+        // solidus (`/`)
+        b'/' => {
+            if !escape_solidus {
+                return Escape::None;
+            }
+            b"\\/"
+        }
+        // line feed character (`\n`)
+        b'\n' => b"\\n",
+        // carriage return character (`\r`)
+        b'\r' => b"\\r",
+        // tab character (`\t`)
+        b'\t' => b"\\t",
+        // backspace character (`\b`)
+        0x08 => b"\\b",
+        // form feed character (`\f`)
+        0x0C => b"\\f",
+        // control character (`\u00XX`).
+        // Refs: https://github.com/serde-rs/json/blob/v1.0.64/src/ser.rs#L1790-L1801
+        0x00..=0x1F => {
+            static HEX: [u8; 16] = *b"0123456789abcdef";
+            return Escape::Control([
+                b'\\',
+                b'u',
+                b'0',
+                b'0',
+                HEX[(byte >> 4) as usize],
+                HEX[(byte & 0xF) as usize],
+            ]);
+        }
+        _ => return Escape::None,
+    })
 }
