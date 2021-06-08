@@ -491,7 +491,7 @@ fn test_dyn_enum() {
         fn variant(&self) -> Variant<'_> {
             match self {
                 Self::Named => Variant::Dynamic(VariantDef::new("Named", Fields::Named(&[]))),
-                Self::Unnamed => Variant::Dynamic(VariantDef::new("Named", Fields::Unnamed)),
+                Self::Unnamed => Variant::Dynamic(VariantDef::new("Unnamed", Fields::Unnamed)),
             }
         }
     }
