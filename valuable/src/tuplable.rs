@@ -14,7 +14,7 @@ use core::fmt;
 /// # Inspecting
 ///
 /// Inspecting fields contained by a `Tuplable` instance is done by visiting the
-/// tuple. When visiting a `Tuple`, the `visit_nunnamed_fields()` method is
+/// tuple. When visiting a `Tuple`, the `visit_unnamed_fields()` method is
 /// called. When the tuple is statically defined, `visit_unnamed_fields()` is
 /// called once with the values of all the fields. A dynamic tuple
 /// implementation may call `visit_unnamed_fields()` multiple times.
