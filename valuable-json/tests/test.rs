@@ -171,7 +171,7 @@ fn test_nonfinite_float_error() {
     let mut out = vec![];
     assert_eq!(
         Serializer::new(&mut out)
-            .ignore_nan(false)
+            .reject_nan()
             .serialize(&f32::NAN)
             .unwrap_err()
             .to_string(),
@@ -179,7 +179,7 @@ fn test_nonfinite_float_error() {
     );
     assert_eq!(
         Serializer::new(&mut out)
-            .ignore_nan(false)
+            .reject_nan()
             .serialize(&f32::INFINITY)
             .unwrap_err()
             .to_string(),
@@ -187,7 +187,7 @@ fn test_nonfinite_float_error() {
     );
     assert_eq!(
         Serializer::new(&mut out)
-            .ignore_nan(false)
+            .reject_nan()
             .serialize(&f32::NEG_INFINITY)
             .unwrap_err()
             .to_string(),
@@ -196,7 +196,7 @@ fn test_nonfinite_float_error() {
 
     assert_eq!(
         Serializer::new(&mut out)
-            .ignore_nan(false)
+            .reject_nan()
             .serialize(&f64::NAN)
             .unwrap_err()
             .to_string(),
@@ -204,7 +204,7 @@ fn test_nonfinite_float_error() {
     );
     assert_eq!(
         Serializer::new(&mut out)
-            .ignore_nan(false)
+            .reject_nan()
             .serialize(&f64::INFINITY)
             .unwrap_err()
             .to_string(),
@@ -212,7 +212,7 @@ fn test_nonfinite_float_error() {
     );
     assert_eq!(
         Serializer::new(&mut out)
-            .ignore_nan(false)
+            .reject_nan()
             .serialize(&f64::NEG_INFINITY)
             .unwrap_err()
             .to_string(),
@@ -246,7 +246,7 @@ fn test_char_key() {
 fn test_escape_solidus() {
     let mut out = vec![];
     Serializer::new(&mut out)
-        .escape_solidus(true)
+        .escape_solidus()
         .serialize(&"/")
         .unwrap();
     assert_eq!(String::from_utf8(out).unwrap(), "\"\\/\"");

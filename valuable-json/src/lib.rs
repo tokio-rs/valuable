@@ -110,9 +110,10 @@ pub struct Serializer<W> {
     error: Option<io::Error>,
 }
 
+// TODO: Investigate what the better way to set these options is.
 #[derive(Debug)]
 struct SerializerOption {
-    ignore_nan: bool,
+    reject_nan: bool,
     escape_solidus: bool,
     style: Option<Style>,
 }
@@ -128,7 +129,7 @@ impl SerializerOption {
         Self {
             style,
             // Default behavior match serde_json.
-            ignore_nan: true,
+            reject_nan: false,
             escape_solidus: false,
         }
     }
@@ -156,19 +157,17 @@ impl<W: io::Write> Serializer<W> {
         }
     }
 
-    /// If true, serialize NaN and infinity as null.
-    /// If false, return an error when encountered to NaN or infinity.
-    /// Default to true.
-    pub fn ignore_nan(&mut self, value: bool) -> &mut Self {
-        self.option.ignore_nan = value;
+    /// Return an error when encountered to NaN or infinity.
+    /// By default, valuable-json, serializes NaN and infinity as null.
+    pub fn reject_nan(&mut self) -> &mut Self {
+        self.option.reject_nan = true;
         self
     }
 
-    /// If true, escape solidus (`/`).
-    /// If false, serialize solidus without escape.
-    /// Default to false.
-    pub fn escape_solidus(&mut self, value: bool) -> &mut Self {
-        self.option.escape_solidus = value;
+    /// Escape solidus (aka slashes, `/`).
+    /// By default, valuable-json serializes solidus without escape.
+    pub fn escape_solidus(&mut self) -> &mut Self {
+        self.option.escape_solidus = true;
         self
     }
 
@@ -489,15 +488,15 @@ impl<W: io::Write> Serializer<W> {
                 }
                 if n.is_finite() {
                     self.push_finite_float(n)?;
-                } else if self.option.ignore_nan {
-                    self.push_null()?;
-                } else {
+                } else if self.option.reject_nan {
                     let msg = if n.is_nan() {
                         "NaN cannot be a JSON value"
                     } else {
                         "infinity cannot be a JSON value"
                     };
                     return Err(invalid_data(msg));
+                } else {
+                    self.push_null()?;
                 }
             }
             Value::F64(n) => {
@@ -506,15 +505,15 @@ impl<W: io::Write> Serializer<W> {
                 }
                 if n.is_finite() {
                     self.push_finite_float(n)?;
-                } else if self.option.ignore_nan {
-                    self.push_null()?;
-                } else {
+                } else if self.option.reject_nan {
                     let msg = if n.is_nan() {
                         "NaN cannot be a JSON value"
                     } else {
                         "infinity cannot be a JSON value"
                     };
                     return Err(invalid_data(msg));
+                } else {
+                    self.push_null()?;
                 }
             }
             Value::Unit => {
@@ -739,7 +738,7 @@ fn escape(byte: u8, escape_solidus: bool) -> Escape {
         // form feed character (`\f`)
         0x0C => b"\\f",
         // control character (`\u00XX`).
-        // Refs: https://github.com/serde-rs/json/blob/v1.0.64/src/ser.rs#L1790-L1801
+        // Based on https://github.com/serde-rs/json/blob/v1.0.64/src/ser.rs#L1790-L1801
         0x00..=0x1F => {
             static HEX: [u8; 16] = *b"0123456789abcdef";
             return Escape::Control([

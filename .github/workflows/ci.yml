@@ -45,6 +45,7 @@ jobs:
         working-directory: valuable
       - run: cargo hack build --target ${{ matrix.target }} --feature-powerset --skip std,default
         working-directory: valuable-serde
+      # TODO: support no-std in valuable-json
       # - run: cargo hack build --target ${{ matrix.target }} --feature-powerset --skip std,default
       #   working-directory: valuable-json
 
