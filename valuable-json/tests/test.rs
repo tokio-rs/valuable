@@ -3,6 +3,16 @@ use std::{collections::BTreeMap, path::Path};
 use valuable::*;
 use valuable_json::*;
 
+macro_rules! map {
+    ($($key:expr => $val:expr),* $(,)?) => {{
+        let mut _map = BTreeMap::new();
+        $(
+            _map.insert($key, $val);
+        )*
+        _map
+    }};
+}
+
 #[track_caller]
 fn assert_ser_compact<V>(value: V, expected: impl AsRef<str>)
 where
@@ -37,25 +47,65 @@ fn test_bool() {
 }
 
 #[test]
+fn test_bool_key() {
+    let map = map!(
+        true => 1,
+        false => 0
+    );
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "bool cannot be a key"
+    );
+}
+
+#[test]
 fn test_int() {
-    assert_ser_both(i8::MIN, i8::MIN.to_string());
-    assert_ser_both(i8::MAX, i8::MAX.to_string());
-    assert_ser_both(i16::MIN, i16::MIN.to_string());
-    assert_ser_both(i16::MAX, i16::MAX.to_string());
-    assert_ser_both(i32::MIN, i32::MIN.to_string());
-    assert_ser_both(i32::MAX, i32::MAX.to_string());
-    assert_ser_both(i64::MIN, i64::MIN.to_string());
-    assert_ser_both(i64::MAX, i64::MAX.to_string());
-    assert_ser_both(i128::MIN, i128::MIN.to_string());
-    assert_ser_both(i128::MAX, i128::MAX.to_string());
-    assert_ser_both(isize::MIN, isize::MIN.to_string());
-    assert_ser_both(isize::MAX, isize::MAX.to_string());
-    assert_ser_both(u8::MAX, u8::MAX.to_string());
-    assert_ser_both(u16::MAX, u16::MAX.to_string());
-    assert_ser_both(u32::MAX, u32::MAX.to_string());
-    assert_ser_both(u64::MAX, u64::MAX.to_string());
-    assert_ser_both(u128::MAX, u128::MAX.to_string());
-    assert_ser_both(usize::MAX, usize::MAX.to_string());
+    macro_rules! assert_int {
+        ($($ty:ty),*) => {{
+            $(
+                assert_ser_both(<$ty>::MIN, <$ty>::MIN.to_string());
+                assert_ser_both(<$ty>::MAX, <$ty>::MAX.to_string());
+            )*
+        }};
+    }
+
+    assert_int!(i8, i16, i32, i64, i128, isize);
+    assert_int!(u8, u16, u32, u64, u128, usize);
+}
+
+#[test]
+fn test_int_key() {
+    macro_rules! assert_int_key {
+        ($($ty:ty),*) => {{
+            $(
+                assert_ser_compact(
+                    map!(
+                        <$ty>::MAX => (),
+                        <$ty>::MIN => (),
+                    ),
+                    to_string(&map!(
+                        <$ty>::MAX.to_string() => (),
+                        <$ty>::MIN.to_string() => (),
+                    ))
+                    .unwrap(),
+                );
+                assert_ser_pretty(
+                    map!(
+                        <$ty>::MAX => (),
+                        <$ty>::MIN => (),
+                    ),
+                    to_string_pretty(&map!(
+                        <$ty>::MAX.to_string() => (),
+                        <$ty>::MIN.to_string() => (),
+                    ))
+                    .unwrap(),
+                );
+            )*
+        }};
+    }
+
+    assert_int_key!(i8, i16, i32, i64, i128, isize);
+    assert_int_key!(u8, u16, u32, u64, u128, usize);
 }
 
 #[test]
@@ -66,6 +116,44 @@ fn test_float() {
     assert_ser_both(f64::MIN, "-1.7976931348623157e308");
     assert_ser_both(f64::MAX, "1.7976931348623157e308");
     assert_ser_both(f64::EPSILON, "2.220446049250313e-16");
+}
+
+#[test]
+fn test_float_key() {
+    #[derive(PartialEq, Eq, PartialOrd, Ord)]
+    struct F32;
+    impl Valuable for F32 {
+        fn as_value(&self) -> Value<'_> {
+            Value::F32(1.0)
+        }
+
+        fn visit(&self, visit: &mut dyn Visit) {
+            visit.visit_value(self.as_value())
+        }
+    }
+
+    #[derive(PartialEq, Eq, PartialOrd, Ord)]
+    struct F64;
+    impl Valuable for F64 {
+        fn as_value(&self) -> Value<'_> {
+            Value::F64(1.0)
+        }
+
+        fn visit(&self, visit: &mut dyn Visit) {
+            visit.visit_value(self.as_value())
+        }
+    }
+
+    let map = map!(F32 => ());
+    assert_eq!(
+        to_string(&map).unwrap_err().to_string(),
+        "float cannot be a key"
+    );
+    let map = map!(F64 => ());
+    assert_eq!(
+        to_string(&map).unwrap_err().to_string(),
+        "float cannot be a key"
+    );
 }
 
 #[test]
@@ -135,7 +223,6 @@ fn test_nonfinite_float_error() {
 #[test]
 fn test_char() {
     assert_ser_both('a', "\"a\"");
-    // escape
     assert_ser_both('"', "\"\\\"\"");
     assert_ser_both('\\', "\"\\\\\"");
     assert_ser_both('/', "\"/\"");
@@ -147,6 +234,12 @@ fn test_char() {
     assert_ser_both('\x00', "\"\\u0000\"");
     assert_ser_both('\x1F', "\"\\u001f\"");
     assert_ser_both('\u{3A3}', "\"\u{3A3}\"");
+}
+
+#[test]
+fn test_char_key() {
+    assert_ser_compact(map!('a' => ()), to_string(&map!("a" => ())).unwrap());
+    assert_ser_pretty(map!('a' => ()), to_string_pretty(&map!("a" => ())).unwrap());
 }
 
 #[test]
@@ -171,6 +264,18 @@ fn test_path() {
 }
 
 #[test]
+fn test_path_key() {
+    assert_ser_compact(
+        map!(Path::new("a.txt") => ()),
+        to_string(&map!("a.txt" => ())).unwrap(),
+    );
+    assert_ser_pretty(
+        map!(Path::new("a.txt") => ()),
+        to_string_pretty(&map!("a.txt" => ())).unwrap(),
+    );
+}
+
+#[test]
 fn test_option() {
     assert_ser_both(None::<u8>, "null");
     assert_ser_both(Some(1), "1");
@@ -185,11 +290,33 @@ fn test_unit() {
 }
 
 #[test]
+fn test_unit_key() {
+    let map = map!(
+        () => (),
+    );
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "unit cannot be a key"
+    );
+}
+
+#[test]
 fn test_tuple() {
     assert_ser_compact((1,), r#"[1]"#);
     assert_ser_pretty((1,), "[\n  1\n]");
     assert_ser_compact(("a", 'b'), r#"["a","b"]"#);
     assert_ser_pretty(("a", 'b'), "[\n  \"a\",\n  \"b\"\n]");
+}
+
+#[test]
+fn test_tuple_key() {
+    let map = map!(
+        ("a",) => (),
+    );
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "tuple cannot be a key"
+    );
 }
 
 #[test]
@@ -207,8 +334,19 @@ fn test_list() {
 }
 
 #[test]
+fn test_list_key() {
+    let map = map!(
+        vec!["a"] => (),
+    );
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "list cannot be a key"
+    );
+}
+
+#[test]
 fn test_unit_struct() {
-    #[derive(Debug, PartialEq, Valuable)]
+    #[derive(Valuable)]
     struct S;
 
     assert_ser_both(S, "[]");
@@ -216,11 +354,11 @@ fn test_unit_struct() {
 
 #[test]
 fn test_tuple_struct() {
-    #[derive(Debug, PartialEq, Valuable)]
+    #[derive(Valuable)]
     struct S0();
-    #[derive(Debug, PartialEq, Valuable)]
+    #[derive(Valuable)]
     struct S1(u8);
-    #[derive(Debug, PartialEq, Valuable)]
+    #[derive(Valuable)]
     struct S2(i8, u8);
 
     assert_ser_both(S0(), "[]");
@@ -243,14 +381,22 @@ fn test_map() {
 }
 
 #[test]
+fn test_map_key() {
+    let map = map!(
+        map!["a" => ()] => (),
+    );
+    assert_eq!(to_vec(&map).unwrap_err().to_string(), "map cannot be a key");
+}
+
+#[test]
 fn test_struct() {
-    #[derive(Debug, PartialEq, Valuable)]
+    #[derive(Valuable)]
     struct S0 {}
-    #[derive(Debug, PartialEq, Valuable)]
+    #[derive(Valuable)]
     struct S1 {
         f: u8,
     }
-    #[derive(Debug, PartialEq, Valuable)]
+    #[derive(Valuable)]
     struct S2 {
         f: u8,
         g: char,
@@ -264,8 +410,43 @@ fn test_struct() {
 }
 
 #[test]
+fn test_struct_key() {
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Valuable)]
+    struct Unit;
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Valuable)]
+    struct Newtype(u8);
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Valuable)]
+    struct Tuple(i8, u8);
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Valuable)]
+    struct Struct {
+        f: u8,
+    }
+
+    let map = map!(Unit => ());
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "struct cannot be a key"
+    );
+    let map = map!(Newtype(0) => ());
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "struct cannot be a key"
+    );
+    let map = map!(Tuple(-1, 1) => ());
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "struct cannot be a key"
+    );
+    let map = map!(Struct { f: 0 } => ());
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "struct cannot be a key"
+    );
+}
+
+#[test]
 fn test_enum() {
-    #[derive(Debug, PartialEq, Valuable)]
+    #[derive(Valuable)]
     enum E {
         Unit,
         Newtype(u8),
@@ -283,6 +464,38 @@ fn test_enum() {
     assert_ser_pretty(
         E::Struct { f: 1 },
         "{\n  \"Struct\": {\n    \"f\": 1\n  }\n}",
+    );
+}
+
+#[test]
+fn test_enum_key() {
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Valuable)]
+    enum E {
+        Unit,
+        Newtype(u8),
+        Tuple(i8, u8),
+        Struct { f: u8 },
+    }
+
+    let map = map!(E::Unit => ());
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "enum cannot be a key"
+    );
+    let map = map!(E::Newtype(0) => ());
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "enum cannot be a key"
+    );
+    let map = map!(E::Tuple(-1, 1) => ());
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "enum cannot be a key"
+    );
+    let map = map!(E::Struct { f: 0 } => ());
+    assert_eq!(
+        to_vec(&map).unwrap_err().to_string(),
+        "enum cannot be a key"
     );
 }
 

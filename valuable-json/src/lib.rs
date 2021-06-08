@@ -325,7 +325,6 @@ impl<W: io::Write> Serializer<W> {
         self.push_u8(b'}')
     }
 
-    // TODO: store is_field flag in serializer?
     fn visit_value_inner(&mut self, value: Value<'_>, is_field: bool) -> io::Result<()> {
         macro_rules! visit_num {
             ($n:expr) => {
