@@ -122,7 +122,7 @@ use crate::*;
 pub trait Visit {
     /// Visit a single value.
     ///
-    /// Thie `visit_value` method is called once when visiting single primitive
+    /// The `visit_value` method is called once when visiting single primitive
     /// values. When visiting `Listable` types, the `visit_value` method is
     /// called once per item in the listable type.
     ///
