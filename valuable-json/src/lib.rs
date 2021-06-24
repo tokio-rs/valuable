@@ -714,6 +714,7 @@ enum Escape {
     None,
 }
 
+#[inline]
 fn escape(byte: u8, escape_solidus: bool) -> Escape {
     Escape::Char(*match byte {
         // quote (`"`)
