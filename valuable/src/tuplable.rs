@@ -108,6 +108,36 @@ pub enum TupleDef {
     },
 }
 
+macro_rules! deref {
+    (
+        $(
+            $(#[$attrs:meta])*
+            $ty:ty,
+        )*
+    ) => {
+        $(
+            $(#[$attrs])*
+            impl<T: ?Sized + Tuplable> Tuplable for $ty {
+                fn definition(&self) -> TupleDef {
+                    T::definition(&**self)
+                }
+            }
+        )*
+    };
+}
+
+deref! {
+    &T,
+    &mut T,
+    #[cfg(feature = "alloc")]
+    alloc::boxed::Box<T>,
+    #[cfg(feature = "alloc")]
+    alloc::rc::Rc<T>,
+    #[cfg(not(valuable_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    alloc::sync::Arc<T>,
+}
+
 impl Tuplable for () {
     fn definition(&self) -> TupleDef {
         TupleDef::Static { fields: 0 }

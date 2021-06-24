@@ -608,56 +608,36 @@ impl fmt::Debug for dyn Enumerable + '_ {
     }
 }
 
-impl<E: ?Sized + Enumerable> Enumerable for &E {
-    fn definition(&self) -> EnumDef<'_> {
-        E::definition(*self)
-    }
+macro_rules! deref {
+    (
+        $(
+            $(#[$attrs:meta])*
+            $ty:ty,
+        )*
+    ) => {
+        $(
+            $(#[$attrs])*
+            impl<T: ?Sized + Enumerable> Enumerable for $ty {
+                fn definition(&self) -> EnumDef<'_> {
+                    T::definition(&**self)
+                }
 
-    fn variant(&self) -> Variant<'_> {
-        E::variant(*self)
-    }
+                fn variant(&self) -> Variant<'_> {
+                    T::variant(&**self)
+                }
+            }
+        )*
+    };
 }
 
-impl<E: ?Sized + Enumerable> Enumerable for &mut E {
-    fn definition(&self) -> EnumDef<'_> {
-        E::definition(&**self)
-    }
-
-    fn variant(&self) -> Variant<'_> {
-        E::variant(&**self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<E: ?Sized + Enumerable> Enumerable for alloc::boxed::Box<E> {
-    fn definition(&self) -> EnumDef<'_> {
-        E::definition(&**self)
-    }
-
-    fn variant(&self) -> Variant<'_> {
-        E::variant(&**self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<E: ?Sized + Enumerable> Enumerable for alloc::rc::Rc<E> {
-    fn definition(&self) -> EnumDef<'_> {
-        E::definition(&**self)
-    }
-
-    fn variant(&self) -> Variant<'_> {
-        E::variant(&**self)
-    }
-}
-
-#[cfg(not(valuable_no_atomic_cas))]
-#[cfg(feature = "alloc")]
-impl<E: ?Sized + Enumerable> Enumerable for alloc::sync::Arc<E> {
-    fn definition(&self) -> EnumDef<'_> {
-        E::definition(&**self)
-    }
-
-    fn variant(&self) -> Variant<'_> {
-        E::variant(&**self)
-    }
+deref! {
+    &T,
+    &mut T,
+    #[cfg(feature = "alloc")]
+    alloc::boxed::Box<T>,
+    #[cfg(feature = "alloc")]
+    alloc::rc::Rc<T>,
+    #[cfg(not(valuable_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    alloc::sync::Arc<T>,
 }

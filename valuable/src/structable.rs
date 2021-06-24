@@ -465,36 +465,32 @@ impl<'a> StructDef<'a> {
     }
 }
 
-impl<S: ?Sized + Structable> Structable for &S {
-    fn definition(&self) -> StructDef<'_> {
-        S::definition(*self)
-    }
+macro_rules! deref {
+    (
+        $(
+            $(#[$attrs:meta])*
+            $ty:ty,
+        )*
+    ) => {
+        $(
+            $(#[$attrs])*
+            impl<T: ?Sized + Structable> Structable for $ty {
+                fn definition(&self) -> StructDef<'_> {
+                    T::definition(&**self)
+                }
+            }
+        )*
+    };
 }
 
-impl<S: ?Sized + Structable> Structable for &mut S {
-    fn definition(&self) -> StructDef<'_> {
-        S::definition(&**self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<S: ?Sized + Structable> Structable for alloc::boxed::Box<S> {
-    fn definition(&self) -> StructDef<'_> {
-        S::definition(&**self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<S: ?Sized + Structable> Structable for alloc::rc::Rc<S> {
-    fn definition(&self) -> StructDef<'_> {
-        S::definition(&**self)
-    }
-}
-
-#[cfg(not(valuable_no_atomic_cas))]
-#[cfg(feature = "alloc")]
-impl<S: ?Sized + Structable> Structable for alloc::sync::Arc<S> {
-    fn definition(&self) -> StructDef<'_> {
-        S::definition(&**self)
-    }
+deref! {
+    &T,
+    &mut T,
+    #[cfg(feature = "alloc")]
+    alloc::boxed::Box<T>,
+    #[cfg(feature = "alloc")]
+    alloc::rc::Rc<T>,
+    #[cfg(not(valuable_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    alloc::sync::Arc<T>,
 }

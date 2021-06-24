@@ -72,58 +72,38 @@ pub trait Valuable {
     }
 }
 
-impl<V: ?Sized + Valuable> Valuable for &V {
-    fn as_value(&self) -> Value<'_> {
-        V::as_value(*self)
-    }
+macro_rules! deref {
+    (
+        $(
+            $(#[$attrs:meta])*
+            $ty:ty,
+        )*
+    ) => {
+        $(
+            $(#[$attrs])*
+            impl<T: ?Sized + Valuable> Valuable for $ty {
+                fn as_value(&self) -> Value<'_> {
+                    T::as_value(&**self)
+                }
 
-    fn visit(&self, visit: &mut dyn Visit) {
-        V::visit(*self, visit);
-    }
+                fn visit(&self, visit: &mut dyn Visit) {
+                    T::visit(&**self, visit);
+                }
+            }
+        )*
+    };
 }
 
-impl<V: ?Sized + Valuable> Valuable for &mut V {
-    fn as_value(&self) -> Value<'_> {
-        V::as_value(&**self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        V::visit(&**self, visit);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<V: ?Sized + Valuable> Valuable for alloc::boxed::Box<V> {
-    fn as_value(&self) -> Value<'_> {
-        V::as_value(&**self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        V::visit(&**self, visit);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<V: ?Sized + Valuable> Valuable for alloc::rc::Rc<V> {
-    fn as_value(&self) -> Value<'_> {
-        V::as_value(&**self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        V::visit(&**self, visit);
-    }
-}
-
-#[cfg(not(valuable_no_atomic_cas))]
-#[cfg(feature = "alloc")]
-impl<V: ?Sized + Valuable> Valuable for alloc::sync::Arc<V> {
-    fn as_value(&self) -> Value<'_> {
-        V::as_value(&**self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        V::visit(&**self, visit);
-    }
+deref! {
+    &T,
+    &mut T,
+    #[cfg(feature = "alloc")]
+    alloc::boxed::Box<T>,
+    #[cfg(feature = "alloc")]
+    alloc::rc::Rc<T>,
+    #[cfg(not(valuable_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    alloc::sync::Arc<T>,
 }
 
 macro_rules! valuable {
