@@ -90,7 +90,12 @@ where
     V: ?Sized + Valuable,
 {
     let vec = to_vec(value)?;
-    Ok(String::from_utf8(vec).unwrap())
+    if cfg!(debug_assertions) {
+        Ok(String::from_utf8(vec).unwrap())
+    } else {
+        // SAFETY: We do not emit invalid UTF-8.
+        Ok(unsafe { String::from_utf8_unchecked(vec) })
+    }
 }
 
 /// Serialize the given value as a pretty-printed string of JSON.
@@ -99,7 +104,12 @@ where
     V: ?Sized + Valuable,
 {
     let vec = to_vec_pretty(value)?;
-    Ok(String::from_utf8(vec).unwrap())
+    if cfg!(debug_assertions) {
+        Ok(String::from_utf8(vec).unwrap())
+    } else {
+        // SAFETY: We do not emit invalid UTF-8.
+        Ok(unsafe { String::from_utf8_unchecked(vec) })
+    }
 }
 
 /// A JSON serializer.
