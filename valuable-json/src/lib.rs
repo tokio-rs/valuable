@@ -240,33 +240,32 @@ impl<W: io::Write> Serializer<W> {
         self.start_string()?;
 
         let bytes = s.as_bytes();
-        self.push_bytes(bytes)?;
 
-        // let mut start = 0;
+        let mut start = 0;
 
-        // for (i, &byte) in bytes.iter().enumerate() {
-        //     let escape = escape(byte, self.option.escape_solidus);
+        for (i, &byte) in bytes.iter().enumerate() {
+            let escape = escape(byte, self.option.escape_solidus);
 
-        //     if matches!(escape, Escape::None) {
-        //         continue;
-        //     }
+            if matches!(escape, Escape::None) {
+                continue;
+            }
 
-        //     if start < i {
-        //         self.push_bytes(&bytes[start..i])?;
-        //     }
+            if start < i {
+                self.push_bytes(&bytes[start..i])?;
+            }
 
-        //     match escape {
-        //         Escape::Char(bytes) => self.push_bytes(&bytes)?,
-        //         Escape::Control(bytes) => self.push_bytes(&bytes)?,
-        //         Escape::None => unreachable!(),
-        //     }
+            match escape {
+                Escape::Char(bytes) => self.push_bytes(&bytes)?,
+                Escape::Control(bytes) => self.push_bytes(&bytes)?,
+                Escape::None => unreachable!(),
+            }
 
-        //     start = i + 1;
-        // }
+            start = i + 1;
+        }
 
-        // if start != bytes.len() {
-        //     self.push_bytes(&bytes[start..])?;
-        // }
+        if start != bytes.len() {
+            self.push_bytes(&bytes[start..])?;
+        }
 
         self.end_string()
     }
