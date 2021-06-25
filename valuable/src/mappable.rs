@@ -98,38 +98,34 @@ pub trait Mappable: Valuable {
     fn size_hint(&self) -> (usize, Option<usize>);
 }
 
-impl<M: ?Sized + Mappable> Mappable for &M {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        M::size_hint(*self)
-    }
+macro_rules! deref {
+    (
+        $(
+            $(#[$attrs:meta])*
+            $ty:ty,
+        )*
+    ) => {
+        $(
+            $(#[$attrs])*
+            impl<T: ?Sized + Mappable> Mappable for $ty {
+                fn size_hint(&self) -> (usize, Option<usize>) {
+                    T::size_hint(&**self)
+                }
+            }
+        )*
+    };
 }
 
-impl<M: ?Sized + Mappable> Mappable for &mut M {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        M::size_hint(&**self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<M: ?Sized + Mappable> Mappable for alloc::boxed::Box<M> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        M::size_hint(&**self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<M: ?Sized + Mappable> Mappable for alloc::rc::Rc<M> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        M::size_hint(&**self)
-    }
-}
-
-#[cfg(not(valuable_no_atomic_cas))]
-#[cfg(feature = "alloc")]
-impl<M: ?Sized + Mappable> Mappable for alloc::sync::Arc<M> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        M::size_hint(&**self)
-    }
+deref! {
+    &T,
+    &mut T,
+    #[cfg(feature = "alloc")]
+    alloc::boxed::Box<T>,
+    #[cfg(feature = "alloc")]
+    alloc::rc::Rc<T>,
+    #[cfg(not(valuable_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    alloc::sync::Arc<T>,
 }
 
 #[cfg(feature = "std")]

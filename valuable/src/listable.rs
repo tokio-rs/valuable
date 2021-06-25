@@ -100,38 +100,34 @@ pub trait Listable: Valuable {
     fn size_hint(&self) -> (usize, Option<usize>);
 }
 
-impl<L: ?Sized + Listable> Listable for &L {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        L::size_hint(*self)
-    }
+macro_rules! deref {
+    (
+        $(
+            $(#[$attrs:meta])*
+            $ty:ty,
+        )*
+    ) => {
+        $(
+            $(#[$attrs])*
+            impl<T: ?Sized + Listable> Listable for $ty {
+                fn size_hint(&self) -> (usize, Option<usize>) {
+                    T::size_hint(&**self)
+                }
+            }
+        )*
+    };
 }
 
-impl<L: ?Sized + Listable> Listable for &mut L {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        L::size_hint(&**self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<L: ?Sized + Listable> Listable for alloc::boxed::Box<L> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        L::size_hint(&**self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<L: ?Sized + Listable> Listable for alloc::rc::Rc<L> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        L::size_hint(&**self)
-    }
-}
-
-#[cfg(not(valuable_no_atomic_cas))]
-#[cfg(feature = "alloc")]
-impl<L: ?Sized + Listable> Listable for alloc::sync::Arc<L> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        L::size_hint(&**self)
-    }
+deref! {
+    &T,
+    &mut T,
+    #[cfg(feature = "alloc")]
+    alloc::boxed::Box<T>,
+    #[cfg(feature = "alloc")]
+    alloc::rc::Rc<T>,
+    #[cfg(not(valuable_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    alloc::sync::Arc<T>,
 }
 
 macro_rules! slice {
@@ -214,7 +210,7 @@ collection! {
     #[cfg(feature = "alloc")]
     (T: Valuable + Ord) alloc::collections::BinaryHeap<T>,
     #[cfg(feature = "alloc")]
-    (T: Valuable + Ord) alloc::collections::BTreeSet<T> ,
+    (T: Valuable + Ord) alloc::collections::BTreeSet<T>,
     #[cfg(feature = "std")]
     (T: Valuable + Eq + std::hash::Hash, H: std::hash::BuildHasher) std::collections::HashSet<T, H>,
 }
