@@ -22,6 +22,7 @@ impl<'a> Pointer<'a> {
         self.path
     }
 
+    #[doc(hidden)]
     #[must_use]
     pub fn step(self) -> Self {
         Self::new(&self.path[1..])
