@@ -312,7 +312,7 @@ fn allowed_lints() -> TokenStream {
     }
 }
 
-fn respan(tokens: TokenStream, span: &impl ToTokens) -> TokenStream {
+pub(crate) fn respan(tokens: TokenStream, span: &impl ToTokens) -> TokenStream {
     let mut iter = span.to_token_stream().into_iter();
     // `Span` on stable Rust has a limitation that only points to the first
     // token, not the whole tokens. We can work around this limitation by

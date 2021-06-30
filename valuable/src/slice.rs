@@ -75,6 +75,17 @@ macro_rules! slice {
                 }
             }
 
+            /// Returns a reference to an element of index.
+            pub fn get(&self, index: usize) -> Option<Value<'_>> {
+                #[allow(unused_doc_comments)]
+                match self {
+                    $(
+                        $(#[$attrs])*
+                        Slice::$variant(s) => s.get(index).map(Valuable::as_value),
+                    )*
+                }
+            }
+
             /// Returns an iterator over the slice.
             ///
             /// # Examples

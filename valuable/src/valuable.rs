@@ -1,3 +1,4 @@
+use crate::pointer::{self, Pointer};
 use crate::{Slice, Value, Visit};
 
 use core::fmt;
@@ -69,6 +70,11 @@ pub trait Valuable {
         for item in slice {
             visit.visit_value(item.as_value());
         }
+    }
+
+    /// Visit the value pointed by `pointer`.
+    fn visit_pointer(&self, pointer: Pointer<'_>, visit: &mut dyn Visit) {
+        pointer::visit_pointer(self, pointer, visit)
     }
 }
 
