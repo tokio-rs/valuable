@@ -1,20 +1,80 @@
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::Ident;
+use syn::{Error, Ident, Result};
+
+use crate::attr::{parse_attrs, Attrs, Context, Position};
 
 pub(crate) fn derive_valuable(input: &mut syn::DeriveInput) -> TokenStream {
+    let cx = Context::default();
     match &input.data {
-        syn::Data::Struct(data) => derive_struct(input, data),
-        syn::Data::Enum(data) => derive_enum(input, data),
-        // It's probably impossible to derive union because you cannot safely reference the field.
-        // TODO: error instead of panic
-        syn::Data::Union(..) => panic!("union is not supported"),
+        syn::Data::Struct(data) => derive_struct(cx, input, data),
+        syn::Data::Enum(data) => derive_enum(cx, input, data),
+        syn::Data::Union(data) => {
+            // It's impossible to derive union because we cannot safely reference the field.
+            Err(Error::new(
+                data.union_token.span,
+                "#[derive(Valuable)] may only be used on structs and enums",
+            ))
+        }
     }
+    .unwrap_or_else(Error::into_compile_error)
 }
 
-fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStream {
+fn derive_struct(
+    cx: Context,
+    input: &syn::DeriveInput,
+    data: &syn::DataStruct,
+) -> Result<TokenStream> {
+    let struct_attrs = parse_attrs(&cx, &input.attrs, Position::Struct);
+    let field_attrs: Vec<_> = data
+        .fields
+        .iter()
+        .map(|f| parse_attrs(&cx, &f.attrs, Position::from(&data.fields)))
+        .collect();
+    if struct_attrs.transparent() && data.fields.len() != 1 {
+        cx.error(Error::new_spanned(
+            input,
+            format!(
+                "#[valuable(transparent)] struct needs exactly one field, but has {}",
+                data.fields.len()
+            ),
+        ))
+    }
+    cx.check()?;
+
     let name = &input.ident;
-    let name_literal = name.to_string();
+    let name_literal = struct_attrs.rename(name);
+
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let allowed_lints = allowed_lints();
+
+    if struct_attrs.transparent() {
+        let field = data.fields.iter().next().unwrap();
+        let access = field.ident.as_ref().map_or_else(
+            || syn::Index::from(0).to_token_stream(),
+            ToTokens::to_token_stream,
+        );
+        let access = respan(quote! { &self.#access }, &field.ty);
+        let valuable_impl = quote! {
+            impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
+                fn as_value(&self) -> ::valuable::Value<'_> {
+                    ::valuable::Valuable::as_value(#access)
+                }
+
+                fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
+                    ::valuable::Valuable::visit(#access, visitor);
+                }
+            }
+        };
+
+        return Ok(quote! {
+            #allowed_lints
+            const _: () = {
+                #valuable_impl
+            };
+        });
+    }
+
     let visit_fields;
     let struct_def;
     let mut named_fields_statics = None;
@@ -23,8 +83,11 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
         syn::Fields::Named(_) => {
             // <struct>_FIELDS
             let named_fields_static_name = format_ident!("{}_FIELDS", input.ident);
-            named_fields_statics =
-                Some(named_fields_static(&named_fields_static_name, &data.fields));
+            named_fields_statics = Some(named_fields_static(
+                &named_fields_static_name,
+                &data.fields,
+                &field_attrs,
+            ));
 
             struct_def = quote! {
                 ::valuable::StructDef::new_static(
@@ -33,13 +96,18 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 )
             };
 
-            let fields = data.fields.iter().map(|field| {
-                let f = field.ident.as_ref();
-                let tokens = quote! {
-                    &self.#f
-                };
-                respan(tokens, &field.ty)
-            });
+            let fields = data
+                .fields
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !field_attrs[*i].skip())
+                .map(|(_, field)| {
+                    let f = field.ident.as_ref();
+                    let tokens = quote! {
+                        &self.#f
+                    };
+                    respan(tokens, &field.ty)
+                });
             visit_fields = quote! {
                 visitor.visit_named_fields(&::valuable::NamedValues::new(
                     #named_fields_static_name,
@@ -57,13 +125,18 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 )
             };
 
-            let indices = data.fields.iter().enumerate().map(|(i, field)| {
-                let index = syn::Index::from(i);
-                let tokens = quote! {
-                    &self.#index
-                };
-                respan(tokens, &field.ty)
-            });
+            let indices = data
+                .fields
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !field_attrs[*i].skip())
+                .map(|(i, field)| {
+                    let index = syn::Index::from(i);
+                    let tokens = quote! {
+                        &self.#index
+                    };
+                    respan(tokens, &field.ty)
+                });
             visit_fields = quote! {
                 visitor.visit_unnamed_fields(
                     &[
@@ -73,8 +146,6 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
             };
         }
     }
-
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let structable_impl = quote! {
         impl #impl_generics ::valuable::Structable for #name #ty_generics #where_clause {
@@ -96,18 +167,38 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
         }
     };
 
-    let allowed_lints = allowed_lints();
-    quote! {
+    Ok(quote! {
         #allowed_lints
         const _: () = {
             #named_fields_statics
             #structable_impl
             #valuable_impl
         };
-    }
+    })
 }
 
-fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
+fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> Result<TokenStream> {
+    let enum_attrs = parse_attrs(&cx, &input.attrs, Position::Enum);
+    let variant_attrs: Vec<_> = data
+        .variants
+        .iter()
+        .map(|v| parse_attrs(&cx, &v.attrs, Position::Variant))
+        .collect();
+    let field_attrs: Vec<Vec<_>> = data
+        .variants
+        .iter()
+        .map(|v| {
+            v.fields
+                .iter()
+                .map(|f| parse_attrs(&cx, &f.attrs, Position::from(&v.fields)))
+                .collect()
+        })
+        .collect();
+    cx.check()?;
+
+    let name = &input.ident;
+    let name_literal = enum_attrs.rename(name);
+
     // <enum>_VARIANTS
     let variants_static_name = format_ident!("{}_VARIANTS", input.ident);
     // `static FIELDS: &[NamedField<'static>]` for variant with named fields
@@ -116,7 +207,10 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     let mut variant_fn = vec![];
     let mut visit_variants = vec![];
 
-    for (i, variant) in data.variants.iter().enumerate() {
+    for (variant_index, variant) in data.variants.iter().enumerate() {
+        let variant_name = &variant.ident;
+        let variant_name_literal = variant_attrs[variant_index].rename(variant_name);
+
         match &variant.fields {
             syn::Fields::Named(_) => {
                 // <enum>_<variant>_FIELDS
@@ -125,10 +219,9 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 named_fields_statics.push(named_fields_static(
                     &named_fields_static_name,
                     &variant.fields,
+                    &field_attrs[variant_index],
                 ));
 
-                let variant_name = &variant.ident;
-                let variant_name_literal = variant_name.to_string();
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
@@ -138,7 +231,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
 
                 variant_fn.push(quote! {
                     Self::#variant_name { .. } => {
-                        ::valuable::Variant::Static(&#variants_static_name[#i])
+                        ::valuable::Variant::Static(&#variants_static_name[#variant_index])
                     }
                 });
 
@@ -170,8 +263,6 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 });
             }
             syn::Fields::Unnamed(_) => {
-                let variant_name = &variant.ident;
-                let variant_name_literal = variant_name.to_string();
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
@@ -181,7 +272,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
 
                 variant_fn.push(quote! {
                     Self::#variant_name(..) => {
-                        ::valuable::Variant::Static(&#variants_static_name[#i])
+                        ::valuable::Variant::Static(&#variants_static_name[#variant_index])
                     }
                 });
 
@@ -210,8 +301,6 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 });
             }
             syn::Fields::Unit => {
-                let variant_name = &variant.ident;
-                let variant_name_literal = variant_name.to_string();
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
@@ -221,7 +310,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
 
                 variant_fn.push(quote! {
                     Self::#variant_name => {
-                        ::valuable::Variant::Static(&#variants_static_name[#i])
+                        ::valuable::Variant::Static(&#variants_static_name[#variant_index])
                     }
                 });
 
@@ -235,14 +324,13 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
             }
         }
     }
+
     let variants_static = quote! {
         static #variants_static_name: &[::valuable::VariantDef<'static>] = &[
             #(#variant_defs)*
         ];
     };
 
-    let name = &input.ident;
-    let name_literal = name.to_string();
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let enumerable_impl = quote! {
         impl #impl_generics ::valuable::Enumerable for #name #ty_generics #where_clause {
@@ -276,7 +364,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     };
 
     let allowed_lints = allowed_lints();
-    quote! {
+    Ok(quote! {
         #allowed_lints
         const _: () = {
             #(#named_fields_statics)*
@@ -284,18 +372,22 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
             #enumerable_impl
             #valuable_impl
         };
-    }
+    })
 }
 
 // `static <name>: &[NamedField<'static>] = &[ ... ];`
-fn named_fields_static(name: &Ident, fields: &syn::Fields) -> TokenStream {
+fn named_fields_static(name: &Ident, fields: &syn::Fields, field_attrs: &[Attrs]) -> TokenStream {
     debug_assert!(matches!(fields, syn::Fields::Named(..)));
-    let named_fields = fields.iter().map(|field| {
-        let field_name_literal = field.ident.as_ref().unwrap().to_string();
-        quote! {
-            ::valuable::NamedField::new(#field_name_literal),
-        }
-    });
+    let named_fields = fields
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !field_attrs[*i].skip())
+        .map(|(i, field)| {
+            let field_name_literal = field_attrs[i].rename(field.ident.as_ref().unwrap());
+            quote! {
+                ::valuable::NamedField::new(#field_name_literal),
+            }
+        });
     quote! {
         static #name: &[::valuable::NamedField<'static>] = &[
             #(#named_fields)*
