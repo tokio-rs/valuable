@@ -1,24 +1,62 @@
 //! Valuable value pointer.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use valuable::*;
+//!
+//! #[derive(Valuable)]
+//! struct Struct1 {
+//!     x: String,
+//!     y: Struct2,
+//! }
+//!
+//! #[derive(Valuable)]
+//! struct Struct2 {
+//!     z: String,
+//! }
+//!
+//! struct Visitor;
+//!
+//! impl Visit for Visitor {
+//!     fn visit_value(&mut self, value: Value<'_>) {
+//!         println!("{:?}", value);
+//!     }
+//! }
+//!
+//! let value = Struct1 {
+//!     x: "a".to_owned(),
+//!     y: Struct2 {
+//!         z: "b".to_owned(),
+//!     },
+//! };
+//!
+//! let mut visitor = Visitor;
+//!
+//! visit_pointer!(value.x, visitor);   // "a"
+//! visit_pointer!(value.y, visitor);   // Struct2 { field: "b" }
+//! visit_pointer!(value.y.z, visitor); // "b"
+//! ```
 
-use crate::*;
+use crate::{NamedValues, Slice, Valuable, Value, Visit};
 
 /// A pointer to the value.
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub struct Pointer<'a> {
-    path: &'a [PointerSegment<'a>],
+    path: &'a [Segment<'a>],
 }
 
 impl<'a> Pointer<'a> {
     /// Creates a new `Pointer`.
-    pub const fn new(path: &'a [PointerSegment<'a>]) -> Self {
+    pub const fn new(path: &'a [Segment<'a>]) -> Self {
         Self { path }
     }
 
     /// Returns a path pointed by this pointer.
     ///
     /// If this pointer points to the current value, this method returns an empty slice.
-    pub fn path(self) -> &'a [PointerSegment<'a>] {
+    pub fn path(self) -> &'a [Segment<'a>] {
         self.path
     }
 
@@ -29,16 +67,16 @@ impl<'a> Pointer<'a> {
     }
 }
 
-impl<'a> From<&'a [PointerSegment<'a>]> for Pointer<'a> {
-    fn from(path: &'a [PointerSegment<'a>]) -> Self {
+impl<'a> From<&'a [Segment<'a>]> for Pointer<'a> {
+    fn from(path: &'a [Segment<'a>]) -> Self {
         Self::new(path)
     }
 }
 
-/// A segment of a pointer.
+/// A segment of a path.
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
-pub enum PointerSegment<'a> {
+pub enum Segment<'a> {
     /// Access of a named struct field.
     Field(&'a str),
     /// Access of an unnamed struct or a tuple field.
@@ -63,21 +101,19 @@ where
         index: 0,
     };
     match (value, pointer.path[0]) {
-        (Value::Listable(l), PointerSegment::Index(..)) => {
+        (Value::Listable(l), Segment::Index(..)) => {
             l.visit(visitor);
         }
-        (Value::Mappable(m), PointerSegment::Index(..)) => {
+        (Value::Mappable(m), Segment::Index(..)) => {
             m.visit(visitor);
         }
-        (Value::Tuplable(t), PointerSegment::TupleIndex(..)) => {
+        (Value::Tuplable(t), Segment::TupleIndex(..)) => {
             t.visit(visitor);
         }
-        (Value::Structable(s), PointerSegment::TupleIndex(..))
-            if s.definition().fields().is_unnamed() =>
-        {
+        (Value::Structable(s), Segment::TupleIndex(..)) if s.definition().fields().is_unnamed() => {
             s.visit(visitor);
         }
-        (Value::Structable(s), PointerSegment::Field(..)) if s.definition().fields().is_named() => {
+        (Value::Structable(s), Segment::Field(..)) if s.definition().fields().is_named() => {
             s.visit(visitor);
         }
         (_, p) => {
@@ -94,7 +130,7 @@ struct Visitor<'a> {
 
 impl Visit for Visitor<'_> {
     fn visit_value(&mut self, value: Value<'_>) {
-        if let PointerSegment::Index(index) = self.pointer.path[0] {
+        if let Segment::Index(index) = self.pointer.path[0] {
             if index.as_usize() == Some(self.index) {
                 value.visit_pointer(self.pointer.step(), self.visit);
             }
@@ -103,7 +139,7 @@ impl Visit for Visitor<'_> {
     }
 
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-        if let PointerSegment::Field(name) = self.pointer.path[0] {
+        if let Segment::Field(name) = self.pointer.path[0] {
             if let Some(value) = named_values.get_by_name(name) {
                 value.visit_pointer(self.pointer.step(), self.visit);
             }
@@ -111,7 +147,7 @@ impl Visit for Visitor<'_> {
     }
 
     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
-        if let PointerSegment::TupleIndex(index) = self.pointer.path[0] {
+        if let Segment::TupleIndex(index) = self.pointer.path[0] {
             if let Some(value) = values.get(index - self.index) {
                 value.visit_pointer(self.pointer.step(), self.visit);
             }
@@ -119,7 +155,7 @@ impl Visit for Visitor<'_> {
     }
 
     fn visit_primitive_slice(&mut self, slice: Slice<'_>) {
-        if let PointerSegment::Index(index) = self.pointer.path[0] {
+        if let Segment::Index(index) = self.pointer.path[0] {
             if let Some(index) = index.as_usize() {
                 if let Some(value) = slice.get(index - self.index) {
                     value.visit_pointer(self.pointer.step(), self.visit);
@@ -130,7 +166,7 @@ impl Visit for Visitor<'_> {
     }
 
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
-        if let PointerSegment::Index(index) = self.pointer.path[0] {
+        if let Segment::Index(index) = self.pointer.path[0] {
             let matched = match key {
                 Value::Bool(k) => index.as_bool() == Some(k),
                 Value::Char(k) => index.as_char() == Some(k),

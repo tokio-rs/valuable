@@ -115,8 +115,7 @@ pub use mappable::Mappable;
 mod named_values;
 pub use named_values::NamedValues;
 
-mod pointer;
-pub use pointer::{Pointer, PointerSegment};
+pub mod pointer;
 
 mod slice;
 pub use slice::Slice;

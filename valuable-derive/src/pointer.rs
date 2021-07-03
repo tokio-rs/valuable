@@ -18,18 +18,18 @@ pub(crate) fn visit_pointer(input: TokenStream) -> Result<TokenStream> {
         Segment::Member(syn::Member::Named(ident)) => {
             let literal = ident.to_string();
             quote! {
-                ::valuable::PointerSegment::Field(#literal),
+                ::valuable::pointer::Segment::Field(#literal),
             }
         }
         Segment::Member(syn::Member::Unnamed(index)) => {
             quote! {
-                ::valuable::PointerSegment::TupleIndex(#index),
+                ::valuable::pointer::Segment::TupleIndex(#index),
             }
         }
         Segment::Index(expr) => {
             let expr = respan(quote! { &#expr }, expr);
             quote! {
-                ::valuable::PointerSegment::Index(
+                ::valuable::pointer::Segment::Index(
                     ::valuable::Valuable::as_value(#expr)
                 ),
             }
@@ -40,7 +40,7 @@ pub(crate) fn visit_pointer(input: TokenStream) -> Result<TokenStream> {
     Ok(quote! {
         #visit_pointer(
             &#expr,
-            ::valuable::Pointer::new(&[
+            ::valuable::pointer::Pointer::new(&[
                 #(#segments)*
             ]),
             &mut #visit,

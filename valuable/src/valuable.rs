@@ -74,7 +74,7 @@ pub trait Valuable {
 
     /// Visit the value pointed by `pointer`.
     fn visit_pointer(&self, pointer: Pointer<'_>, visit: &mut dyn Visit) {
-        pointer::visit_pointer(self, pointer, visit)
+        pointer::visit_pointer(self, pointer, visit);
     }
 }
 
