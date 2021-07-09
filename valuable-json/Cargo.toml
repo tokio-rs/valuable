@@ -1,0 +1,11 @@
+[package]
+name = "valuable-json"
+version = "0.1.0"
+authors = ["Ning Sun <sunng@protonmail.com>"]
+edition = "2018"
+license = "MIT"
+description = "Valuable instrument for `serde_json::Value`"
+
+[dependencies]
+valuable = { version = "0.1", path = "../valuable", default-features = false }
+serde_json = "1"
