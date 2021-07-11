@@ -41,7 +41,7 @@ use core::fmt;
 ///
 ///     fn visit(&self, visit: &mut dyn Visit) {
 ///         for (k, v) in &self.entries {
-///             visit.visit_entry(v.as_value(), v.as_value());
+///             visit.visit_entry(k.as_value(), v.as_value());
 ///         }
 ///     }
 /// }
