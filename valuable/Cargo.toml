@@ -18,8 +18,12 @@ std = ["alloc"]
 # Provide imps for types in Rust's `alloc` library.
 alloc = []
 
+# Provides serde_json::Value instrument for valuable
+json = ["serde_json"]
+
 [dependencies]
 valuable-derive = { version = "0.1.0", optional = true, path = "../valuable-derive" }
+serde_json = { version = "1.0.46", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
