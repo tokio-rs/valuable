@@ -8,13 +8,10 @@ impl Valuable for Json {
             Json::Array(ref array) => array.as_value(),
             Json::Bool(ref value) => value.as_value(),
             Json::Number(ref num) => {
-                // TODO: check correctness for this
                 if num.is_f64() {
                     Value::F64(num.as_f64().unwrap())
                 } else if num.is_i64() {
                     Value::I64(num.as_i64().unwrap())
-                } else if num.is_u64() {
-                    Value::U64(num.as_u64().unwrap())
                 } else {
                     unreachable!()
                 }
@@ -30,13 +27,10 @@ impl Valuable for Json {
             Json::Array(ref array) => array.visit(visit),
             Json::Bool(ref value) => value.visit(visit),
             Json::Number(ref num) => {
-                // TODO: check correctness for this
                 if num.is_f64() {
                     num.as_f64().unwrap().visit(visit)
                 } else if num.is_i64() {
                     num.as_i64().unwrap().visit(visit)
-                } else if num.is_u64() {
-                    num.as_u64().unwrap().visit(visit)
                 } else {
                     unreachable!()
                 }
@@ -64,5 +58,21 @@ impl Mappable for Map<String, Json> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.len();
         (len, Some(len))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{Valuable, Value};
+    use serde_json::json;
+
+    #[test]
+    fn test_json() {
+        let j = json!({"a": 100, "b": 1.0, "c": -1});
+        let jv = j.as_value();
+
+        assert!(matches!(jv, Value::Mappable(_)));
+
+        assert!(matches!(json!(100).as_value(), Value::I64(_)));
     }
 }
