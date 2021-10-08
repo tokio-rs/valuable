@@ -325,7 +325,7 @@ value! {
     /// let v = Value::Error(&err);
     /// ```
     #[cfg(feature = "std")]
-    Error(&'a dyn std::error::Error),
+    Error(&'a (dyn std::error::Error +'static)),
 
     /// A Rust list value
     ///
@@ -574,7 +574,7 @@ macro_rules! convert {
             /// assert!(Value::Bool(true).as_error().is_none());
             /// ```
             #[cfg(feature = "std")]
-            pub fn as_error(&self) -> Option<&dyn std::error::Error> {
+            pub fn as_error(&self) -> Option<&(dyn std::error::Error + 'static)> {
                 match *self {
                     Value::Error(v) => Some(v),
                     _ => None,
