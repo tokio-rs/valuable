@@ -246,6 +246,13 @@ fn test_error() {
     let error: io::Error = io::ErrorKind::Other.into();
     let error: &dyn error::Error = &error;
     assert_value!(&'a dyn error::Error: Error, as_error, yes => error);
+
+    assert!(error
+        .as_value()
+        .as_error()
+        .unwrap()
+        .downcast_ref::<io::Error>()
+        .is_some()); // Check that Value::Error downcast-able
 }
 
 test_num! {

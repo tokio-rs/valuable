@@ -321,7 +321,7 @@ impl Valuable for std::path::PathBuf {
 }
 
 #[cfg(feature = "std")]
-impl Valuable for dyn std::error::Error + '_ {
+impl Valuable for dyn std::error::Error + 'static {
     fn as_value(&self) -> Value<'_> {
         Value::Error(self)
     }
