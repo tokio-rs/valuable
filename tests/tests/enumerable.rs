@@ -10,7 +10,7 @@ fn test_manual_static_impl() {
 
     static ENUM_STRUCT_FIELDS: &[NamedField<'static>] = &[NamedField::new("x")];
     static ENUM_VARIANTS: &[VariantDef<'static>] = &[
-        VariantDef::new("Struct", Fields::Named(&ENUM_STRUCT_FIELDS)),
+        VariantDef::new("Struct", Fields::Named(ENUM_STRUCT_FIELDS)),
         VariantDef::new("Tuple", Fields::Unnamed),
         VariantDef::new("Unit", Fields::Unnamed),
     ];
