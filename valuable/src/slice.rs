@@ -75,6 +75,37 @@ macro_rules! slice {
                 }
             }
 
+
+            /// Returns `true` if the slice is not empty.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Slice;
+            ///
+            /// let slice = Slice::U32(&[1, 1, 2, 3, 5]);
+            /// assert!(!slice.is_empty());
+            /// ```
+            /// ```
+            /// # use valuable::Slice;
+            /// let slice = Slice::U32(&[]);
+            /// assert!(slice.is_empty());
+            /// ```
+            pub fn is_empty(&self) -> bool {
+                self.len() == 0
+            }
+
+            /// Returns the number of elements in the slice
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use valuable::Slice;
+            ///
+            /// let slice = Slice::U32(&[1, 1, 2, 3, 5]);
+            /// assert_eq!(5, slice.len());
+            /// ```
+
             /// Returns an iterator over the slice.
             ///
             /// # Examples
