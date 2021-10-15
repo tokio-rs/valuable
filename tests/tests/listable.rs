@@ -195,7 +195,18 @@ macro_rules! test_primitive {
                     loop {
                         match (i.next(), expect.next()) {
                             (Some(Value::$vvariant(actual)), Some(expect)) => {
-                                assert_eq!(actual, *expect)
+                                // When testing floating-point values, the
+                                // actual value will be the exact same float
+                                // value as the expected, if everything is
+                                // working correctly. So, it's not strictly
+                                // necessary to use epsilon comparisons here,
+                                // and modifying the macro to use epsilon
+                                // comparisons for floats would make it
+                                // significantly more complex...
+                                #[allow(clippy::float_cmp)]
+                                {
+                                    assert_eq!(actual, *expect)
+                                }
                             }
                             (None, None) => break,
                             _ => panic!(),
