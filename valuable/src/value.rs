@@ -408,11 +408,11 @@ value! {
 
 impl Valuable for Value<'_> {
     fn as_value(&self) -> Value<'_> {
-        self.clone()
+        *self
     }
 
     fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_value(self.clone());
+        visit.visit_value(*self);
     }
 }
 
