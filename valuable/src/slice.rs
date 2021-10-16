@@ -95,17 +95,6 @@ macro_rules! slice {
                 self.len() == 0
             }
 
-            /// Returns the number of elements in the slice
-            ///
-            /// # Examples
-            ///
-            /// ```
-            /// use valuable::Slice;
-            ///
-            /// let slice = Slice::U32(&[1, 1, 2, 3, 5]);
-            /// assert_eq!(5, slice.len());
-            /// ```
-
             /// Returns an iterator over the slice.
             ///
             /// # Examples
