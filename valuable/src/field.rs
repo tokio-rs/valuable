@@ -9,7 +9,7 @@ pub enum Fields<'a> {
 }
 
 /// A named field
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct NamedField<'a>(&'a str);
 
 impl Fields<'_> {

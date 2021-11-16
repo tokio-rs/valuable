@@ -379,7 +379,7 @@ impl<'a> StructDef<'a> {
     /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
     /// assert_eq!("Foo", def.name());
     /// ```
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &'a str {
         match self {
             StructDef::Static { name, .. } => name,
             StructDef::Dynamic { name, .. } => name,
@@ -407,7 +407,7 @@ impl<'a> StructDef<'a> {
     /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
     /// assert!(matches!(def.fields(), Fields::Unnamed));
     /// ```
-    pub fn fields(&self) -> &Fields<'_> {
+    pub fn fields(&self) -> &Fields<'a> {
         match self {
             StructDef::Static { fields, .. } => fields,
             StructDef::Dynamic { fields, .. } => fields,
