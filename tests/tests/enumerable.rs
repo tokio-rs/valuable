@@ -11,8 +11,8 @@ fn test_manual_static_impl() {
     static ENUM_STRUCT_FIELDS: &[NamedField<'static>] = &[NamedField::new("x")];
     static ENUM_VARIANTS: &[VariantDef<'static>] = &[
         VariantDef::new("Struct", Fields::Named(ENUM_STRUCT_FIELDS)),
-        VariantDef::new("Tuple", Fields::Unnamed),
-        VariantDef::new("Unit", Fields::Unnamed),
+        VariantDef::new("Tuple", Fields::Unnamed(1)),
+        VariantDef::new("Unit", Fields::Unnamed(0)),
     ];
 
     impl Enumerable for Enum {
@@ -80,7 +80,7 @@ fn test_manual_dyn_impl() {
         }
 
         fn variant(&self) -> Variant<'_> {
-            Variant::Dynamic(VariantDef::new("MyVariant", Fields::Unnamed))
+            Variant::Dynamic(VariantDef::new("MyVariant", Fields::Unnamed(0)))
         }
     }
 
@@ -109,17 +109,17 @@ fn test_variant_named_field() {
 
 #[test]
 fn test_variant_unnamed_field() {
-    let variant = VariantDef::new("Hello", Fields::Unnamed);
+    let variant = VariantDef::new("Hello", Fields::Unnamed(1));
 
     assert_eq!(variant.name(), "Hello");
-    assert!(matches!(variant.fields(), Fields::Unnamed));
+    assert!(matches!(variant.fields(), Fields::Unnamed(1)));
 }
 
 #[test]
 fn test_enum_def() {
     let fields = [NamedField::new("foo")];
     let a = VariantDef::new("A", Fields::Named(&fields[..]));
-    let b = VariantDef::new("B", Fields::Unnamed);
+    let b = VariantDef::new("B", Fields::Unnamed(1));
     let variants = [a, b];
     let def = EnumDef::new_dynamic("Foo", &variants);
 

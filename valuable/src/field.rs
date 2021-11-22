@@ -5,7 +5,9 @@ pub enum Fields<'a> {
     Named(&'a [NamedField<'a>]),
 
     /// Unnamed (positional) fields or unit
-    Unnamed,
+    ///
+    /// The `usize` value represents the number of fields.
+    Unnamed(usize),
 }
 
 /// A named field
@@ -60,7 +62,72 @@ impl Fields<'_> {
     /// assert!(fields.is_unnamed());
     /// ```
     pub fn is_unnamed(&self) -> bool {
-        matches!(self, Fields::Unnamed)
+        matches!(self, Fields::Unnamed(_))
+    }
+
+    /// Returns the number of fields.
+    ///
+    /// # Examples
+    ///
+    /// Named fields
+    ///
+    /// ```
+    /// use valuable::{Fields, NamedField};
+    ///
+    /// let fields = Fields::Named(&[
+    ///     NamedField::new("alice"),
+    ///     NamedField::new("bob"),
+    /// ]);
+    /// assert_eq!(fields.len(), 2);
+    /// ```
+    ///
+    /// Unnamed fields
+    ///
+    /// ```
+    /// use valuable::Fields;
+    ///
+    /// let fields = Fields::Unnamed(2);
+    /// assert_eq!(fields.len(), 2);
+    /// ```
+    pub fn len(&self) -> usize {
+        match self {
+            Self::Named(names) => names.len(),
+            Self::Unnamed(len) => *len,
+        }
+    }
+
+    /// Returns `true` if this set of fields defines no fields.
+    ///
+    /// # Examples
+    ///
+    /// Named fields
+    ///
+    /// ```
+    /// use valuable::{Fields, NamedField};
+    ///
+    /// let non_empty = Fields::Named(&[
+    ///     NamedField::new("alice"),
+    ///     NamedField::new("bob"),
+    /// ]);
+    /// let empty = Fields::Named(&[]);
+    ///
+    /// assert!(!non_empty.is_empty());
+    /// assert!(empty.is_empty());
+    /// ```
+    ///
+    /// Unnamed fields
+    ///
+    /// ```
+    /// use valuable::Fields;
+    ///
+    /// let non_empty = Fields::Unnamed(2);
+    /// let empty = Fields::Unnamed(0);
+    ///
+    /// assert!(!non_empty.is_empty());
+    /// assert!(empty.is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 

@@ -148,17 +148,17 @@ fn test_named_field() {
 
 #[test]
 fn test_fields_unnamed() {
-    let fields = Fields::Unnamed;
+    let fields = Fields::Unnamed(1);
     assert!(fields.is_unnamed());
     assert!(!fields.is_named());
 }
 
 #[test]
 fn test_struct_def() {
-    let def = StructDef::new_static("hello", Fields::Unnamed);
+    let def = StructDef::new_static("hello", Fields::Unnamed(1));
 
     assert_eq!(def.name(), "hello");
-    assert!(matches!(def.fields(), Fields::Unnamed));
+    assert!(matches!(def.fields(), Fields::Unnamed(1)));
     assert!(!def.is_dynamic());
 }
 
