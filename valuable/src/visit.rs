@@ -454,6 +454,9 @@ deref! {
 /// ```
 ///
 /// [`Visit`]: Visit [`NamedField`]: crate::NamedField
-pub fn visit(value: &impl Valuable, visit: &mut dyn Visit) {
+pub fn visit<V>(value: &V, visit: &mut dyn Visit)
+where
+    V: ?Sized + Valuable,
+{
     visit.visit_value(value.as_value());
 }

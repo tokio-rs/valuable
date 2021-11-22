@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "valuable",
     "valuable-derive",
+    "valuable-json",
     "valuable-serde",
     "tests",
 ]

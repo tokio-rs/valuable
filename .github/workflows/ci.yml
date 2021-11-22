@@ -32,8 +32,8 @@ jobs:
         # thumbv6m-none-eabi supports atomic, but not atomic CAS.
         # riscv32i-unknown-none-elf does not support atomic at all.
         target:
-          - thumbv6m-none-eabi
           - thumbv7m-none-eabi
+          - thumbv6m-none-eabi
           - riscv32i-unknown-none-elf
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +47,9 @@ jobs:
         working-directory: valuable
       - run: cargo hack build --target ${{ matrix.target }} --feature-powerset --skip std,default
         working-directory: valuable-serde
+      # TODO: support no-std in valuable-json
+      # - run: cargo hack build --target ${{ matrix.target }} --feature-powerset --skip std,default
+      #   working-directory: valuable-json
 
   features:
     runs-on: ubuntu-latest
