@@ -641,3 +641,42 @@ deref! {
     #[cfg(feature = "alloc")]
     alloc::sync::Arc<T>,
 }
+
+static RESULT_VARIANTS: &[VariantDef<'static>] = &[
+    VariantDef::new("Ok", Fields::Unnamed),
+    VariantDef::new("Err", Fields::Unnamed),
+];
+
+impl<T, E> Enumerable for Result<T, E>
+where
+    T: Valuable,
+    E: Valuable,
+{
+    fn definition(&self) -> EnumDef<'_> {
+        EnumDef::new_static("Result", RESULT_VARIANTS)
+    }
+
+    fn variant(&self) -> Variant<'_> {
+        match self {
+            Ok(_) => Variant::Static(&RESULT_VARIANTS[0]),
+            Err(_) => Variant::Static(&RESULT_VARIANTS[1]),
+        }
+    }
+}
+
+impl<T, E> Valuable for Result<T, E>
+where
+    T: Valuable,
+    E: Valuable,
+{
+    fn as_value(&self) -> Value<'_> {
+        Value::Enumerable(self)
+    }
+
+    fn visit(&self, visitor: &mut dyn Visit) {
+        match self {
+            Ok(val) => visitor.visit_unnamed_fields(&[val.as_value()]),
+            Err(val) => visitor.visit_unnamed_fields(&[val.as_value()]),
+        }
+    }
+}
