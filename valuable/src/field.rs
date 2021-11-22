@@ -1,4 +1,4 @@
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(valuable_no_atomic_cas)))]
 use alloc::{string::String, sync::Arc};
 use core::fmt;
 
@@ -19,7 +19,7 @@ pub struct NamedField<'a>(NamedFieldInner<'a>);
 #[derive(Clone)]
 enum NamedFieldInner<'a> {
     Borrowed(&'a str),
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", not(valuable_no_atomic_cas)))]
     Owned(Arc<str>),
 }
 
@@ -102,7 +102,7 @@ impl<'a> NamedField<'a> {
     /// let field = NamedField::from_string(name);
     /// assert_eq!("hello_world", field.name());
     /// ```
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", not(valuable_no_atomic_cas)))]
     pub fn from_string(name: String) -> NamedField<'static> {
         NamedField(NamedFieldInner::Owned(Arc::from(name)))
     }
@@ -120,7 +120,7 @@ impl<'a> NamedField<'a> {
     pub fn name(&self) -> &str {
         match self.0 {
             NamedFieldInner::Borrowed(name) => name,
-            #[cfg(feature = "alloc")]
+            #[cfg(all(feature = "alloc", not(valuable_no_atomic_cas)))]
             NamedFieldInner::Owned(ref name) => name,
         }
     }
@@ -138,14 +138,14 @@ impl<'a> From<&'a str> for NamedField<'a> {
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(valuable_no_atomic_cas)))]
 impl From<String> for NamedField<'static> {
     fn from(name: String) -> Self {
         Self::from_string(name)
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(valuable_no_atomic_cas)))]
 impl From<Arc<str>> for NamedField<'static> {
     fn from(name: Arc<str>) -> Self {
         Self(NamedFieldInner::Owned(name))
