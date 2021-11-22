@@ -121,13 +121,6 @@ macro_rules! deref {
 deref! {
     &T,
     &mut T,
-    #[cfg(feature = "alloc")]
-    alloc::boxed::Box<T>,
-    #[cfg(feature = "alloc")]
-    alloc::rc::Rc<T>,
-    #[cfg(not(valuable_no_atomic_cas))]
-    #[cfg(feature = "alloc")]
-    alloc::sync::Arc<T>,
 }
 
 macro_rules! slice {
@@ -161,16 +154,7 @@ macro_rules! slice {
 
 slice! {
     (T: Valuable) &'_ [T],
-    #[cfg(feature = "alloc")]
-    (T: Valuable) alloc::boxed::Box<[T]>,
-    #[cfg(feature = "alloc")]
-    (T: Valuable) alloc::rc::Rc<[T]>,
-    #[cfg(not(valuable_no_atomic_cas))]
-    #[cfg(feature = "alloc")]
-    (T: Valuable) alloc::sync::Arc<[T]>,
     (T: Valuable, const N: usize) [T; N],
-    #[cfg(feature = "alloc")]
-    (T: Valuable) alloc::vec::Vec<T>,
 }
 
 macro_rules! collection {
@@ -204,34 +188,56 @@ macro_rules! collection {
     };
 }
 
-collection! {
-    #[cfg(feature = "alloc")]
-    (T: Valuable) alloc::collections::LinkedList<T>,
-    #[cfg(feature = "alloc")]
-    (T: Valuable + Ord) alloc::collections::BinaryHeap<T>,
-    #[cfg(feature = "alloc")]
-    (T: Valuable + Ord) alloc::collections::BTreeSet<T>,
-    #[cfg(feature = "std")]
-    (T: Valuable + Eq + std::hash::Hash, H: std::hash::BuildHasher) std::collections::HashSet<T, H>,
-}
+feature! {
+    #![feature = "alloc"]
+    use alloc::collections;
 
-#[cfg(feature = "alloc")]
-impl<T: Valuable> Valuable for alloc::collections::VecDeque<T> {
-    fn as_value(&self) -> Value<'_> {
-        Value::Listable(self as &dyn Listable)
+    deref!{
+        alloc::boxed::Box<T>,
+        alloc::rc::Rc<T>,
+        #[cfg(not(valuable_no_atomic_cas))]
+        alloc::sync::Arc<T>,
     }
 
-    fn visit(&self, visit: &mut dyn Visit) {
-        let (first, second) = self.as_slices();
-        T::visit_slice(first, visit);
-        T::visit_slice(second, visit);
+    slice! {
+        (T: Valuable) alloc::boxed::Box<[T]>,
+        (T: Valuable) alloc::rc::Rc<[T]>,
+        #[cfg(not(valuable_no_atomic_cas))]
+        (T: Valuable) alloc::sync::Arc<[T]>,
+        (T: Valuable) alloc::vec::Vec<T>,
+    }
+
+    collection! {
+        (T: Valuable) collections::LinkedList<T>,
+        (T: Valuable + Ord) collections::BinaryHeap<T>,
+        (T: Valuable + Ord) collections::BTreeSet<T>,
+    }
+
+
+    impl<T: Valuable> Valuable for collections::VecDeque<T> {
+        fn as_value(&self) -> Value<'_> {
+            Value::Listable(self as &dyn Listable)
+        }
+
+        fn visit(&self, visit: &mut dyn Visit) {
+            let (first, second) = self.as_slices();
+            T::visit_slice(first, visit);
+            T::visit_slice(second, visit);
+        }
+    }
+
+    impl<T: Valuable> Listable for collections::VecDeque<T> {
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            (self.len(), Some(self.len()))
+        }
     }
 }
 
-#[cfg(feature = "alloc")]
-impl<T: Valuable> Listable for alloc::collections::VecDeque<T> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
+feature! {
+    #![feature = "std"]
+
+    collection! {
+        (T: Valuable + Eq + std::hash::Hash, H: std::hash::BuildHasher) std::collections::HashSet<T, H>,
     }
 }
 

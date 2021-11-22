@@ -97,13 +97,6 @@ macro_rules! deref {
 deref! {
     &T,
     &mut T,
-    #[cfg(feature = "alloc")]
-    alloc::boxed::Box<T>,
-    #[cfg(feature = "alloc")]
-    alloc::rc::Rc<T>,
-    #[cfg(not(valuable_no_atomic_cas))]
-    #[cfg(feature = "alloc")]
-    alloc::sync::Arc<T>,
 }
 
 macro_rules! valuable {
@@ -280,54 +273,67 @@ impl Valuable for &'_ str {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl Valuable for alloc::string::String {
-    fn as_value(&self) -> Value<'_> {
-        Value::String(&self[..])
+feature! {
+    #![feature = "alloc"]
+
+    deref! {
+        alloc::boxed::Box<T>,
+        alloc::rc::Rc<T>,
+        #[cfg(not(valuable_no_atomic_cas))]
+        alloc::sync::Arc<T>,
     }
 
-    fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_value(Value::String(self));
-    }
+    impl Valuable for alloc::string::String {
+        fn as_value(&self) -> Value<'_> {
+            Value::String(&self[..])
+        }
 
-    fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
-    where
-        Self: Sized,
-    {
-        visit.visit_primitive_slice(Slice::String(slice));
-    }
-}
+        fn visit(&self, visit: &mut dyn Visit) {
+            visit.visit_value(Value::String(self));
+        }
 
-#[cfg(feature = "std")]
-impl Valuable for &std::path::Path {
-    fn as_value(&self) -> Value<'_> {
-        Value::Path(self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_value(Value::Path(self));
-    }
-}
-
-#[cfg(feature = "std")]
-impl Valuable for std::path::PathBuf {
-    fn as_value(&self) -> Value<'_> {
-        Value::Path(self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_value(Value::Path(self));
+        fn visit_slice(slice: &[Self], visit: &mut dyn Visit)
+        where
+            Self: Sized,
+        {
+            visit.visit_primitive_slice(Slice::String(slice));
+        }
     }
 }
 
-#[cfg(feature = "std")]
-impl Valuable for dyn std::error::Error + 'static {
-    fn as_value(&self) -> Value<'_> {
-        Value::Error(self)
+feature! {
+    #![feature = "std"]
+
+    impl Valuable for &std::path::Path {
+        fn as_value(&self) -> Value<'_> {
+            Value::Path(self)
+        }
+
+        fn visit(&self, visit: &mut dyn Visit) {
+            visit.visit_value(Value::Path(self));
+        }
     }
 
-    fn visit(&self, visit: &mut dyn Visit) {
-        visit.visit_value(self.as_value());
+
+    impl Valuable for std::path::PathBuf {
+        fn as_value(&self) -> Value<'_> {
+            Value::Path(self)
+        }
+
+        fn visit(&self, visit: &mut dyn Visit) {
+            visit.visit_value(Value::Path(self));
+        }
+    }
+
+
+    impl Valuable for dyn std::error::Error + 'static {
+        fn as_value(&self) -> Value<'_> {
+            Value::Error(self)
+        }
+
+        fn visit(&self, visit: &mut dyn Visit) {
+            visit.visit_value(self.as_value());
+        }
     }
 }
 

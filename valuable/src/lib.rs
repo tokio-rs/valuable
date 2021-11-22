@@ -96,9 +96,13 @@
 //! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+
+#[macro_use]
+mod cfg;
 
 mod enumerable;
 pub use enumerable::{EnumDef, Enumerable, Variant, VariantDef};
@@ -133,5 +137,8 @@ pub use value::Value;
 mod visit;
 pub use visit::{visit, Visit};
 
-#[cfg(feature = "derive")]
-pub use valuable_derive::*;
+feature! {
+    #![feature = "derive"]
+
+    pub use valuable_derive::*;
+}

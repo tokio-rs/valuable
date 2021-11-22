@@ -119,52 +119,56 @@ macro_rules! deref {
 deref! {
     &T,
     &mut T,
-    #[cfg(feature = "alloc")]
-    alloc::boxed::Box<T>,
-    #[cfg(feature = "alloc")]
-    alloc::rc::Rc<T>,
-    #[cfg(not(valuable_no_atomic_cas))]
-    #[cfg(feature = "alloc")]
-    alloc::sync::Arc<T>,
 }
 
-#[cfg(feature = "std")]
-impl<K: Valuable, V: Valuable> Valuable for std::collections::HashMap<K, V> {
-    fn as_value(&self) -> Value<'_> {
-        Value::Mappable(self)
+feature! {
+    #![feature = "alloc"]
+
+    deref! {
+        alloc::boxed::Box<T>,
+        alloc::rc::Rc<T>,
+        #[cfg(not(valuable_no_atomic_cas))]
+        alloc::sync::Arc<T>,
     }
 
-    fn visit(&self, visit: &mut dyn Visit) {
-        for (key, value) in self.iter() {
-            visit.visit_entry(key.as_value(), value.as_value());
+
+    impl<K: Valuable, V: Valuable> Valuable for alloc::collections::BTreeMap<K, V> {
+        fn as_value(&self) -> Value<'_> {
+            Value::Mappable(self)
+        }
+
+        fn visit(&self, visit: &mut dyn Visit) {
+            for (key, value) in self.iter() {
+                visit.visit_entry(key.as_value(), value.as_value());
+            }
+        }
+    }
+
+    impl<K: Valuable, V: Valuable> Mappable for alloc::collections::BTreeMap<K, V> {
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            self.iter().size_hint()
         }
     }
 }
 
-#[cfg(feature = "std")]
-impl<K: Valuable, V: Valuable> Mappable for std::collections::HashMap<K, V> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter().size_hint()
-    }
-}
+feature! {
+    #![feature = "std"]
+    impl<K: Valuable, V: Valuable> Valuable for std::collections::HashMap<K, V> {
+        fn as_value(&self) -> Value<'_> {
+            Value::Mappable(self)
+        }
 
-#[cfg(feature = "alloc")]
-impl<K: Valuable, V: Valuable> Valuable for alloc::collections::BTreeMap<K, V> {
-    fn as_value(&self) -> Value<'_> {
-        Value::Mappable(self)
-    }
-
-    fn visit(&self, visit: &mut dyn Visit) {
-        for (key, value) in self.iter() {
-            visit.visit_entry(key.as_value(), value.as_value());
+        fn visit(&self, visit: &mut dyn Visit) {
+            for (key, value) in self.iter() {
+                visit.visit_entry(key.as_value(), value.as_value());
+            }
         }
     }
-}
 
-#[cfg(feature = "alloc")]
-impl<K: Valuable, V: Valuable> Mappable for alloc::collections::BTreeMap<K, V> {
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter().size_hint()
+    impl<K: Valuable, V: Valuable> Mappable for std::collections::HashMap<K, V> {
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            self.iter().size_hint()
+        }
     }
 }
 

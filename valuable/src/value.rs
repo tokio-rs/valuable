@@ -311,6 +311,7 @@ value! {
     /// let v = Value::Path(path);
     /// ```
     #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     Path(&'a std::path::Path),
 
     /// A Rust error value
@@ -325,6 +326,7 @@ value! {
     /// let v = Value::Error(&err);
     /// ```
     #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     Error(&'a (dyn std::error::Error +'static)),
 
     /// A Rust list value
@@ -553,6 +555,7 @@ macro_rules! convert {
             /// assert!(Value::Bool(true).as_path().is_none());
             /// ```
             #[cfg(feature = "std")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
             pub fn as_path(&self) -> Option<&std::path::Path> {
                 match *self {
                     Value::Path(v) => Some(v),
@@ -574,13 +577,13 @@ macro_rules! convert {
             /// assert!(Value::Bool(true).as_error().is_none());
             /// ```
             #[cfg(feature = "std")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
             pub fn as_error(&self) -> Option<&(dyn std::error::Error + 'static)> {
                 match *self {
                     Value::Error(v) => Some(v),
                     _ => None,
                 }
             }
-
 
             /// Return a `&dyn Listable` representation of `self`, if possible.
             ///

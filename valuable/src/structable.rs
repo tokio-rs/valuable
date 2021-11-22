@@ -486,11 +486,15 @@ macro_rules! deref {
 deref! {
     &T,
     &mut T,
-    #[cfg(feature = "alloc")]
-    alloc::boxed::Box<T>,
-    #[cfg(feature = "alloc")]
-    alloc::rc::Rc<T>,
-    #[cfg(not(valuable_no_atomic_cas))]
-    #[cfg(feature = "alloc")]
-    alloc::sync::Arc<T>,
+}
+
+feature! {
+    #![feature = "alloc"]
+
+    deref! {
+        alloc::boxed::Box<T>,
+        alloc::rc::Rc<T>,
+        #[cfg(not(valuable_no_atomic_cas))]
+        alloc::sync::Arc<T>,
+    }
 }

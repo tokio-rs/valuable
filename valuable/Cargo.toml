@@ -27,3 +27,7 @@ criterion = "0.3"
 [[bench]]
 name = "structable"
 harness = false
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
