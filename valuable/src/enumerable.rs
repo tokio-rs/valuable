@@ -218,7 +218,7 @@ pub enum EnumDef<'a> {
     ///     }
     ///
     ///     fn variant(&self) -> Variant<'_> {
-    ///         Variant::Dynamic(VariantDef::new(&self.variant, Fields::Unnamed))
+    ///         Variant::Dynamic(VariantDef::new(&self.variant, Fields::Unnamed(0)))
     ///     }
     /// }
     /// ```
@@ -271,7 +271,7 @@ impl<'a> EnumDef<'a> {
     /// use valuable::{EnumDef, Fields, VariantDef};
     ///
     /// static VARIANTS: &[VariantDef<'static>] = &[
-    ///     VariantDef::new("Bar", Fields::Unnamed),
+    ///     VariantDef::new("Bar", Fields::Unnamed(1)),
     /// ];
     ///
     /// let def = EnumDef::new_static( "Foo", VARIANTS);
@@ -294,7 +294,7 @@ impl<'a> EnumDef<'a> {
     ///
     /// let def = EnumDef::new_dynamic(
     ///     "Foo",
-    ///     &[VariantDef::new("Bar", Fields::Unnamed)]
+    ///     &[VariantDef::new("Bar", Fields::Unnamed(1))]
     /// );
     /// ```
     pub const fn new_dynamic(name: &'a str, variants: &'a [VariantDef<'a>]) -> EnumDef<'a> {
@@ -421,7 +421,7 @@ impl<'a> VariantDef<'a> {
     /// ```
     /// use valuable::{Fields, VariantDef};
     ///
-    /// let def = VariantDef::new("Foo", Fields::Unnamed);
+    /// let def = VariantDef::new("Foo", Fields::Unnamed(2));
     /// ```
     pub const fn new(name: &'a str, fields: Fields<'a>) -> VariantDef<'a> {
         VariantDef { name, fields }
@@ -434,7 +434,7 @@ impl<'a> VariantDef<'a> {
     /// ```
     /// use valuable::{Fields, VariantDef};
     ///
-    /// let def = VariantDef::new("Foo", Fields::Unnamed);
+    /// let def = VariantDef::new("Foo", Fields::Unnamed(2));
     /// assert_eq!("Foo", def.name());
     /// ```
     pub fn name(&self) -> &str {
@@ -448,8 +448,8 @@ impl<'a> VariantDef<'a> {
     /// ```
     /// use valuable::{Fields, VariantDef};
     ///
-    /// let def = VariantDef::new("Foo", Fields::Unnamed);
-    /// assert!(matches!(def.fields(), Fields::Unnamed));
+    /// let def = VariantDef::new("Foo", Fields::Unnamed(3));
+    /// assert!(matches!(def.fields(), Fields::Unnamed(_)));
     /// ```
     pub fn fields(&self) -> &Fields<'_> {
         &self.fields
@@ -465,7 +465,7 @@ impl Variant<'_> {
     /// use valuable::{Fields, Variant, VariantDef};
     ///
     /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
-    ///     "Foo", Fields::Unnamed);
+    ///     "Foo", Fields::Unnamed(2));
     ///
     /// let variant = Variant::Static(VARIANT);
     /// assert_eq!("Foo", variant.name());
@@ -507,7 +507,7 @@ impl Variant<'_> {
     /// use valuable::{Fields, Variant, VariantDef};
     ///
     /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
-    ///     "Foo", Fields::Unnamed);
+    ///     "Foo", Fields::Unnamed(1));
     ///
     /// let variant = Variant::Static(VARIANT);
     /// assert!(!variant.is_named_fields());
@@ -538,7 +538,7 @@ impl Variant<'_> {
     /// use valuable::{Fields, Variant, VariantDef};
     ///
     /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
-    ///     "Foo", Fields::Unnamed);
+    ///     "Foo", Fields::Unnamed(1));
     ///
     /// let variant = Variant::Static(VARIANT);
     /// assert!(variant.is_unnamed_fields());

@@ -33,7 +33,7 @@ impl Fields<'_> {
     /// ```
     /// use valuable::Fields;
     ///
-    /// let fields = Fields::Unnamed;
+    /// let fields = Fields::Unnamed(2);
     /// assert!(!fields.is_named());
     /// ```
     pub fn is_named(&self) -> bool {
@@ -58,7 +58,7 @@ impl Fields<'_> {
     /// ```
     /// use valuable::Fields;
     ///
-    /// let fields = Fields::Unnamed;
+    /// let fields = Fields::Unnamed(3);
     /// assert!(fields.is_unnamed());
     /// ```
     pub fn is_unnamed(&self) -> bool {
@@ -74,10 +74,12 @@ impl Fields<'_> {
     /// ```
     /// use valuable::{Fields, NamedField};
     ///
-    /// let fields = Fields::Named(&[
+    /// let fields = &[
     ///     NamedField::new("alice"),
     ///     NamedField::new("bob"),
-    /// ]);
+    /// ];
+    /// let fields = Fields::Named(fields);
+    ///
     /// assert_eq!(fields.len(), 2);
     /// ```
     ///
@@ -105,10 +107,12 @@ impl Fields<'_> {
     /// ```
     /// use valuable::{Fields, NamedField};
     ///
-    /// let non_empty = Fields::Named(&[
+    /// let fields = &[
     ///     NamedField::new("alice"),
     ///     NamedField::new("bob"),
-    /// ]);
+    /// ];
+    /// let non_empty = Fields::Named(fields);
+    ///
     /// let empty = Fields::Named(&[]);
     ///
     /// assert!(!non_empty.is_empty());
