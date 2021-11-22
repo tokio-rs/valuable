@@ -1,3 +1,7 @@
+#[cfg(feature = "alloc")]
+use alloc::{string::String, sync::Arc};
+use core::fmt;
+
 /// Data stored within a `Structable` or  an `Enumerable`.
 #[derive(Debug)]
 pub enum Fields<'a> {
@@ -9,8 +13,15 @@ pub enum Fields<'a> {
 }
 
 /// A named field
-#[derive(Debug, Clone, Copy)]
-pub struct NamedField<'a>(&'a str);
+#[derive(Clone)]
+pub struct NamedField<'a>(NamedFieldInner<'a>);
+
+#[derive(Clone)]
+enum NamedFieldInner<'a> {
+    Borrowed(&'a str),
+    #[cfg(feature = "alloc")]
+    Owned(Arc<str>),
+}
 
 impl Fields<'_> {
     /// Returns `true` if the fields are named.
@@ -76,7 +87,24 @@ impl<'a> NamedField<'a> {
     /// assert_eq!("hello", field.name());
     /// ```
     pub const fn new(name: &'a str) -> NamedField<'a> {
-        NamedField(name)
+        NamedField(NamedFieldInner::Borrowed(name))
+    }
+
+    /// Create a new `NamedField` instance from an owned [`String`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::NamedField;
+    ///
+    /// let what = "world";
+    /// let name = format!("hello_{}", what);
+    /// let field = NamedField::from_string(name);
+    /// assert_eq!("hello_world", field.name());
+    /// ```
+    #[cfg(feature = "alloc")]
+    pub fn from_string(name: String) -> NamedField<'static> {
+        NamedField(NamedFieldInner::Owned(Arc::from(name)))
     }
 
     /// Returns the field name
@@ -90,6 +118,36 @@ impl<'a> NamedField<'a> {
     /// assert_eq!("hello", field.name());
     /// ```
     pub fn name(&self) -> &str {
-        self.0
+        match self.0 {
+            NamedFieldInner::Borrowed(name) => name,
+            #[cfg(feature = "alloc")]
+            NamedFieldInner::Owned(ref name) => name,
+        }
+    }
+}
+
+impl<'a> fmt::Debug for NamedField<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("NamedField").field(&self.name()).finish()
+    }
+}
+
+impl<'a> From<&'a str> for NamedField<'a> {
+    fn from(name: &'a str) -> Self {
+        Self::new(name)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl From<String> for NamedField<'static> {
+    fn from(name: String) -> Self {
+        Self::from_string(name)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl From<Arc<str>> for NamedField<'static> {
+    fn from(name: Arc<str>) -> Self {
+        Self(NamedFieldInner::Owned(name))
     }
 }
