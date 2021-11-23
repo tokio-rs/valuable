@@ -223,7 +223,7 @@ pub trait Visit {
     /// valuable::visit(&my_struct, &mut Print);
     /// ```
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
-        drop(named_values);
+        let _ = named_values;
     }
 
     /// Visit a struct or enum's unnamed fields.
@@ -267,7 +267,7 @@ pub trait Visit {
     /// valuable::visit(&my_struct, &mut Print);
     /// ```
     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
-        drop(values);
+        let _ = values;
     }
 
     /// Visit a primitive slice.
@@ -359,7 +359,7 @@ pub trait Visit {
     /// valuable::visit(&map, &mut Print);
     /// ```
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
-        drop((key, value));
+        let _ = (key, value);
     }
 }
 

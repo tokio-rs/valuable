@@ -192,3 +192,18 @@ fn test_unbalanced_named_values() {
         &[Value::U32(123), Value::U32(123)],
     );
 }
+
+// Test the `NamedField` lifetime escapes correctly
+#[allow(dead_code)]
+fn extract_named_field(def: &StructDef<'static>) -> &'static [NamedField<'static>] {
+    match def.fields() {
+        Fields::Named(fields) => fields,
+        _ => unreachable!(),
+    }
+}
+
+// Test the name lifetime escapes correctly
+#[allow(dead_code)]
+fn extract_name(def: &StructDef<'static>) -> &'static str {
+    def.name()
+}
