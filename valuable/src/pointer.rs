@@ -47,31 +47,72 @@
 //! [`Listable`]: crate::Listable
 //! [`Tuplable`]: crate::Tuplable
 
+use core::ops;
+
 use crate::{NamedValues, Slice, Valuable, Value, Visit};
 
+#[derive(Debug, Clone)]
+enum Segments<'a> {
+    Borrowed(&'a [Segment<'a>]),
+    #[cfg(feature = "alloc")]
+    Owned(Vec<Segment<'a>>),
+}
+
+impl<'a> Segments<'a> {
+    #[cfg(feature = "alloc")]
+    fn make_mut(&mut self) -> &mut Vec<Segment<'a>> {
+        if let Self::Borrowed(v) = self {
+            *self = Self::Owned(v.to_vec())
+        }
+        match self {
+            Self::Owned(v) => v,
+            Self::Borrowed(_) => unreachable!(),
+        }
+    }
+}
+
+impl<'a> ops::Deref for Segments<'a> {
+    type Target = [Segment<'a>];
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Borrowed(v) => *v,
+            #[cfg(feature = "alloc")]
+            Self::Owned(v) => v,
+        }
+    }
+}
+
 /// A pointer to the value.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct Pointer<'a> {
-    path: &'a [Segment<'a>],
+    path: Segments<'a>,
 }
 
 impl<'a> Pointer<'a> {
     /// Creates a new `Pointer`.
     pub const fn new(path: &'a [Segment<'a>]) -> Self {
-        Self { path }
+        Self {
+            path: Segments::Borrowed(path),
+        }
+    }
+
+    /// Extends this a new segment to the back of a path.
+    #[cfg(feature = "alloc")]
+    pub fn push_segment(&mut self, segment: Segment<'a>) {
+        self.path.make_mut().push(segment);
     }
 
     /// Returns a path pointed by this pointer.
     ///
     /// If this pointer points to the current value, this method returns an empty slice.
-    pub fn path(self) -> &'a [Segment<'a>] {
-        self.path
+    pub fn path(&'a self) -> &'a [Segment<'a>] {
+        &self.path
     }
 
     #[doc(hidden)]
     #[must_use]
-    pub fn step(self) -> Self {
+    pub fn step(&'a self) -> Self {
         Self::new(&self.path[1..])
     }
 }
@@ -94,7 +135,7 @@ pub enum Segment<'a> {
     Index(Value<'a>),
 }
 
-pub(crate) fn visit_pointer<V>(value: &V, pointer: Pointer<'_>, visit: &mut dyn Visit)
+pub(crate) fn visit_pointer<V>(value: &V, pointer: &Pointer<'_>, visit: &mut dyn Visit)
 where
     V: ?Sized + Valuable,
 {
@@ -132,7 +173,7 @@ where
 }
 
 struct Visitor<'a> {
-    pointer: Pointer<'a>,
+    pointer: &'a Pointer<'a>,
     visit: &'a mut dyn Visit,
     index: usize,
 }
@@ -141,7 +182,7 @@ impl Visit for Visitor<'_> {
     fn visit_value(&mut self, value: Value<'_>) {
         if let Segment::Index(index) = self.pointer.path[0] {
             if index.as_usize() == Some(self.index) {
-                value.visit_pointer(self.pointer.step(), self.visit);
+                value.visit_pointer(&self.pointer.step(), self.visit);
             }
         }
         self.index += 1;
@@ -150,7 +191,7 @@ impl Visit for Visitor<'_> {
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
         if let Segment::Field(name) = self.pointer.path[0] {
             if let Some(value) = named_values.get_by_name(name) {
-                value.visit_pointer(self.pointer.step(), self.visit);
+                value.visit_pointer(&self.pointer.step(), self.visit);
             }
         }
     }
@@ -158,7 +199,7 @@ impl Visit for Visitor<'_> {
     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
         if let Segment::TupleIndex(index) = self.pointer.path[0] {
             if let Some(value) = values.get(index - self.index) {
-                value.visit_pointer(self.pointer.step(), self.visit);
+                value.visit_pointer(&self.pointer.step(), self.visit);
             }
         }
     }
@@ -167,7 +208,7 @@ impl Visit for Visitor<'_> {
         if let Segment::Index(index) = self.pointer.path[0] {
             if let Some(index) = index.as_usize() {
                 if let Some(value) = slice.get(index - self.index) {
-                    value.visit_pointer(self.pointer.step(), self.visit);
+                    value.visit_pointer(&self.pointer.step(), self.visit);
                 }
             }
         }
@@ -198,7 +239,7 @@ impl Visit for Visitor<'_> {
                 _ => false,
             };
             if matched {
-                value.visit_pointer(self.pointer.step(), self.visit);
+                value.visit_pointer(&self.pointer.step(), self.visit);
             }
         }
     }

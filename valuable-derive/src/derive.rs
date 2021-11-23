@@ -61,7 +61,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 if let ::valuable::pointer::Segment::Field(f) = pointer.path()[0] {
                     match f {
                         #(#field_name_literals => {
-                            ::valuable::Valuable::visit_pointer(#fields, pointer.step(), visit)
+                            ::valuable::Valuable::visit_pointer(#fields, &pointer.step(), visit)
                         })*
                         _ => {}
                     }
@@ -104,7 +104,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 if let ::valuable::pointer::Segment::TupleIndex(i) = pointer.path()[0] {
                     match i {
                         #(#field_indices => {
-                            ::valuable::Valuable::visit_pointer(#indices, pointer.step(), visit)
+                            ::valuable::Valuable::visit_pointer(#indices, &pointer.step(), visit)
                         })*
                         _ => {}
                     }
@@ -135,7 +135,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
 
             fn visit_pointer(
                 &self,
-                pointer: ::valuable::pointer::Pointer<'_>,
+                pointer: &::valuable::pointer::Pointer<'_>,
                 visit: &mut dyn ::valuable::Visit,
             ) {
                 if pointer.path().is_empty() {

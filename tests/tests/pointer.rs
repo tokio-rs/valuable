@@ -29,7 +29,7 @@ fn basic() {
 
     let mut visitor = CollectValues::default();
     value.visit_pointer(
-        pointer::Pointer::new(&[pointer::Segment::Field("x")]),
+        &pointer::Pointer::new(&[pointer::Segment::Field("x")]),
         &mut visitor,
     );
     assert_eq!(visitor.0.len(), 1);
@@ -37,7 +37,7 @@ fn basic() {
 
     let mut visitor = CollectValues::default();
     value.visit_pointer(
-        pointer::Pointer::new(&[pointer::Segment::Field("y")]),
+        &pointer::Pointer::new(&[pointer::Segment::Field("y")]),
         &mut visitor,
     );
     assert_eq!(visitor.0.len(), 1);
@@ -45,7 +45,7 @@ fn basic() {
 
     let mut visitor = CollectValues::default();
     value.visit_pointer(
-        pointer::Pointer::new(&[pointer::Segment::Field("y"), pointer::Segment::Field("z")]),
+        &pointer::Pointer::new(&[pointer::Segment::Field("y"), pointer::Segment::Field("z")]),
         &mut visitor,
     );
     assert_eq!(visitor.0.len(), 1);

@@ -40,7 +40,7 @@ pub(crate) fn visit_pointer(input: TokenStream) -> Result<TokenStream> {
     Ok(quote! {
         #visit_pointer(
             &#expr,
-            ::valuable::pointer::Pointer::new(&[
+            &::valuable::pointer::Pointer::new(&[
                 #(#segments)*
             ]),
             &mut #visit,
