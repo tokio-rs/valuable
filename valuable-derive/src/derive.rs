@@ -139,7 +139,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 visit: &mut dyn ::valuable::Visit,
             ) {
                 if pointer.path().is_empty() {
-                    visit.visit_value(self.as_value());
+                    visit.visit_value(::valuable::Valuable::as_value(self));
                     return;
                 }
                 #visit_pointer

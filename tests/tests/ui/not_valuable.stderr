@@ -12,6 +12,20 @@ note: required by `as_value`
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
+  --> tests/ui/not_valuable.rs:5:10
+   |
+5  | #[derive(Valuable)]
+   |          ^^^^^^^^ the trait `Valuable` is not implemented for `S`
+   |
+   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+note: required by `visit_pointer`
+  --> $WORKSPACE/valuable/src/valuable.rs
+   |
+   |     fn visit_pointer(&self, pointer: Pointer<'_>, visit: &mut dyn Visit) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: this error originates in the derive macro `Valuable` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `S: Valuable` is not satisfied
   --> tests/ui/not_valuable.rs:11:14
    |
 11 | struct Tuple(Option<S>);
@@ -23,6 +37,20 @@ note: required by `as_value`
    |
    |     fn as_value(&self) -> Value<'_>;
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `S: Valuable` is not satisfied
+  --> tests/ui/not_valuable.rs:10:10
+   |
+10 | #[derive(Valuable)]
+   |          ^^^^^^^^ the trait `Valuable` is not implemented for `S`
+   |
+   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+note: required by `visit_pointer`
+  --> $WORKSPACE/valuable/src/valuable.rs
+   |
+   |     fn visit_pointer(&self, pointer: Pointer<'_>, visit: &mut dyn Visit) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: this error originates in the derive macro `Valuable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
   --> tests/ui/not_valuable.rs:15:17
