@@ -1,4 +1,10 @@
-//! Valuable value pointer.
+//! References to fields of [`Valuable`] values.
+//!
+//! A [`Pointer`] stores a path traversal to a particular value in a nested
+//! [`Valuable`] structure. For example, a [`Pointer`] might refer to the field `z`
+//! of the field `y` of the value `x`. [`Pointer`] paths can also include indices into
+//! [`Listable`] and [`Tupleable`] values, in order to represent expressions like
+//! `x.y[3].0`.
 //!
 //! # Examples
 //!
