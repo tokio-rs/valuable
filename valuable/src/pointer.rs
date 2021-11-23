@@ -3,7 +3,7 @@
 //! A [`Pointer`] stores a path traversal to a particular value in a nested
 //! [`Valuable`] structure. For example, a [`Pointer`] might refer to the field `z`
 //! of the field `y` of the value `x`. [`Pointer`] paths can also include indices into
-//! [`Listable`] and [`Tupleable`] values, in order to represent expressions like
+//! [`Listable`] and [`Tuplable`] values, in order to represent expressions like
 //! `x.y[3].0`.
 //!
 //! # Examples
@@ -43,6 +43,9 @@
 //! visit_pointer!(value.y, visitor);   // Struct2 { field: "b" }
 //! visit_pointer!(value.y.z, visitor); // "b"
 //! ```
+//!
+//! [`Listable`]: crate::Listable
+//! [`Tuplable`]: crate::Tuplable
 
 use crate::{NamedValues, Slice, Valuable, Value, Visit};
 
