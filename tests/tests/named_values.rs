@@ -2,7 +2,8 @@ use valuable::*;
 
 #[test]
 fn test_iter() {
-    let f = [NamedField::new("a"), NamedField::new("b")];
+    let f = &[NamedField::new("a"), NamedField::new("b")];
+    let f = Names::new(f);
     let v = NamedValues::new(&f, &[Value::I32(1), Value::I32(2)]);
 
     let iter = v.iter();
@@ -13,7 +14,8 @@ fn test_iter() {
 
 #[test]
 fn test_iter_rev() {
-    let f = [NamedField::new("a"), NamedField::new("b")];
+    let f = &[NamedField::new("a"), NamedField::new("b")];
+    let f = Names::new(f);
     let v = NamedValues::new(&f, &[Value::I32(1), Value::I32(2)]);
 
     let iter = v.iter().rev();
@@ -24,7 +26,8 @@ fn test_iter_rev() {
 
 #[test]
 fn test_get() {
-    let f = [NamedField::new("a"), NamedField::new("b")];
+    let f = &[NamedField::new("a"), NamedField::new("b")];
+    let f = Names::new(f);
     let bad = NamedField::new("a");
     let v = NamedValues::new(&f, &[Value::I32(1), Value::I32(2)]);
 
@@ -35,7 +38,8 @@ fn test_get() {
 
 #[test]
 fn test_get_by_name() {
-    let f = [NamedField::new("a"), NamedField::new("b")];
+    let f = &[NamedField::new("a"), NamedField::new("b")];
+    let f = Names::new(f);
     let v = NamedValues::new(&f, &[Value::I32(1), Value::I32(2)]);
 
     assert!(matches!(v.get_by_name("a"), Some(Value::I32(v)) if *v == 1));

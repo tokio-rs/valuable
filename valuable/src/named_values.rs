@@ -6,7 +6,7 @@ use crate::*;
 /// Set of values from a `Structable` or `Enumerable` with named fields.
 #[derive(Debug)]
 pub struct NamedValues<'a> {
-    fields: &'a [NamedField<'a>],
+    fields: &'a Names<'a>,
     values: &'a [Value<'a>],
 }
 
@@ -39,7 +39,7 @@ impl<'a> NamedValues<'a> {
     ///     named_values.get(&fields[0]).unwrap().as_u32(),
     ///     Some(123));
     /// ```
-    pub fn new(fields: &'a [NamedField<'a>], values: &'a [Value<'a>]) -> NamedValues<'a> {
+    pub fn new(fields: &'a Names<'a>, values: &'a [Value<'a>]) -> NamedValues<'a> {
         assert!(
             fields.len() == values.len(),
             "`fields` and `values` must be the same length"

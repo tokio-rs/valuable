@@ -5,7 +5,7 @@ pub struct HelloWorld {
     pub id: u32,
 }
 
-pub static HELLO_WORLD_FIELDS: &[NamedField<'static>] = &[NamedField::new("id")];
+pub static HELLO_WORLD_FIELDS: &Names<'static> = &Names::new(&[NamedField::new("id")]);
 
 impl Valuable for HelloWorld {
     fn as_value(&self) -> Value<'_> {

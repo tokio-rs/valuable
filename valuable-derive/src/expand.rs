@@ -297,9 +297,9 @@ fn named_fields_static(name: &Ident, fields: &syn::Fields) -> TokenStream {
         }
     });
     quote! {
-        static #name: &[::valuable::NamedField<'static>] = &[
+        static #name: &::valuable::Names<'static> = &::valuable::Names::new(&[
             #(#named_fields)*
-        ];
+        ]);
     }
 }
 

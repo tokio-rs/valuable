@@ -8,17 +8,17 @@ fn test_manual_static_impl() {
         sub: SubStruct,
     }
 
-    static MY_STRUCT_FIELDS: &[NamedField<'static>] = &[
+    static MY_STRUCT_FIELDS: &Names<'static> = &Names::new(&[
         NamedField::new("num"),
         NamedField::new("list"),
         NamedField::new("sub"),
-    ];
+    ]);
 
     struct SubStruct {
         message: &'static str,
     }
 
-    static SUB_STRUCT_FIELDS: &[NamedField<'static>] = &[NamedField::new("message")];
+    static SUB_STRUCT_FIELDS: &Names<'static> = &Names::new(&[NamedField::new("message")]);
 
     impl Valuable for MyStruct {
         fn as_value(&self) -> Value<'_> {
