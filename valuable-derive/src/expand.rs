@@ -50,10 +50,11 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
             }
         }
         syn::Fields::Unnamed(_) | syn::Fields::Unit => {
+            let len = data.fields.len();
             struct_def = quote! {
                 ::valuable::StructDef::new_static(
                     #name_literal,
-                    ::valuable::Fields::Unnamed,
+                    ::valuable::Fields::Unnamed(#len),
                 )
             };
 
@@ -172,10 +173,11 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
             syn::Fields::Unnamed(_) => {
                 let variant_name = &variant.ident;
                 let variant_name_literal = variant_name.to_string();
+                let len = variant.fields.len();
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::Fields::Unnamed,
+                        ::valuable::Fields::Unnamed(#len),
                     ),
                 });
 
@@ -215,7 +217,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::Fields::Unnamed,
+                        ::valuable::Fields::Unnamed(0),
                     ),
                 });
 

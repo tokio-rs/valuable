@@ -424,7 +424,7 @@ fn test_dyn_struct() {
 
     impl Structable for Unnamed {
         fn definition(&self) -> StructDef<'_> {
-            StructDef::new_dynamic("Unnamed", Fields::Unnamed)
+            StructDef::new_dynamic("Unnamed", Fields::Unnamed(2))
         }
     }
 
@@ -491,7 +491,7 @@ fn test_dyn_enum() {
         fn variant(&self) -> Variant<'_> {
             match self {
                 Self::Named => Variant::Dynamic(VariantDef::new("Named", Fields::Named(&[]))),
-                Self::Unnamed => Variant::Dynamic(VariantDef::new("Named", Fields::Unnamed)),
+                Self::Unnamed => Variant::Dynamic(VariantDef::new("Named", Fields::Unnamed(2))),
             }
         }
     }
