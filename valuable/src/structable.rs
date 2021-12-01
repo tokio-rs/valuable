@@ -339,6 +339,16 @@ impl<'a> StructDef<'a> {
     ///
     /// let def = StructDef::new_static("Foo", Fields::Unnamed);
     /// ```
+    ///
+    /// With named fields:
+    /// ```
+    /// use valuable::{StructDef, Fields, NamedField};
+    ///
+    /// static NAMES: &[NamedField<'static>] = &[NamedField::new("hello")];
+    /// static MY_STRUCT: &StructDef<'static> = &StructDef::new_static(
+    ///     "Foo",
+    ///     Fields::Named(NAMES),
+    /// );
     pub const fn new_static(name: &'static str, fields: Fields<'static>) -> StructDef<'a> {
         StructDef::Static { name, fields }
     }

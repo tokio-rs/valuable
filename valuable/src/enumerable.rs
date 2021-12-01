@@ -494,10 +494,11 @@ impl Variant<'_> {
     /// ```
     /// use valuable::{Fields, NamedField, Variant, VariantDef};
     ///
-    /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
-    ///     "Foo", Fields::Named(&[NamedField::new("hello")]));
+    /// static NAMES: &[NamedField<'static>] = &[NamedField::new("hello")];
+    /// static VARIANT: VariantDef<'static> = VariantDef::new(
+    ///     "Foo", Fields::Named(NAMES));
     ///
-    /// let variant = Variant::Static(VARIANT);
+    /// let variant = Variant::Static(&VARIANT);
     /// assert!(variant.is_named_fields());
     /// ```
     ///
@@ -525,8 +526,9 @@ impl Variant<'_> {
     /// ```
     /// use valuable::{Fields, NamedField, Variant, VariantDef};
     ///
+    /// static NAMES: &[NamedField<'static>] = &[NamedField::new("hello")];
     /// static VARIANT: &VariantDef<'static> = &VariantDef::new(
-    ///     "Foo", Fields::Named(&[NamedField::new("hello")]));
+    ///     "Foo", Fields::Named(NAMES));
     ///
     /// let variant = Variant::Static(VARIANT);
     /// assert!(!variant.is_unnamed_fields());
