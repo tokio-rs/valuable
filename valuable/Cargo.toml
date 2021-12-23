@@ -1,10 +1,25 @@
 [package]
 name = "valuable"
 version = "0.1.0"
-authors = ["Carl Lerche <me@carllerche.com>"]
-edition = "2018"
+authors = ["Tokio Contributors <team@tokio.rs>"]
+edition = "2021"
 license = "MIT"
-description = "Values"
+rust-version = "1.57.0"
+readme = "README.md"
+repository = "https://github.com/tokio-rs/valuable"
+description = """
+Object-safe value inspection, used to pass un-typed structured data across trait-object boundaries.
+"""
+categories = [
+    "development-tools::debugging",
+    "encoding",
+]
+keywords = [
+    "valuable",
+    "serialization",
+    "debugging",
+    "no_std",
+]
 
 [features]
 default = ["std"]
@@ -27,3 +42,7 @@ criterion = "0.3"
 [[bench]]
 name = "structable"
 harness = false
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

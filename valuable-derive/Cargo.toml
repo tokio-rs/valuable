@@ -1,10 +1,11 @@
 [package]
 name = "valuable-derive"
 version = "0.1.0"
-authors = ["Carl Lerche <me@carllerche.com>", "Taiki Endo <te316e89@gmail.com>"]
-edition = "2018"
+authors = ["Tokio Contributors <team@tokio.rs>"]
+edition = "2021"
 license = "MIT"
-description = "Values"
+rust-version = "1.57.0"
+description = "Macros for `valuable` crate."
 
 [lib]
 proc-macro = true
