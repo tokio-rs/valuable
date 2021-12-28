@@ -2,9 +2,9 @@
 name = "valuable-derive"
 version = "0.1.0"
 authors = ["Tokio Contributors <team@tokio.rs>"]
-edition = "2021"
+edition = "2018"
 license = "MIT"
-rust-version = "1.57.0"
+# rust-version = "1.42.0"
 description = "Macros for `valuable` crate."
 
 [lib]
