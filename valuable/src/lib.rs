@@ -96,6 +96,15 @@
 //! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg, doc_cfg_hide))]
+#![cfg_attr(
+    docsrs,
+    doc(cfg_hide(
+        not(valuable_no_atomic_cas),
+        not(valuable_no_atomic),
+        not(valuable_no_atomic_64)
+    ))
+)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -134,4 +143,4 @@ mod visit;
 pub use visit::{visit, Visit};
 
 #[cfg(feature = "derive")]
-pub use valuable_derive::*;
+pub use valuable_derive::Valuable;
