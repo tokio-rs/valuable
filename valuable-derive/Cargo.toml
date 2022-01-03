@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2018"
 license = "MIT"
 rust-version = "1.51.0"
-description = "Macros for `valuable` crate."
+description = "Macros for the `valuable` crate."
 repository = "https://github.com/tokio-rs/valuable"
 categories = [
     "development-tools::debugging",
