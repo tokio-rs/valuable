@@ -36,7 +36,7 @@ impl Fields<'_> {
     /// let fields = Fields::Unnamed(2);
     /// assert!(!fields.is_named());
     /// ```
-    pub fn is_named(&self) -> bool {
+    pub const fn is_named(&self) -> bool {
         matches!(self, Fields::Named(..))
     }
 
@@ -61,7 +61,7 @@ impl Fields<'_> {
     /// let fields = Fields::Unnamed(3);
     /// assert!(fields.is_unnamed());
     /// ```
-    pub fn is_unnamed(&self) -> bool {
+    pub const fn is_unnamed(&self) -> bool {
         matches!(self, Fields::Unnamed(_))
     }
 
@@ -91,7 +91,7 @@ impl Fields<'_> {
     /// let fields = Fields::Unnamed(2);
     /// assert_eq!(fields.len(), 2);
     /// ```
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         match self {
             Self::Named(names) => names.len(),
             Self::Unnamed(len) => *len,
@@ -130,7 +130,7 @@ impl Fields<'_> {
     /// assert!(!non_empty.is_empty());
     /// assert!(empty.is_empty());
     /// ```
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.len() == 0
     }
 }
@@ -160,7 +160,7 @@ impl<'a> NamedField<'a> {
     /// let field = NamedField::new("hello");
     /// assert_eq!("hello", field.name());
     /// ```
-    pub fn name(&self) -> &str {
+    pub const fn name(&self) -> &str {
         self.0
     }
 }
