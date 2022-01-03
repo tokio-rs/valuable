@@ -13,7 +13,7 @@ on:
 env:
   RUSTFLAGS: -Dwarnings
   RUST_BACKTRACE: 1
-  minrust: 1.42
+  minrust: 1.51
 
 jobs:
   test:
