@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2018"
 license = "MIT"
 rust-version = "1.51.0"
-readme = "README.md"
+readme = "../README.md"
 repository = "https://github.com/tokio-rs/valuable"
 description = """
 Object-safe value inspection, used to pass un-typed structured data across trait-object boundaries.
