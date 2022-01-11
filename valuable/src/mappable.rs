@@ -6,7 +6,7 @@ use core::fmt;
 ///
 /// Implemented by [`Valuable`] types that have a map-like shape. This includes
 /// [`HashMap`] and other Rust [collection] types. Values that implement
-/// `Mappable` must return [`Value::Mappable`] from their [`Value::as_value`]
+/// `Mappable` must return [`Value::Mappable`] from their [`Valuable::as_value`]
 /// implementation.
 ///
 /// [collection]: https://doc.rust-lang.org/stable/std/collections/index.html
