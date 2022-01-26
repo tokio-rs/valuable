@@ -5,7 +5,19 @@ authors = ["Taiki Endo <te316e89@gmail.com>"]
 edition = "2018"
 license = "MIT"
 description = "`serde::Serialize` implementation for `Valuable` types."
-publish = false
+rust-version = "1.51.0"
+readme = "README.md"
+repository = "https://github.com/tokio-rs/valuable"
+categories = [
+    "development-tools::debugging",
+    "encoding",
+]
+keywords = [
+    "valuable",
+    "serialization",
+    "serde",
+    "no_std",
+]
 
 [features]
 default = ["std"]
