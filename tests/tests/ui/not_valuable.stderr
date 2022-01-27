@@ -1,21 +1,16 @@
 error[E0277]: the trait bound `S: Valuable` is not satisfied
-  --> tests/ui/not_valuable.rs:7:8
-   |
-5  | #[derive(Valuable)]
-   |          -------- required by a bound introduced by this call
-6  | struct Struct {
-7  |     f: Option<S>,
-   |        ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
-   |
-   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
-note: required by `as_value`
-  --> $WORKSPACE/valuable/src/valuable.rs
-   |
-   |     fn as_value(&self) -> Value<'_>;
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ --> $DIR/tests/ui/not_valuable.rs:7:8
+  |
+5 | #[derive(Valuable)]
+  |          -------- required by a bound introduced by this call
+6 | struct Struct {
+7 |     f: Option<S>,
+  |        ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+  |
+  = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
-  --> tests/ui/not_valuable.rs:11:14
+  --> $DIR/tests/ui/not_valuable.rs:11:14
    |
 10 | #[derive(Valuable)]
    |          -------- required by a bound introduced by this call
@@ -23,14 +18,9 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    |              ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
    |
    = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
-note: required by `as_value`
-  --> $WORKSPACE/valuable/src/valuable.rs
-   |
-   |     fn as_value(&self) -> Value<'_>;
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
-  --> tests/ui/not_valuable.rs:15:17
+  --> $DIR/tests/ui/not_valuable.rs:15:17
    |
 13 | #[derive(Valuable)]
    |          -------- required by a bound introduced by this call
@@ -41,14 +31,9 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
    = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `Valuable` for `&Option<S>`
-note: required by `as_value`
-  --> $WORKSPACE/valuable/src/valuable.rs
-   |
-   |     fn as_value(&self) -> Value<'_>;
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
-  --> tests/ui/not_valuable.rs:16:11
+  --> $DIR/tests/ui/not_valuable.rs:16:11
    |
 13 | #[derive(Valuable)]
    |          -------- required by a bound introduced by this call
@@ -59,8 +44,3 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
    = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `Valuable` for `&Option<S>`
-note: required by `as_value`
-  --> $WORKSPACE/valuable/src/valuable.rs
-   |
-   |     fn as_value(&self) -> Value<'_>;
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
