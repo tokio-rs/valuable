@@ -94,7 +94,18 @@
 //! let hello_world = HelloWorld { message: Message::HelloWorld };
 //! hello_world.visit(&mut Print);
 //! ```
-
+//!
+//! # Related Crates
+//!
+//! - [`valuable-serde`] provides a bridge between `valuable` and the [`serde`]
+//!   serialization ecosystem. Using [`valuable_serde::Serializable`] allows any
+//!   type that implements [`Valuable`] to be serialized by any
+//!   [`serde::ser::Serializer`].
+//!
+//! [`valuable-serde`]: https://crates.io/crates/valuable-serde
+//! [`serde`]: https://crates.io/crates/serde
+//! [`valuable_serde::Serializable`]: https://docs.rs/valuable-serde/latest/valuable_serde/struct.Serializable.html
+//! [`serde::ser::Serializer`]:  https://docs.rs/serde/latest/serde/ser/trait.Serializer.html
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg, doc_cfg_hide))]
 #![cfg_attr(

@@ -8,6 +8,17 @@
 
 //! [`serde::Serialize`] implementation for [`Valuable`] types.
 //!
+//! [Valuable][`valuable`] provides object-safe value inspection. Use cases
+//! include passing structured data to trait objects and object-safe serialization.
+//!
+//! This crate provides a bridge between [`valuable`] and the [`serde`]
+//! serialization ecosystem. Using [`Serializable`] allows any type
+//! that implements `valuable`'s [`Valuable`] trait to be serialized by any
+//! [`serde::ser::Serializer`].
+//!
+//! [`valuable`]: https://docs.rs/valuable
+//! [`serde`]: https://docs.rs/serde
+//!
 //! # Examples
 //!
 //! ```
