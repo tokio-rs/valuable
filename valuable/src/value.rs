@@ -1,7 +1,6 @@
 use crate::{Enumerable, Listable, Mappable, Structable, Tuplable, Valuable, Visit};
 
 use core::fmt;
-use std::fmt::Display;
 
 macro_rules! value {
     (
@@ -85,7 +84,7 @@ macro_rules! value {
             /// let meters = Meters(5);
             /// let v = Value::Display(&meters);
             /// ```
-            Display(&'a dyn Display),
+            Display(&'a dyn fmt::Display),
 
             /// A Rust `()` or `None` value.
             ///
@@ -735,7 +734,7 @@ macro_rules! convert {
             /// assert!(Value::Display(&meters).as_display().is_some());
             /// assert!(Value::Bool(true).as_display().is_none());
             /// ```
-            pub fn as_display(&self) -> Option<&dyn Display> {
+            pub fn as_display(&self) -> Option<&dyn fmt::Display> {
                 match *self {
                     Value::Display(v) => Some(v),
                     _ => None,
