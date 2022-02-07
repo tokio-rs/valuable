@@ -1,6 +1,7 @@
 use crate::{Enumerable, Listable, Mappable, Structable, Tuplable, Valuable, Visit};
 
 use core::fmt;
+use std::fmt::Display;
 
 macro_rules! value {
     (
@@ -65,6 +66,27 @@ macro_rules! value {
                 $variant($ty),
             )*
 
+            /// An arbitrary value that implements Display.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use std::fmt;
+            /// use valuable::{Value, Valuable};
+            ///
+            /// struct Meters(u32);
+            ///
+            /// impl fmt::Display for Meters {
+            ///     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            ///         write!(f, "{}m", self.0)
+            ///     }
+            /// }
+            ///
+            /// let meters = Meters(5);
+            /// let v = Value::Display(&meters);
+            /// ```
+            Display(&'a dyn Display),
+
             /// A Rust `()` or `None` value.
             ///
             /// # Examples
@@ -104,6 +126,7 @@ macro_rules! value {
                         $(#[$attrs])*
                         $variant(v) => fmt::Debug::fmt(v, fmt),
                     )*
+                    Display(d) => d.fmt(fmt),
                     Unit => ().fmt(fmt),
                 }
             }
@@ -687,6 +710,34 @@ macro_rules! convert {
             pub fn as_tuplable(&self) -> Option<&dyn Tuplable> {
                 match *self {
                     Value::Tuplable(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            /// Return a `&dyn Display` representation of `self`, if possible.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use std::fmt;
+            /// use valuable::{Value, Valuable};
+            ///
+            /// struct Meters(u32);
+            ///
+            /// impl fmt::Display for Meters {
+            ///     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            ///         write!(f, "{}m", self.0)
+            ///     }
+            /// }
+            ///
+            /// let meters = Meters(5);
+            ///
+            /// assert!(Value::Display(&meters).as_display().is_some());
+            /// assert!(Value::Bool(true).as_display().is_none());
+            /// ```
+            pub fn as_display(&self) -> Option<&dyn Display> {
+                match *self {
+                    Value::Display(v) => Some(v),
                     _ => None,
                 }
             }
