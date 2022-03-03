@@ -721,6 +721,12 @@ macro_rules! convert {
 
             /// Return a `&dyn Display` representation of `self`, if possible.
             ///
+            /// If this value is a [`Value::Display`] variant, or any primitive
+            /// `Value` variant, this method will return a `&dyn Display` trait
+            /// object. Otherwise, if the value is [`Structable`],
+            /// [`Enumerable`], [`Tupleable`], [`Listable`], [`Mappable`], or a
+            /// [`Value::Path`], this method will return `None`.
+            ///
             /// # Examples
             ///
             /// ```
@@ -738,11 +744,40 @@ macro_rules! convert {
             /// let meters = Meters(5);
             ///
             /// assert!(Value::Display(&meters).as_display().is_some());
-            /// assert!(Value::Bool(true).as_display().is_none());
+            /// assert!(Value::Tupleable((true, "hello")).as_display().is_none());
             /// ```
             pub fn as_display(&self) -> Option<&dyn fmt::Display> {
+                use Value::*;
                 match *self {
-                    Value::Display(v) => Some(v),
+                    I8(ref v) => Some(v),
+                    I16(ref v) => Some(v),
+                    I32(ref v) => Some(v),
+                    I64(ref v) => Some(v),
+                    I128(ref v) => Some(v),
+                    Isize(ref v) => Some(v),
+                    U8(ref v) => Some(v),
+                    U16(ref v) => Some(v),
+                    U32(ref v) => Some(v),
+                    U64(ref v) => Some(v),
+                    U128(ref v) => Some(v),
+                    Usize(ref v) => Some(v),
+                    F32(ref v) => Some(v),
+                    F64(ref v) => Some(v),
+                    Bool(ref v) => Some(v),
+                    Char(ref v) => Some(v),
+                    String(ref v) => Some(v),
+
+                    #[cfg(feature = "std")]
+                    Error(ref v) => Some(v),
+
+                    // XXX(eliza): this, sadly, does not work for `Path`s; the
+                    // only way to return them as a `Display` impl is
+                    // `Path::display`, which creates a value owned by _this_
+                    // function; we can't return that as a trait object because
+                    // we're borrowing it from the function's scope rather than
+                    // from the value itself.
+
+                    Display(v) => Some(v),
                     _ => None,
                 }
             }
