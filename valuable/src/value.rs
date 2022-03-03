@@ -131,7 +131,7 @@ macro_rules! value {
                         $(#[$attrs])*
                         $variant(v) => fmt::Debug::fmt(v, fmt),
                     )*
-                    Display(d) => d.fmt(fmt),
+                    Display(d) => write!(fmt, "\"{}\"", d),
                     Unit => ().fmt(fmt),
                 }
             }
