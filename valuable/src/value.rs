@@ -113,6 +113,12 @@ macro_rules! value {
             }
         }
 
+        impl<'a> From<&'a dyn fmt::Display> for Value<'a> {
+            fn from(src: &'a dyn fmt::Display) -> Self {
+                Self::Display(src)
+            }
+        }
+
         impl fmt::Debug for Value<'_> {
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 use Value::*;
