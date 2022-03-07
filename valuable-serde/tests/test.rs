@@ -518,3 +518,75 @@ fn test_dyn_enum() {
         ],
     );
 }
+
+#[test]
+fn test_errors() {
+    use std::{error::Error, fmt};
+
+    #[derive(Debug)]
+    struct TestError {
+        message: &'static str,
+        source: Option<Box<dyn Error + 'static>>,
+    }
+
+    impl fmt::Display for TestError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str(self.message)
+        }
+    }
+
+    impl Error for TestError {
+        fn source(&self) -> Option<&(dyn Error + 'static)> {
+            self.source.as_deref()
+        }
+    }
+
+    let no_source = TestError {
+        message: "an error occurred",
+        source: None,
+    };
+
+    assert_ser_eq!(
+        &Serializable::new(&no_source as &(dyn Error + 'static)),
+        &[
+            Token::Struct {
+                name: "Error",
+                len: 2
+            },
+            Token::Str("message"),
+            Token::Str("an error occurred"),
+            Token::Str("source"),
+            Token::None,
+            Token::StructEnd
+        ]
+    );
+
+    let with_source = TestError {
+        message: "the error caused another error",
+        source: Some(Box::new(no_source)),
+    };
+
+    assert_ser_eq!(
+        &Serializable::new(&with_source as &(dyn Error + 'static)),
+        &[
+            Token::Struct {
+                name: "Error",
+                len: 2
+            },
+            Token::Str("message"),
+            Token::Str("the error caused another error"),
+            Token::Str("source"),
+            Token::Some,
+            Token::Struct {
+                name: "Error",
+                len: 2
+            },
+            Token::Str("message"),
+            Token::Str("an error occurred"),
+            Token::Str("source"),
+            Token::None,
+            Token::StructEnd,
+            Token::StructEnd
+        ]
+    );
+}
