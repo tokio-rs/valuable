@@ -65,6 +65,27 @@ macro_rules! value {
                 $variant($ty),
             )*
 
+            /// An arbitrary value that implements [`std::fmt::Display`].
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use std::fmt;
+            /// use valuable::{Value, Valuable};
+            ///
+            /// struct Meters(u32);
+            ///
+            /// impl fmt::Display for Meters {
+            ///     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            ///         write!(f, "{}m", self.0)
+            ///     }
+            /// }
+            ///
+            /// let meters = Meters(5);
+            /// let v = Value::Display(&meters);
+            /// ```
+            Display(&'a dyn fmt::Display),
+
             /// A Rust `()` or `None` value.
             ///
             /// # Examples
@@ -92,6 +113,12 @@ macro_rules! value {
             }
         }
 
+        impl<'a> From<&'a dyn fmt::Display> for Value<'a> {
+            fn from(src: &'a dyn fmt::Display) -> Self {
+                Self::Display(src)
+            }
+        }
+
         impl fmt::Debug for Value<'_> {
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 use Value::*;
@@ -104,6 +131,7 @@ macro_rules! value {
                         $(#[$attrs])*
                         $variant(v) => fmt::Debug::fmt(v, fmt),
                     )*
+                    Display(d) => write!(fmt, "\"{}\"", d),
                     Unit => ().fmt(fmt),
                 }
             }
@@ -687,6 +715,69 @@ macro_rules! convert {
             pub fn as_tuplable(&self) -> Option<&dyn Tuplable> {
                 match *self {
                     Value::Tuplable(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            /// Return a `&dyn Display` representation of `self`, if possible.
+            ///
+            /// If this value is a [`Value::Display`] variant, or any primitive
+            /// `Value` variant, this method will return a `&dyn Display` trait
+            /// object. Otherwise, if the value is [`Structable`],
+            /// [`Enumerable`], [`Tuplable`], [`Listable`], [`Mappable`], or a
+            /// [`Value::Path`], this method will return `None`.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use std::fmt;
+            /// use valuable::{Value, Valuable};
+            ///
+            /// struct Meters(u32);
+            ///
+            /// impl fmt::Display for Meters {
+            ///     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            ///         write!(f, "{}m", self.0)
+            ///     }
+            /// }
+            ///
+            /// let meters = Meters(5);
+            ///
+            /// assert!(Value::Display(&meters).as_display().is_some());
+            /// assert!(Value::Tuplable(&(true, "hello")).as_display().is_none());
+            /// ```
+            pub fn as_display(&self) -> Option<&dyn fmt::Display> {
+                use Value::*;
+                match *self {
+                    I8(ref v) => Some(v),
+                    I16(ref v) => Some(v),
+                    I32(ref v) => Some(v),
+                    I64(ref v) => Some(v),
+                    I128(ref v) => Some(v),
+                    Isize(ref v) => Some(v),
+                    U8(ref v) => Some(v),
+                    U16(ref v) => Some(v),
+                    U32(ref v) => Some(v),
+                    U64(ref v) => Some(v),
+                    U128(ref v) => Some(v),
+                    Usize(ref v) => Some(v),
+                    F32(ref v) => Some(v),
+                    F64(ref v) => Some(v),
+                    Bool(ref v) => Some(v),
+                    Char(ref v) => Some(v),
+                    String(ref v) => Some(v),
+
+                    #[cfg(feature = "std")]
+                    Error(ref v) => Some(v),
+
+                    // XXX(eliza): this, sadly, does not work for `Path`s; the
+                    // only way to return them as a `Display` impl is
+                    // `Path::display`, which creates a value owned by _this_
+                    // function; we can't return that as a trait object because
+                    // we're borrowing it from the function's scope rather than
+                    // from the value itself.
+
+                    Display(v) => Some(v),
                     _ => None,
                 }
             }
