@@ -724,7 +724,7 @@ macro_rules! convert {
             /// If this value is a [`Value::Display`] variant, or any primitive
             /// `Value` variant, this method will return a `&dyn Display` trait
             /// object. Otherwise, if the value is [`Structable`],
-            /// [`Enumerable`], [`Tupleable`], [`Listable`], [`Mappable`], or a
+            /// [`Enumerable`], [`Tuplable`], [`Listable`], [`Mappable`], or a
             /// [`Value::Path`], this method will return `None`.
             ///
             /// # Examples
@@ -744,7 +744,7 @@ macro_rules! convert {
             /// let meters = Meters(5);
             ///
             /// assert!(Value::Display(&meters).as_display().is_some());
-            /// assert!(Value::Tupleable((true, "hello")).as_display().is_none());
+            /// assert!(Value::Tuplable((true, "hello")).as_display().is_none());
             /// ```
             pub fn as_display(&self) -> Option<&dyn fmt::Display> {
                 use Value::*;
