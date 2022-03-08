@@ -1,11 +1,21 @@
 [package]
 name = "valuable-derive"
 version = "0.1.0"
-authors = ["Carl Lerche <me@carllerche.com>", "Taiki Endo <te316e89@gmail.com>"]
 edition = "2018"
 license = "MIT"
-description = "Values"
-
+rust-version = "1.51.0"
+description = "Macros for the `valuable` crate."
+repository = "https://github.com/tokio-rs/valuable"
+categories = [
+    "development-tools::debugging",
+    "encoding",
+]
+keywords = [
+    "valuable",
+    "serialization",
+    "debugging",
+    "no_std",
+]
 [lib]
 proc-macro = true
 

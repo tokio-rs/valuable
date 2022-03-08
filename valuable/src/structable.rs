@@ -337,7 +337,7 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed(2));
     /// ```
     pub const fn new_static(name: &'static str, fields: Fields<'static>) -> StructDef<'a> {
         StructDef::Static { name, fields }
@@ -352,7 +352,7 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed(3));
     /// ```
     pub const fn new_dynamic(name: &'a str, fields: Fields<'a>) -> StructDef<'a> {
         StructDef::Dynamic { name, fields }
@@ -367,7 +367,7 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed(1));
     /// assert_eq!("Foo", def.name());
     /// ```
     ///
@@ -376,10 +376,10 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed(2));
     /// assert_eq!("Foo", def.name());
     /// ```
-    pub fn name(&self) -> &'a str {
+    pub const fn name(&self) -> &'a str {
         match self {
             StructDef::Static { name, .. } => name,
             StructDef::Dynamic { name, .. } => name,
@@ -395,8 +395,8 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
-    /// assert!(matches!(def.fields(), Fields::Unnamed));
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed(3));
+    /// assert!(matches!(def.fields(), Fields::Unnamed(_)));
     /// ```
     ///
     /// With a dynamic struct
@@ -404,10 +404,10 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
-    /// assert!(matches!(def.fields(), Fields::Unnamed));
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed(1));
+    /// assert!(matches!(def.fields(), Fields::Unnamed(_)));
     /// ```
-    pub fn fields(&self) -> &Fields<'a> {
+    pub const fn fields(&self) -> &Fields<'a> {
         match self {
             StructDef::Static { fields, .. } => fields,
             StructDef::Dynamic { fields, .. } => fields,
@@ -423,7 +423,7 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed(2));
     /// assert!(def.is_static());
     /// ```
     ///
@@ -432,10 +432,10 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed(4));
     /// assert!(!def.is_static());
     /// ```
-    pub fn is_static(&self) -> bool {
+    pub const fn is_static(&self) -> bool {
         matches!(self, StructDef::Static { .. })
     }
 
@@ -448,7 +448,7 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_static("Foo", Fields::Unnamed);
+    /// let def = StructDef::new_static("Foo", Fields::Unnamed(1));
     /// assert!(!def.is_dynamic());
     /// ```
     ///
@@ -457,10 +457,10 @@ impl<'a> StructDef<'a> {
     /// ```
     /// use valuable::{StructDef, Fields};
     ///
-    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed);
+    /// let def = StructDef::new_dynamic("Foo", Fields::Unnamed(1));
     /// assert!(def.is_dynamic());
     /// ```
-    pub fn is_dynamic(&self) -> bool {
+    pub const fn is_dynamic(&self) -> bool {
         matches!(self, StructDef::Dynamic { .. })
     }
 }

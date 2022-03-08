@@ -8,6 +8,17 @@
 
 //! [`serde::Serialize`] implementation for [`Valuable`] types.
 //!
+//! [Valuable][`valuable`] provides object-safe value inspection. Use cases
+//! include passing structured data to trait objects and object-safe serialization.
+//!
+//! This crate provides a bridge between [`valuable`] and the [`serde`]
+//! serialization ecosystem. Using [`Serializable`] allows any type
+//! that implements `valuable`'s [`Valuable`] trait to be serialized by any
+//! [`serde::ser::Serializer`].
+//!
+//! [`valuable`]: https://docs.rs/valuable
+//! [`serde`]: https://docs.rs/serde
+//!
 //! # Examples
 //!
 //! ```
@@ -375,7 +386,7 @@ impl<S: Serializer> Visit for VisitStaticStruct<S> {
         let (name, serializer) = match mem::replace(self, Self::Tmp) {
             Self::Start {
                 name,
-                fields: Fields::Unnamed,
+                fields: Fields::Unnamed(_),
                 serializer,
             } => (name, serializer),
             mut res @ Self::End(..) => {
@@ -470,7 +481,7 @@ impl<S: Serializer> Visit for VisitStaticEnum<S> {
         };
         let fields = match variant.fields() {
             Fields::Named(fields) => fields,
-            Fields::Unnamed => unreachable!(),
+            Fields::Unnamed(_) => unreachable!(),
         };
         for (i, (_, v)) in named_values.iter().enumerate() {
             if let Err(e) = ser.serialize_field(fields[i].name(), &Serializable(v)) {
