@@ -744,7 +744,7 @@ macro_rules! convert {
             /// let meters = Meters(5);
             ///
             /// assert!(Value::Display(&meters).as_display().is_some());
-            /// assert!(Value::Tuplable((true, "hello")).as_display().is_none());
+            /// assert!(Value::Tuplable(&(true, "hello")).as_display().is_none());
             /// ```
             pub fn as_display(&self) -> Option<&dyn fmt::Display> {
                 use Value::*;
