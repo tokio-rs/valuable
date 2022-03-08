@@ -265,6 +265,7 @@ where
             Value::Path(p) => Serialize::serialize(p, serializer),
             #[cfg(feature = "std")]
             Value::Error(e) => Err(S::Error::custom(e)),
+            Value::Display(d) => serializer.collect_str(d),
 
             v => unimplemented!("{:?}", v),
         }
