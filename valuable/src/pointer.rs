@@ -51,7 +51,6 @@ use crate::{NamedValues, Slice, Valuable, Value, Visit};
 
 /// A pointer to the value.
 #[derive(Debug, Clone, Copy)]
-#[non_exhaustive]
 pub struct Pointer<'a> {
     path: &'a [Segment<'a>],
 }
