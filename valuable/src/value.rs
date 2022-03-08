@@ -65,7 +65,7 @@ macro_rules! value {
                 $variant($ty),
             )*
 
-            /// An arbitrary value that implements Display.
+            /// An arbitrary value that implements [`std::fmt::Display`].
             ///
             /// # Examples
             ///
