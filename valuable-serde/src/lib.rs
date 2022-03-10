@@ -669,7 +669,10 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
     }
 }
 
+#[cfg(feature = "std")]
 struct SerializeError<'a>(&'a dyn std::error::Error);
+
+#[cfg(feature = "std")]
 impl Serialize for SerializeError<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         struct CollectStr<'a>(&'a dyn std::error::Error);
