@@ -264,7 +264,7 @@ where
             #[cfg(feature = "std")]
             Value::Path(p) => Serialize::serialize(p, serializer),
             #[cfg(feature = "std")]
-            Value::Error(e) => serializer.collect_str(e),
+            Value::Error(e) => SerializeError(e).serialize(serializer),
 
             v => unimplemented!("{:?}", v),
         }
@@ -666,5 +666,24 @@ impl<S: Serializer> Visit for VisitDynamic<'_, S> {
         if !matches!(self, Self::Error(..)) {
             *self = Self::Error(S::Error::custom("visit_value in dynamic struct/variant"));
         }
+    }
+}
+
+#[cfg(feature = "std")]
+struct SerializeError<'a>(&'a dyn std::error::Error);
+
+#[cfg(feature = "std")]
+impl Serialize for SerializeError<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        struct CollectStr<'a>(&'a dyn std::error::Error);
+        impl Serialize for CollectStr<'_> {
+            fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                serializer.collect_str(&self.0)
+            }
+        }
+        let mut s = serializer.serialize_struct("Error", 2)?;
+        s.serialize_field("message", &CollectStr(self.0))?;
+        s.serialize_field("source", &self.0.source().map(SerializeError))?;
+        s.end()
     }
 }
