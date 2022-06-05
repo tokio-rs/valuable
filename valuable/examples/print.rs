@@ -1,13 +1,17 @@
+#[cfg(feature = "valuable-derive",)]
 use valuable::{NamedValues, Valuable, Value, Visit};
 
+#[cfg(feature = "valuable-derive",)]
 struct Print(String);
 
+#[cfg(feature = "valuable-derive",)]
 impl Print {
     fn indent(&self) -> Print {
         Print(format!("{}    ", self.0))
     }
 }
 
+#[cfg(feature = "valuable-derive",)]
 impl Visit for Print {
     fn visit_value(&mut self, value: Value<'_>) {
         match value {
@@ -69,6 +73,7 @@ impl Visit for Print {
     }
 }
 
+#[cfg(feature = "valuable-derive",)]
 #[derive(Valuable)]
 struct Person {
     name: String,
@@ -76,6 +81,7 @@ struct Person {
     addresses: Vec<Address>,
 }
 
+#[cfg(feature = "valuable-derive",)]
 #[derive(Valuable)]
 struct Address {
     street: String,
@@ -83,6 +89,7 @@ struct Address {
     zip: String,
 }
 
+#[cfg(feature = "valuable-derive",)]
 fn main() {
     let person = Person {
         name: "Angela Ashton".to_string(),
@@ -103,4 +110,8 @@ fn main() {
 
     let mut print = Print("".to_string());
     valuable::visit(&person, &mut print);
+}
+
+#[cfg(not(feature = "valuable-derive",))]
+fn main() {
 }

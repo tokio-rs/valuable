@@ -11,6 +11,7 @@
 //!
 //! First, derive [`Valuable`][macro@crate::Valuable] on your types.
 //!
+#![cfg_attr(feature = "valuable-derive", doc = r##"
 //! ```
 //! use valuable::Valuable;
 //!
@@ -25,6 +26,7 @@
 //!     Custom(String),
 //! }
 //! ```
+"##)]
 //!
 //! Then, implement a [visitor][Visit] to inspect the data.
 //!
@@ -81,6 +83,7 @@
 //!
 //! Then, use the visitor to visit the value.
 //!
+#![cfg_attr(feature = "valuable-derive", doc = r##"
 //! ```
 //! # use valuable::*;
 //! # #[derive(Valuable)]
@@ -94,6 +97,7 @@
 //! let hello_world = HelloWorld { message: Message::HelloWorld };
 //! hello_world.visit(&mut Print);
 //! ```
+"##)]
 //!
 //! # Related Crates
 //!

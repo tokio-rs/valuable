@@ -33,6 +33,7 @@ macro_rules! value {
         ///
         /// Converting a struct
         ///
+        #[cfg_attr(feature = "valuable-derive", doc = r##"
         /// ```
         /// use valuable::{Value, Valuable};
         ///
@@ -55,6 +56,7 @@ macro_rules! value {
         ///     format!("{:?}", hello),
         /// );
         /// ```
+	"##)]
         ///
         /// [visitor]: Visit
         #[non_exhaustive]
@@ -359,6 +361,7 @@ value! {
     ///
     /// # Examples
     ///
+    #[cfg_attr(feature = "valuable-derive", doc = r##"
     /// ```
     /// use valuable::{Value, Valuable};
     ///
@@ -373,12 +376,14 @@ value! {
     ///
     /// let v = Value::Structable(&my_struct);
     /// ```
+    "##)]
     Structable(&'a dyn Structable),
 
     /// A Rust enum value
     ///
     /// # Examples
     ///
+    #[cfg_attr(feature = "valuable-derive", doc = r##"
     /// ```
     /// use valuable::{Value, Valuable};
     ///
@@ -391,6 +396,7 @@ value! {
     /// let my_enum = MyEnum::Foo;
     /// let v = Value::Enumerable(&my_enum);
     /// ```
+    "##)]
     Enumerable(&'a dyn Enumerable),
 
     /// A tuple value
@@ -627,6 +633,7 @@ macro_rules! convert {
             ///
             /// # Examples
             ///
+            #[cfg_attr(feature = "valuable-derive", doc = r##"
             /// ```
             /// use valuable::{Value, Valuable};
             ///
@@ -640,6 +647,7 @@ macro_rules! convert {
             /// assert!(Value::Structable(&hello).as_structable().is_some());
             /// assert!(Value::Bool(true).as_structable().is_none());
             /// ```
+	    "##)]
             pub fn as_structable(&self) -> Option<&dyn Structable> {
                 match *self {
                     Value::Structable(v) => Some(v),
@@ -651,6 +659,7 @@ macro_rules! convert {
             ///
             /// # Examples
             ///
+            #[cfg_attr(feature = "valuable-derive", doc = r##"
             /// ```
             /// use valuable::{Value, Valuable};
             ///
@@ -665,6 +674,7 @@ macro_rules! convert {
             /// assert!(Value::Enumerable(&greet).as_enumerable().is_some());
             /// assert!(Value::Bool(true).as_enumerable().is_none());
             /// ```
+	    "##)]
             pub fn as_enumerable(&self) -> Option<&dyn Enumerable> {
                 match *self {
                     Value::Enumerable(v) => Some(v),
