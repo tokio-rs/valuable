@@ -17,7 +17,9 @@ use core::fmt;
 /// may be called multiple times per `Structable`, but the two methods are never
 /// mixed.
 ///
-#[cfg_attr(feature = "valuable-derive", doc = r##"
+#[cfg_attr(
+    feature = "valuable-derive",
+    doc = r##"
 /// ```
 /// use valuable::{NamedValues, Valuable, Value, Visit};
 ///
@@ -51,7 +53,8 @@ use core::fmt;
 ///
 /// valuable::visit(&my_struct, &mut PrintFields);
 /// ```
-"##)]
+"##
+)]
 ///
 /// If the struct is **statically** defined, then all fields are known ahead of
 /// time and may be accessed via the [`StructDef`] instance returned by
@@ -63,7 +66,9 @@ use core::fmt;
 /// Implementing `Structable` is usually done by adding `#[derive(Valuable)]` to
 /// a Rust `struct` definition.
 ///
-#[cfg_attr(feature = "valuable-derive", doc = r##"
+#[cfg_attr(
+    feature = "valuable-derive",
+    doc = r##"
 /// ```
 /// use valuable::{Fields, Valuable, Structable, StructDef};
 ///
@@ -89,7 +94,8 @@ use core::fmt;
 ///     _ => unreachable!(),
 /// }
 /// ```
-"##)]
+"##
+)]
 ///
 /// [`definition()`]: Structable::definition()
 pub trait Structable: Valuable {
@@ -99,7 +105,9 @@ pub trait Structable: Valuable {
     ///
     /// # Examples
     ///
-    #[cfg_attr(feature = "valuable-derive", doc = r##"
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Structable, Valuable};
     ///
@@ -114,7 +122,8 @@ pub trait Structable: Valuable {
     ///
     /// assert_eq!("MyStruct", my_struct.definition().name());
     /// ```
-    "##)]
+    "##
+    )]
     fn definition(&self) -> StructDef<'_>;
 }
 
@@ -136,7 +145,9 @@ pub enum StructDef<'a> {
     ///
     /// A statically defined struct
     ///
-    #[cfg_attr(feature = "valuable-derive", doc = r##"
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Fields, Valuable, Structable, StructDef};
     ///
@@ -162,7 +173,8 @@ pub enum StructDef<'a> {
     ///     _ => unreachable!(),
     /// }
     /// ```
-    "##)]
+    "##
+    )]
     #[non_exhaustive]
     Static {
         /// The struct's name.

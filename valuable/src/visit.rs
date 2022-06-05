@@ -13,7 +13,9 @@ use crate::*;
 ///
 /// Recursively printing a Rust value.
 ///
-#[cfg_attr(feature = "valuable-derive", doc = r##"
+#[cfg_attr(
+    feature = "valuable-derive",
+    doc = r##"
 /// ```
 /// use valuable::{NamedValues, Valuable, Value, Visit};
 ///
@@ -120,7 +122,8 @@ use crate::*;
 /// let mut print = Print("".to_string());
 /// valuable::visit(&person, &mut print);
 /// ```
-"##)]
+"##
+)]
 pub trait Visit {
     /// Visit a single value.
     ///
@@ -191,7 +194,9 @@ pub trait Visit {
     ///
     /// Visiting all fields in a struct.
     ///
-    #[cfg_attr(feature = "valuable-derive", doc = r##"
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{NamedValues, Valuable, Value, Visit};
     ///
@@ -225,7 +230,8 @@ pub trait Visit {
     ///
     /// valuable::visit(&my_struct, &mut Print);
     /// ```
-    "##)]
+    "##
+    )]
     fn visit_named_fields(&mut self, named_values: &NamedValues<'_>) {
         let _ = named_values;
     }
@@ -243,7 +249,9 @@ pub trait Visit {
     ///
     /// Visiting all fields in a struct.
     ///
-    #[cfg_attr(feature = "valuable-derive", doc = r##"
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Valuable, Value, Visit};
     ///
@@ -271,7 +279,8 @@ pub trait Visit {
     ///
     /// valuable::visit(&my_struct, &mut Print);
     /// ```
-    "##)]
+    "##
+    )]
     fn visit_unnamed_fields(&mut self, values: &[Value<'_>]) {
         let _ = values;
     }
@@ -421,7 +430,9 @@ deref! {
 /// extracted from a struct, it is preferable to obtain the associated
 /// [`NamedField`] once and use it repeatedly.
 ///
-#[cfg_attr(feature = "valuable-derive", doc = r##"
+#[cfg_attr(
+    feature = "valuable-derive",
+    doc = r##"
 /// ```
 /// use valuable::{NamedValues, Valuable, Value, Visit};
 ///
@@ -459,7 +470,8 @@ deref! {
 ///
 /// assert_eq!(123, get_foo.0);
 /// ```
-"##)]
+"##
+)]
 ///
 /// [`Visit`]: Visit [`NamedField`]: crate::NamedField
 pub fn visit(value: &impl Valuable, visit: &mut dyn Visit) {
