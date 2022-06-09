@@ -25,6 +25,9 @@ use core::fmt;
 /// [`visit_named_fields()`]: Visit::visit_named_fields
 /// [`visit_unnamed_fields()`]: Visit::visit_unnamed_fields
 ///
+#[cfg_attr(
+    feature = "valuable-derive",
+    doc = r##"
 /// ```
 /// use valuable::{Valuable, Value, Visit};
 ///
@@ -58,6 +61,8 @@ use core::fmt;
 ///
 /// valuable::visit(&my_enum, &mut PrintVariant);
 /// ```
+"##
+)]
 ///
 /// If the enum is **statically** defined, then all variants, and variant fields
 /// are known ahead of time and may be accessed via the [`EnumDef`] instance
@@ -70,6 +75,9 @@ use core::fmt;
 /// Implementing `Enumerable` is usually done by adding `#[derive(Valuable)]` to
 /// a Rust `enum` definition.
 ///
+#[cfg_attr(
+    feature = "valuable-derive",
+    doc = r##"
 /// ```
 /// use valuable::{Valuable, Enumerable, EnumDef};
 ///
@@ -93,6 +101,8 @@ use core::fmt;
 /// assert_eq!("Foo", variants[0].name());
 /// assert!(variants[0].fields().is_unnamed());
 /// ```
+"##
+)]
 pub trait Enumerable: Valuable {
     /// Returns the enum's definition.
     ///
@@ -100,6 +110,9 @@ pub trait Enumerable: Valuable {
     ///
     /// # Examples
     ///
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Enumerable, Valuable};
     ///
@@ -113,12 +126,17 @@ pub trait Enumerable: Valuable {
     ///
     /// assert_eq!("MyEnum", my_enum.definition().name());
     /// ```
+    "##
+    )]
     fn definition(&self) -> EnumDef<'_>;
 
     /// Returns the `enum`'s current variant.
     ///
     /// # Examples
     ///
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Enumerable, Valuable};
     ///
@@ -131,6 +149,8 @@ pub trait Enumerable: Valuable {
     /// let my_enum = MyEnum::Foo;
     /// assert_eq!("Foo", my_enum.variant().name());
     /// ```
+    "##
+    )]
     fn variant(&self) -> Variant<'_>;
 }
 
@@ -151,6 +171,9 @@ pub enum EnumDef<'a> {
     ///
     /// A statically defined enum
     ///
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Valuable, Enumerable, EnumDef};
     ///
@@ -174,6 +197,8 @@ pub enum EnumDef<'a> {
     /// assert_eq!("Foo", variants[0].name());
     /// assert_eq!("Bar", variants[1].name());
     /// ```
+    "##
+    )]
     #[non_exhaustive]
     Static {
         /// The enum's name
@@ -305,6 +330,9 @@ impl<'a> EnumDef<'a> {
     ///
     /// # Examples
     ///
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Enumerable, Valuable};
     ///
@@ -317,6 +345,8 @@ impl<'a> EnumDef<'a> {
     /// let def = Foo::Bar.definition();
     /// assert_eq!("Foo", def.name());
     /// ```
+    "##
+    )]
     pub fn name(&self) -> &str {
         match self {
             EnumDef::Static { name, .. } => name,
@@ -328,6 +358,9 @@ impl<'a> EnumDef<'a> {
     ///
     /// # Examples
     ///
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Enumerable, Valuable};
     ///
@@ -343,6 +376,8 @@ impl<'a> EnumDef<'a> {
     /// assert_eq!(2, variants.len());
     /// assert_eq!("Bar", variants[0].name());
     /// ```
+    "##
+    )]
     pub fn variants(&self) -> &[VariantDef<'_>] {
         match self {
             EnumDef::Static { variants, .. } => variants,
@@ -356,6 +391,9 @@ impl<'a> EnumDef<'a> {
     ///
     /// With a static enum
     ///
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Enumerable, Valuable};
     ///
@@ -368,6 +406,8 @@ impl<'a> EnumDef<'a> {
     /// let def = Foo::Bar.definition();
     /// assert!(def.is_static());
     /// ```
+    "##
+    )]
     ///
     /// With a dynamic enum
     ///
@@ -387,6 +427,9 @@ impl<'a> EnumDef<'a> {
     ///
     /// With a static enum
     ///
+    #[cfg_attr(
+        feature = "valuable-derive",
+        doc = r##"
     /// ```
     /// use valuable::{Enumerable, Valuable};
     ///
@@ -399,6 +442,8 @@ impl<'a> EnumDef<'a> {
     /// let def = Foo::Bar.definition();
     /// assert!(!def.is_dynamic());
     /// ```
+    "##
+    )]
     ///
     /// With a dynamic enum
     ///
