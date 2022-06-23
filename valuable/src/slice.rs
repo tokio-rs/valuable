@@ -75,7 +75,6 @@ macro_rules! slice {
                 }
             }
 
-
             /// Returns `true` if the slice is not empty.
             ///
             /// # Examples
@@ -93,6 +92,17 @@ macro_rules! slice {
             /// ```
             pub fn is_empty(&self) -> bool {
                 self.len() == 0
+            }
+
+            /// Returns a reference to an element of index.
+            pub fn get(&self, index: usize) -> Option<Value<'_>> {
+                #[allow(unused_doc_comments)]
+                match self {
+                    $(
+                        $(#[$attrs])*
+                        Slice::$variant(s) => s.get(index).map(Valuable::as_value),
+                    )*
+                }
             }
 
             /// Returns an iterator over the slice.
