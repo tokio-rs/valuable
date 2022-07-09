@@ -33,9 +33,7 @@ jobs:
         with:
           toolchain: ${{ env.minrust }}
           override: true
-      # - uses: Swatinem/rust-cache@v1
-      - name: "check --workspace --all-features"
-        run: cargo check --workspace --all-features --all-targets
+      - run: cargo check --workspace --all-features
 
   no-std:
     strategy:
