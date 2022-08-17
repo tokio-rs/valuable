@@ -37,6 +37,10 @@ valuable-derive = { version = "0.1.0", optional = true, path = "../valuable-deri
 
 [dev-dependencies]
 criterion = "0.3"
+# Plotters increased their MSRV with v0.3.2 to be Rust 1.56
+# We pull in this dependency via criterion.
+# See https://github.com/plotters-rs/plotters/issues/398
+plotters = "= 0.3.1"
 
 [[bench]]
 name = "structable"
