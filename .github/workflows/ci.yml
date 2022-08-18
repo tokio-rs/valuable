@@ -33,9 +33,7 @@ jobs:
         with:
           toolchain: ${{ env.minrust }}
           override: true
-      # - uses: Swatinem/rust-cache@v1
-      - name: "check --workspace --all-features"
-        run: cargo check --workspace --all-features --all-targets
+      - run: cargo check --workspace --all-features
 
   no-std:
     strategy:
@@ -54,7 +52,7 @@ jobs:
       - name: Install Rust
         run: rustup update stable
       - name: Install cargo-hack
-        run: cargo install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
       - run: rustup target add ${{ matrix.target }}
       - run: cargo hack build --target ${{ matrix.target }} --feature-powerset --skip std,default
         working-directory: valuable
@@ -68,7 +66,7 @@ jobs:
       - name: Install Rust
         run: rustup update stable
       - name: Install cargo-hack
-        run: cargo install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
       - run: cargo hack build --workspace --feature-powerset
 
   # When this job failed, run ci/no_atomic.sh and commit result changes.
