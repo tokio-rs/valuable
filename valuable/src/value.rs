@@ -1,4 +1,4 @@
-use crate::{Enumerable, Listable, Mappable, Structable, Tuplable, Valuable, Visit};
+use crate::{Displayable, Enumerable, Listable, Mappable, Structable, Tuplable, Valuable, Visit};
 
 use core::fmt;
 
@@ -75,6 +75,9 @@ macro_rules! value {
             /// let v = Value::Unit;
             /// ```
             Unit,
+
+            /// A value that can only be recorded using [`std::fmt::Display`].
+            Displayable(&'a dyn Displayable),
         }
 
         $(
@@ -85,6 +88,18 @@ macro_rules! value {
                 }
             }
         )*
+
+        impl<'a> From<&'a fmt::Arguments<'_>> for Value<'a> {
+            fn from(src: &'a fmt::Arguments<'_>) -> Value<'a> {
+                Value::Displayable(src)
+            }
+        }
+
+        impl<'a> From<&'a dyn Displayable> for Value<'a> {
+            fn from(src: &'a dyn Displayable) -> Value<'a> {
+                Value::Displayable(src)
+            }
+        }
 
         impl<'a> From<()> for Value<'a> {
             fn from(_: ()) -> Value<'a> {
@@ -104,6 +119,7 @@ macro_rules! value {
                         $(#[$attrs])*
                         $variant(v) => fmt::Debug::fmt(v, fmt),
                     )*
+                    Displayable(ref v) => fmt::Display::fmt(v, fmt),
                     Unit => ().fmt(fmt),
                 }
             }
@@ -687,6 +703,64 @@ macro_rules! convert {
             pub fn as_tuplable(&self) -> Option<&dyn Tuplable> {
                 match *self {
                     Value::Tuplable(v) => Some(v),
+                    _ => None,
+                }
+            }
+
+            /// Return a `&dyn Display` representation of `self`, if possible.
+            ///
+            /// If this value is a [`Value::Display`] variant, or any primitive
+            /// `Value` variant, this method will return a `&dyn Display` trait
+            /// object. Otherwise, if the value is [`Structable`],
+            /// [`Enumerable`], [`Tuplable`], [`Listable`], or [`Mappable`],
+            /// this method will return `None`.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use std::fmt;
+            /// use valuable::{Value, Valuable};
+            ///
+            /// struct Meters(u32);
+            ///
+            /// impl fmt::Display for Meters {
+            ///     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            ///         write!(f, "{}m", self.0)
+            ///     }
+            /// }
+            ///
+            /// let meters = Meters(5);
+            ///
+            /// assert!(Value::Display(&meters).as_display().is_some());
+            /// assert!(Value::Tuplable(&(true, "hello")).as_display().is_none());
+            /// ```
+            pub fn as_display(&self) -> Option<&dyn Displayable> {
+                match *self {
+                    Value::Displayable(v) => Some(v),
+                    Value::I8(ref v) => Some(v),
+                    Value::I16(ref v) => Some(v),
+                    Value::I32(ref v) => Some(v),
+                    Value::I64(ref v) => Some(v),
+                    Value::I128(ref v) => Some(v),
+                    Value::Isize(ref v) => Some(v),
+                    Value::U8(ref v) => Some(v),
+                    Value::U16(ref v) => Some(v),
+                    Value::U32(ref v) => Some(v),
+                    Value::U64(ref v) => Some(v),
+                    Value::U128(ref v) => Some(v),
+                    Value::Usize(ref v) => Some(v),
+                    Value::F32(ref v) => Some(v),
+                    Value::F64(ref v) => Some(v),
+                    Value::Bool(ref v) => Some(v),
+                    Value::Char(ref v) => Some(v),
+                    Value::String(ref v) => Some(v),
+
+                    #[cfg(feature = "std")]
+                    Value::Error(ref v) => Some(v),
+
+                    #[cfg(feature = "std")]
+                    Value::Path(ref v) => Some(v as &dyn Displayable),
+
                     _ => None,
                 }
             }

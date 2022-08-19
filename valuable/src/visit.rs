@@ -361,6 +361,23 @@ pub trait Visit {
     fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
         let _ = (key, value);
     }
+
+    /// Visit an opaque [`core::fmt::Display`] trait object.
+    ///
+    /// This method is typically called by the [`Displayable`] trait.
+    ///
+    /// # Default Implementation
+    ///
+    /// This method has a default implementation, which calls the visitor's
+    /// [`visit_value`] method with a [`Displayable` value](Value::Displayable).
+    /// In most cases, this method does not need to be overridden by `Visit`
+    /// implementations, as the [`visit_value`] method can handle
+    /// [`Value::Displayable`] instances.  However, it may be overridden to
+    /// avoid this indirection, for more  performant recording of
+    /// `[core::fmt::Display`] values.
+    fn visit_display(&mut self, value: &dyn core::fmt::Display) {
+        self.visit_value(Value::Displayable(&value));
+    }
 }
 
 macro_rules! deref {
@@ -391,6 +408,10 @@ macro_rules! deref {
 
                 fn visit_entry(&mut self, key: Value<'_>, value: Value<'_>) {
                     T::visit_entry(&mut **self, key, value)
+                }
+
+                fn visit_display(&mut self, value: &dyn core::fmt::Display) {
+                    T::visit_display(&mut **self, value, )
                 }
             }
         )*

@@ -120,6 +120,9 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+mod fmt;
+pub use fmt::Displayable;
+
 mod enumerable;
 pub use enumerable::{EnumDef, Enumerable, Variant, VariantDef};
 

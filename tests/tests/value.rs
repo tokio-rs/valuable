@@ -1,5 +1,6 @@
 use valuable::*;
 
+use core::fmt;
 use core::sync::atomic;
 
 macro_rules! assert_visit_call {
@@ -47,6 +48,11 @@ macro_rules! assert_as {
 macro_rules! assert_value {
     (
         $ty:ty: $variant:ident, $as:ident, $eq:ident => $( $values:expr ),*
+    ) => {
+        assert_value!($ty: $variant, $as, $eq, "{:?}" => $( $values ),*);
+    };
+    (
+        $ty:ty: $variant:ident, $as:ident, $eq:ident, $fmt:literal => $( $values:expr ),*
     ) => {{
         use Value::*;
 
@@ -73,8 +79,8 @@ macro_rules! assert_value {
 
             // fmt::Debug
             assert_eq!(
-                format!("{:?}", val),
-                format!("{:?}", src),
+                format!($fmt, val),
+                format!($fmt, src),
             );
 
             // Test conversion
@@ -330,10 +336,21 @@ fn test_atomic() {
     assert!(matches!(val.as_value(), Value::Usize(v) if v == usize::MAX));
 }
 
+// #[test]
+// fn test_dyn_display() {
+//     let args = &format_args!("hello {}", "world") as &dyn fmt::Display;
+//     // let string = &"hello world" as &dyn fmt::Display;
+//     assert_value!(&'a dyn fmt::Display: Displayable, as_display, display_eq, "{}" => args);
+// }
+
 fn eq<T: PartialEq>(a: &T, b: &T) -> bool {
     *a == *b
 }
 
 fn yes<T>(_: &T, _: &T) -> bool {
     true
+}
+
+fn display_eq<A: fmt::Display, B: fmt::Display>(a: &A, b: &B) -> bool {
+    a.to_string() == b.to_string()
 }
