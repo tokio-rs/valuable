@@ -1,22 +1,19 @@
-#[cfg(feature = "valuable-derive")]
 use valuable::Valuable;
 
-#[cfg(feature = "valuable-derive")]
-use std::collections::HashMap;
-
-// `Debug` not implemented for struct, the debug implementation is going via
-// valuable.
-#[cfg(feature = "valuable-derive")]
-#[derive(Valuable)]
-struct Person {
-    name: String,
-    age: u8,
-    phones: Vec<String>,
-    favorites: HashMap<String, String>,
-}
-
-#[cfg(feature = "valuable-derive")]
+#[cfg(feature = "derive")]
 fn main() {
+    use std::collections::HashMap;
+
+    // `Debug` not implemented for struct, the debug implementation is going via
+    // valuable.
+    #[derive(Valuable)]
+    struct Person {
+        name: String,
+        age: u8,
+        phones: Vec<String>,
+        favorites: HashMap<String, String>,
+    }
+
     let mut p = Person {
         name: "John Doe".to_string(),
         age: 42,
@@ -29,5 +26,5 @@ fn main() {
     println!("{:#?}", p.as_value());
 }
 
-#[cfg(not(feature = "valuable-derive",))]
+#[cfg(not(feature = "derive",))]
 fn main() {}
