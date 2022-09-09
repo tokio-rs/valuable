@@ -4,10 +4,22 @@ use crate::field::*;
 use crate::*;
 
 /// Set of values from a `Structable` or `Enumerable` with named fields.
-#[derive(Debug)]
+#[derive(Debug, Copy)]
 pub struct NamedValues<'a> {
     fields: &'a [NamedField<'a>],
     values: &'a [Value<'a>],
+}
+
+impl<'a> Clone for NamedValues<'a> {
+    fn clone(&self) -> Self {
+        Self { fields: self.fields.clone(), values: self.values.clone() }
+    }
+}
+
+impl<'a> Default for NamedValues<'a> {
+    fn default() -> Self {
+        Self { fields: Default::default(), values: Default::default() }
+    }
 }
 
 impl<'a> NamedValues<'a> {
