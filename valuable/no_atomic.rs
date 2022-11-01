@@ -64,6 +64,7 @@ const NO_ATOMIC_64: &[&str] = &[
 ];
 const NO_ATOMIC: &[&str] = &[
     "avr-unknown-gnu-atmega328",
+    "mipsel-sony-psx",
     "msp430-none-elf",
     "riscv32i-unknown-none-elf",
     "riscv32im-unknown-none-elf",
