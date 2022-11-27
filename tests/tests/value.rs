@@ -161,6 +161,9 @@ macro_rules! test_num {
 
         $(
             #[test]
+            // We're not actually using 3.14 as the value of pi, it's just an
+            // arbitrary float...
+            #[allow(clippy::approx_constant)]
             fn $name() {
                 use core::convert::TryFrom;
 
@@ -216,11 +219,17 @@ fn test_char() {
 }
 
 #[test]
+// We're not actually using 3.14 as the value of pi, it's just an
+// arbitrary float...
+#[allow(clippy::approx_constant)]
 fn test_f32() {
     assert_value!(f32: F32, as_f32, eq => 3.1415_f32, -1.234_f32, f32::MAX, f32::MIN);
 }
 
 #[test]
+// We're not actually using 3.14 as the value of pi, it's just an
+// arbitrary float...
+#[allow(clippy::approx_constant)]
 fn test_f64() {
     assert_value!(f64: F64, as_f64, eq => 3.1415_f64, -1.234_f64, f64::MAX, f64::MIN);
 }
@@ -246,6 +255,13 @@ fn test_error() {
     let error: io::Error = io::ErrorKind::Other.into();
     let error: &dyn error::Error = &error;
     assert_value!(&'a dyn error::Error: Error, as_error, yes => error);
+
+    assert!(error
+        .as_value()
+        .as_error()
+        .unwrap()
+        .downcast_ref::<io::Error>()
+        .is_some()); // Check that Value::Error downcast-able
 }
 
 test_num! {

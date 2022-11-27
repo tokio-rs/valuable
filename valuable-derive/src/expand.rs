@@ -118,10 +118,11 @@ fn derive_struct(
             }
         }
         syn::Fields::Unnamed(_) | syn::Fields::Unit => {
+            let len = data.fields.len();
             struct_def = quote! {
                 ::valuable::StructDef::new_static(
                     #name_literal,
-                    ::valuable::Fields::Unnamed,
+                    ::valuable::Fields::Unnamed(#len),
                 )
             };
 
@@ -263,10 +264,11 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                 });
             }
             syn::Fields::Unnamed(_) => {
+                let len = variant.fields.len();
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::Fields::Unnamed,
+                        ::valuable::Fields::Unnamed(#len),
                     ),
                 });
 
@@ -304,7 +306,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::Fields::Unnamed,
+                        ::valuable::Fields::Unnamed(0),
                     ),
                 });
 

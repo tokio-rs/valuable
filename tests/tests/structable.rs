@@ -148,17 +148,17 @@ fn test_named_field() {
 
 #[test]
 fn test_fields_unnamed() {
-    let fields = Fields::Unnamed;
+    let fields = Fields::Unnamed(1);
     assert!(fields.is_unnamed());
     assert!(!fields.is_named());
 }
 
 #[test]
 fn test_struct_def() {
-    let def = StructDef::new_static("hello", Fields::Unnamed);
+    let def = StructDef::new_static("hello", Fields::Unnamed(1));
 
     assert_eq!(def.name(), "hello");
-    assert!(matches!(def.fields(), Fields::Unnamed));
+    assert!(matches!(def.fields(), Fields::Unnamed(1)));
     assert!(!def.is_dynamic());
 }
 
@@ -191,4 +191,19 @@ fn test_unbalanced_named_values() {
         &[NamedField::new("foo")],
         &[Value::U32(123), Value::U32(123)],
     );
+}
+
+// Test the `NamedField` lifetime escapes correctly
+#[allow(dead_code)]
+fn extract_named_field(def: &StructDef<'static>) -> &'static [NamedField<'static>] {
+    match def.fields() {
+        Fields::Named(fields) => fields,
+        _ => unreachable!(),
+    }
+}
+
+// Test the name lifetime escapes correctly
+#[allow(dead_code)]
+fn extract_name(def: &StructDef<'static>) -> &'static str {
+    def.name()
 }

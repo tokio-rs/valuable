@@ -31,7 +31,7 @@ impl Valuable for HelloWorld {
     }
 }
 
-static WORLD_FIELDS: &'static [NamedField<'static>] = &[NamedField::new("answer")];
+static WORLD_FIELDS: &[NamedField<'static>] = &[NamedField::new("answer")];
 
 impl Valuable for World {
     fn as_value(&self) -> Value<'_> {
