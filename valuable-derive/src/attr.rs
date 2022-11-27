@@ -1,41 +1,110 @@
-use std::{cell::RefCell, thread};
+use std::{cell::RefCell, fmt::Write as _, thread};
 
 use proc_macro2::Span;
-use syn::{spanned::Spanned, Error, Fields, Ident, Lit, Meta, NestedMeta};
+use syn::{spanned::Spanned, Error, Fields, Ident, Lit, Meta};
+
+const ATTR_NAME: &str = "valuable";
 
 // All #[valuable] attributes.
-static ATTRS: &[&AttrDef] = &[&RENAME, &TRANSPARENT, &SKIP];
-// #[valuable(rename = "...")]
-static RENAME: AttrDef = AttrDef {
-    name: "rename",
-    conflicts_with: &[],
-    position: &[
-        Position::Struct,
-        Position::Enum,
-        Position::Variant,
-        Position::NamedField,
-    ],
-    style: &[MetaStyle::NamedValue],
-};
-// #[valuable(transparent)]
-static TRANSPARENT: AttrDef = AttrDef {
-    name: "transparent",
-    conflicts_with: &["rename"],
-    position: &[Position::Struct],
-    style: &[MetaStyle::Ident],
-};
-// #[valuable(skip)]
-static SKIP: AttrDef = AttrDef {
-    name: "skip",
-    conflicts_with: &["rename"],
-    position: &[
-        // TODO: How do we implement Enumerable::variant and Valuable::as_value?
-        // Position::Variant,
-        Position::NamedField,
-        Position::UnnamedField,
-    ],
-    style: &[MetaStyle::Ident],
-};
+static ATTRS: &[AttrDef] = &[
+    // #[valuable(rename = "...")]
+    AttrDef {
+        name: "rename",
+        conflicts_with: &[],
+        position: &[
+            Position::Struct,
+            Position::Enum,
+            Position::Variant,
+            Position::NamedField,
+        ],
+        style: &[MetaStyle::NameValue(MetaNameValueStyle::Str)],
+    },
+    // #[valuable(transparent)]
+    AttrDef {
+        name: "transparent",
+        conflicts_with: &["rename"],
+        position: &[
+            Position::Struct,
+            // TODO: We can probably support single-variant enum that has a single field
+            // Position::Enum,
+        ],
+        style: &[MetaStyle::Ident],
+    },
+    // #[valuable(skip)]
+    AttrDef {
+        name: "skip",
+        conflicts_with: &["rename"],
+        position: &[
+            // TODO: How do we implement Enumerable::variant and Valuable::as_value if a variant is skipped?
+            // Position::Variant,
+            Position::NamedField,
+            Position::UnnamedField,
+        ],
+        style: &[MetaStyle::Ident],
+    },
+];
+
+pub(crate) struct Attrs {
+    rename: Option<(syn::MetaNameValue, syn::LitStr)>,
+    transparent: Option<Span>,
+    skip: Option<Span>,
+}
+
+impl Attrs {
+    pub(crate) fn rename(&self, original: &Ident) -> syn::LitStr {
+        self.rename.as_ref().map_or_else(
+            || syn::LitStr::new(&original.to_string(), original.span()),
+            |(_, l)| l.clone(),
+        )
+    }
+
+    pub(crate) fn transparent(&self) -> bool {
+        self.transparent.is_some()
+    }
+
+    pub(crate) fn skip(&self) -> bool {
+        self.skip.is_some()
+    }
+}
+
+pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position) -> Attrs {
+    let mut rename = None;
+    let mut transparent = None;
+    let mut skip = None;
+
+    let attrs = filter_attrs(cx, attrs, pos);
+    for (def, meta) in &attrs {
+        if def.late_check(cx, &attrs) {
+            continue;
+        }
+        match def.name {
+            // #[valuable(rename = "...")]
+            "rename" => {
+                let m = match meta {
+                    Meta::NameValue(m) => m,
+                    _ => unreachable!(),
+                };
+                let lit = match &m.lit {
+                    Lit::Str(l) => l.clone(),
+                    _ => unreachable!(),
+                };
+                rename = Some((m.clone(), lit));
+            }
+            // #[valuable(transparent)]
+            "transparent" => transparent = Some(meta.span()),
+            // #[valuable(skip)]
+            "skip" => skip = Some(meta.span()),
+
+            _ => unreachable!("{}", def.name),
+        }
+    }
+
+    Attrs {
+        rename,
+        transparent,
+        skip,
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Position {
@@ -49,46 +118,56 @@ pub(crate) enum Position {
 }
 
 impl Position {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     fn as_str(&self) -> &'static str {
         match self {
-            Self::Struct => "struct",
-            Self::Enum => "enum",
-            Self::Variant => "variant",
-            Self::NamedField => "named field",
-            Self::UnnamedField => "unnamed field",
+            Position::Struct => "struct",
+            Position::Enum => "enum",
+            Position::Variant => "variant",
+            Position::NamedField => "named field",
+            Position::UnnamedField => "unnamed field",
         }
     }
 
     fn is_field(self) -> bool {
-        matches!(self, Self::NamedField | Self::UnnamedField)
+        self == Position::NamedField || self == Position::UnnamedField
     }
 }
 
 impl From<&Fields> for Position {
     fn from(meta: &Fields) -> Self {
         match meta {
-            Fields::Named(..) => Self::NamedField,
-            Fields::Unnamed(..) | Fields::Unit => Self::UnnamedField,
+            Fields::Named(..) => Position::NamedField,
+            Fields::Unnamed(..) | Fields::Unit => Position::UnnamedField,
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum MetaStyle {
-    // #[valuable(<name>)]
+pub(crate) enum MetaStyle {
+    // #[attr(<name>)]
     Ident,
-    // #[valuable(<name> = ...)]
-    NamedValue,
-    // #[valuable(<name>(...))]
+    // #[attr(<name> = ...)]
+    NameValue(MetaNameValueStyle),
+    // #[attr(<name>(...))]
     List,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum MetaNameValueStyle {
+    // #[attr(<name> = "...")]
+    Str,
+    // #[attr(<name> = ...)]
+    Any,
+}
+
 impl MetaStyle {
-    fn format(self, name: &str) -> String {
+    pub(crate) fn format(self, name: &str) -> String {
         match self {
-            MetaStyle::Ident => name.to_string(),
+            MetaStyle::Ident => name.to_owned(),
             MetaStyle::List => format!("{}(...)", name),
-            MetaStyle::NamedValue => format!("{} = \"...\"", name),
+            MetaStyle::NameValue(MetaNameValueStyle::Str) => format!("{} = \"...\"", name),
+            MetaStyle::NameValue(MetaNameValueStyle::Any) => format!("{} = ...", name),
         }
     }
 }
@@ -96,9 +175,12 @@ impl MetaStyle {
 impl From<&Meta> for MetaStyle {
     fn from(meta: &Meta) -> Self {
         match meta {
-            Meta::Path(..) => Self::Ident,
-            Meta::List(..) => Self::List,
-            Meta::NameValue(..) => Self::NamedValue,
+            Meta::Path(..) => MetaStyle::Ident,
+            Meta::List(..) => MetaStyle::List,
+            Meta::NameValue(m) => match &m.lit {
+                Lit::Str(..) => MetaStyle::NameValue(MetaNameValueStyle::Str),
+                _ => MetaStyle::NameValue(MetaNameValueStyle::Any),
+            },
         }
     }
 }
@@ -119,11 +201,11 @@ impl AttrDef {
     fn early_check(&self, cx: &Context, pos: Position, meta: &Meta) -> bool {
         let mut has_error = false;
         if let Err(msg) = self.check_position(pos) {
-            cx.error(Error::new_spanned(meta, msg));
+            cx.error(format_err!(meta, msg));
             has_error = true;
         }
         if let Err(msg) = self.check_style(meta) {
-            cx.error(Error::new_spanned(meta, msg));
+            cx.error(format_err!(meta, msg));
             has_error = true;
         }
         has_error
@@ -133,7 +215,7 @@ impl AttrDef {
         if self.position.contains(&pos) {
             return Ok(());
         }
-        let mut msg = format!("#[valuable({})] may only be used on ", self.name);
+        let mut msg = format!("#[{}({})] may only be used on ", ATTR_NAME, self.name);
         // TODO: simplify if possible
         // len == 1: a
         // len == 2: a and b
@@ -175,7 +257,7 @@ impl AttrDef {
         if self.style.contains(&meta) {
             return Ok(());
         }
-        let mut msg = "expected ".to_string();
+        let mut msg = "expected ".to_owned();
         let mut first = true;
         for style in self.style {
             if first {
@@ -183,27 +265,29 @@ impl AttrDef {
             } else {
                 msg.push_str(" or ");
             }
-            msg.push_str(&format!("`#[valuable({})]`", style.format(self.name)));
+            let _ = write!(msg, "`#[{}({})]`", ATTR_NAME, style.format(self.name));
         }
         msg.push_str(", found ");
-        msg.push_str(&format!("`#[valuable({})]`", meta.format(self.name)));
+        let _ = write!(msg, "`#[{}({})]`", ATTR_NAME, meta.format(self.name));
         Err(msg)
     }
 
     /// Performs checks that can be performed after parsing all attributes in
     /// the same scope and parent scopes, and returns `true` if at least one
     /// error occurs.
-    fn late_check(&self, cx: &Context, meta: &Meta) -> bool {
+    fn late_check(&self, cx: &Context, attrs: &[(&AttrDef, Meta)]) -> bool {
         let mut has_error = false;
-        if let Err(msg) = self.check_conflicts(cx, meta) {
-            cx.error(Error::new_spanned(meta.path(), msg));
-            has_error = true;
+        for (def, meta) in attrs {
+            if def.name != self.name && self.conflicts_with.contains(&def.name) {
+                let msg = format!(
+                    "#[{0}({1})] may not be used together with #[{0}({2})]",
+                    ATTR_NAME, self.name, def.name
+                );
+                cx.error(format_err!(meta.path(), msg));
+                has_error = true;
+            }
         }
         has_error
-    }
-
-    fn check_conflicts(&self, cx: &Context, meta: &Meta) -> Result<(), String> {
-        Ok(())
     }
 }
 
@@ -212,6 +296,7 @@ pub(crate) struct Context {
     // - `None`: during checking.
     // - `Some(None)`: there are no errors.
     // - `Some(Some)`: there are errors.
+    #[allow(clippy::option_option)]
     error: RefCell<Option<Option<Error>>>,
 }
 
@@ -247,105 +332,19 @@ impl Drop for Context {
     }
 }
 
-pub(crate) struct Attrs {
-    rename: Option<(syn::MetaNameValue, syn::LitStr)>,
-    transparent: Option<Span>,
-    skip: Option<Span>,
-}
-
-impl Attrs {
-    pub(crate) fn rename(&self, original: &Ident) -> syn::LitStr {
-        self.rename.as_ref().map_or_else(
-            || syn::LitStr::new(&original.to_string(), original.span()),
-            |(_, l)| l.clone(),
-        )
-    }
-
-    pub(crate) fn transparent(&self) -> bool {
-        self.transparent.is_some()
-    }
-
-    pub(crate) fn skip(&self) -> bool {
-        self.skip.is_some()
-    }
-}
-
-pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position) -> Attrs {
-    let mut rename = None;
-    let mut transparent = None;
-    let mut skip = None;
-    for (def, meta) in filter_valuable_attrs(cx, attrs) {
-        if def.early_check(cx, pos, &meta) {
-            continue;
-        }
-        match def.name {
-            // #[valuable(rename = "...")]
-            "rename" => {
-                if rename.is_some() {
-                    cx.error(Error::new_spanned(
-                        meta,
-                        "duplicate #[valuable(rename)] attribute",
-                    ));
-                    continue;
-                }
-                let m = match meta {
-                    Meta::NameValue(m) => m,
-                    _ => unreachable!(),
-                };
-                let lit = match &m.lit {
-                    Lit::Str(l) => l.clone(),
-                    l => {
-                        cx.error(Error::new_spanned(l, "expected string literal"));
-                        continue;
-                    }
-                };
-                rename = Some((m, lit));
-            }
-
-            // #[valuable(transparent)]
-            "transparent" => {
-                if transparent.replace(meta.span()).is_some() {
-                    cx.error(Error::new_spanned(
-                        meta,
-                        "duplicate #[valuable(transparent)] attribute",
-                    ));
-                    continue;
-                }
-            }
-
-            // #[valuable(skip)]
-            "skip" => {
-                if skip.replace(meta.span()).is_some() {
-                    cx.error(Error::new_spanned(
-                        meta,
-                        "duplicate #[valuable(skip)] attribute",
-                    ));
-                    continue;
-                }
-            }
-
-            _ => unreachable!("{}", def.name),
-        }
-    }
-
-    Attrs {
-        rename,
-        transparent,
-        skip,
-    }
-}
-
-fn filter_valuable_attrs<'a>(
+fn filter_attrs<'a>(
     cx: &'a Context,
     attrs: &'a [syn::Attribute],
-) -> impl Iterator<Item = (&'static AttrDef, Meta)> + 'a {
+    pos: Position,
+) -> Vec<(&'static AttrDef, Meta)> {
+    let mut counter = vec![0; ATTRS.len()];
     attrs
         .iter()
-        .filter(|attr| attr.path.is_ident("valuable"))
+        .filter(|attr| attr.path.is_ident(ATTR_NAME))
         .filter_map(move |attr| match attr.parse_meta() {
             Ok(Meta::List(l)) => Some(l.nested),
             Ok(m) => {
-                cx.error(Error::new_spanned(m, "expected `#[valuable(...)]`"));
+                cx.error(format_err!(m, "expected `#[{}(...)]`", ATTR_NAME));
                 None
             }
             Err(e) => {
@@ -355,25 +354,37 @@ fn filter_valuable_attrs<'a>(
         })
         .flatten()
         .filter_map(move |m| match m {
-            NestedMeta::Lit(l) => {
-                cx.error(Error::new_spanned(l, "expected identifier, found literal"));
+            syn::NestedMeta::Lit(l) => {
+                cx.error(format_err!(l, "expected identifier, found literal"));
                 None
             }
-            NestedMeta::Meta(m) => match m.path().get_ident() {
+            syn::NestedMeta::Meta(m) => match m.path().get_ident() {
                 Some(p) => match ATTRS.iter().position(|a| p == a.name) {
-                    Some(pos) => Some((ATTRS[pos], m)),
+                    Some(pos) => {
+                        counter[pos] += 1;
+                        if counter[pos] == 1 {
+                            Some((&ATTRS[pos], m))
+                        } else {
+                            cx.error(format_err!(
+                                &m,
+                                "duplicate #[{}({})] attribute",
+                                ATTR_NAME,
+                                p
+                            ));
+                            None
+                        }
+                    }
                     None => {
-                        cx.error(Error::new_spanned(
-                            p,
-                            format!("unknown valuable attribute `{}`", p),
-                        ));
+                        cx.error(format_err!(p, "unknown {} attribute `{}`", ATTR_NAME, p));
                         None
                     }
                 },
                 None => {
-                    cx.error(Error::new_spanned(m, "expected identifier, found path"));
+                    cx.error(format_err!(m, "expected identifier, found path"));
                     None
                 }
             },
         })
+        .filter(|(def, meta)| !def.early_check(cx, pos, meta))
+        .collect()
 }

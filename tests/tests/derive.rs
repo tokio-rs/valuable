@@ -105,6 +105,7 @@ fn test_rename() {
 fn test_skip() {
     #[derive(Valuable)]
     struct S {
+        #[allow(dead_code)]
         #[valuable(skip)]
         f: (),
     }
@@ -118,6 +119,7 @@ fn test_skip() {
             #[valuable(skip)]
             f: (),
         },
+        #[allow(dead_code)]
         T(#[valuable(skip)] ()),
     }
 
