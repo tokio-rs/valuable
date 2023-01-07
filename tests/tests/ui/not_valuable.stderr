@@ -16,8 +16,8 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
             ()
             (T0, T1)
             (T0, T1, T2)
-          and 78 others
-  = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+          and $N others
+  = note: required for `Option<S>` to implement `Valuable`
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
   --> tests/ui/not_valuable.rs:11:14
@@ -36,8 +36,8 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
              ()
              (T0, T1)
              (T0, T1, T2)
-           and 78 others
-   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+           and $N others
+   = note: required for `Option<S>` to implement `Valuable`
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
   --> tests/ui/not_valuable.rs:15:17
@@ -57,10 +57,10 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
              ()
              (T0, T1)
              (T0, T1, T2)
-           and 78 others
-   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+           and $N others
+   = note: required for `Option<S>` to implement `Valuable`
    = note: 1 redundant requirement hidden
-   = note: required because of the requirements on the impl of `Valuable` for `&Option<S>`
+   = note: required for `&Option<S>` to implement `Valuable`
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
   --> tests/ui/not_valuable.rs:16:11
@@ -80,7 +80,7 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
              ()
              (T0, T1)
              (T0, T1, T2)
-           and 78 others
-   = note: required because of the requirements on the impl of `Valuable` for `Option<S>`
+           and $N others
+   = note: required for `Option<S>` to implement `Valuable`
    = note: 1 redundant requirement hidden
-   = note: required because of the requirements on the impl of `Valuable` for `&Option<S>`
+   = note: required for `&Option<S>` to implement `Valuable`
