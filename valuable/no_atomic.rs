@@ -18,8 +18,6 @@ const NO_ATOMIC_CAS: &[&str] = &[
 
 const NO_ATOMIC_64: &[&str] = &[
     "arm-linux-androideabi",
-    "armebv7r-none-eabi",
-    "armebv7r-none-eabihf",
     "armv4t-none-eabi",
     "armv4t-unknown-linux-gnueabi",
     "armv5te-none-eabi",
@@ -27,9 +25,6 @@ const NO_ATOMIC_64: &[&str] = &[
     "armv5te-unknown-linux-musleabi",
     "armv5te-unknown-linux-uclibceabi",
     "armv6k-nintendo-3ds",
-    "armv7-sony-vita-newlibeabihf",
-    "armv7r-none-eabi",
-    "armv7r-none-eabihf",
     "avr-unknown-gnu-atmega328",
     "hexagon-unknown-linux-musl",
     "m68k-unknown-linux-gnu",
