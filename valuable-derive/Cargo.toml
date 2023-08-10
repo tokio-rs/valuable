@@ -20,9 +20,9 @@ keywords = [
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0"
+proc-macro2 = "1.0.60"
 quote = "1.0"
-syn = { version = "1.0.60", features = ["extra-traits"] }
+syn = { version = "2.0", features = ["extra-traits"] }
 
 [dev-dependencies]
 valuable = { path = "../valuable", features = ["derive"] }
