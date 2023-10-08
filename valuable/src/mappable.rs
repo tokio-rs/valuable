@@ -129,7 +129,7 @@ deref! {
 }
 
 #[cfg(feature = "std")]
-impl<K: Valuable, V: Valuable> Valuable for std::collections::HashMap<K, V> {
+impl<K: Valuable, V: Valuable, S> Valuable for std::collections::HashMap<K, V, S> {
     fn as_value(&self) -> Value<'_> {
         Value::Mappable(self)
     }
@@ -142,7 +142,7 @@ impl<K: Valuable, V: Valuable> Valuable for std::collections::HashMap<K, V> {
 }
 
 #[cfg(feature = "std")]
-impl<K: Valuable, V: Valuable> Mappable for std::collections::HashMap<K, V> {
+impl<K: Valuable, V: Valuable, S> Mappable for std::collections::HashMap<K, V, S> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter().size_hint()
     }

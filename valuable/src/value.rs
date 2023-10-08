@@ -502,7 +502,6 @@ macro_rules! convert {
                 $(#[$attrs])*
                 pub fn $as(&self) -> Option<$ty> {
                     use Value::*;
-                    use core::convert::TryInto;
 
                     match *self {
                         I8(v) => v.try_into().ok(),

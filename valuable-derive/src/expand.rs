@@ -403,6 +403,7 @@ fn allowed_lints() -> TokenStream {
         #[allow(non_upper_case_globals)]
         #[allow(clippy::unknown_clippy_lints)]
         #[allow(clippy::used_underscore_binding)]
+        #[allow(clippy::indexing_slicing)]
     }
 }
 

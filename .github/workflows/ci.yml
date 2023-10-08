@@ -8,12 +8,12 @@ on:
     branches:
       - master
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 2 * * 0'
 
 env:
   RUSTFLAGS: -Dwarnings
   RUST_BACKTRACE: 1
-  minrust: 1.51
+  minrust: '1.56'
 
 jobs:
   test:
