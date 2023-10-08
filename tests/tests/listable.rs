@@ -281,7 +281,7 @@ macro_rules! test_primitive {
 
 test_primitive! {
     test_bool, Bool(Value::Bool): bool => |x| { x % 2 == 0 };
-    test_char, Char(Value::Char): char => |x| { core::convert::TryFrom::try_from(x as u32).unwrap_or('f') };
+    test_char, Char(Value::Char): char => |x| { TryFrom::try_from(x as u32).unwrap_or('f') };
     test_f32, F32(Value::F32): f32 => |x| { x as f32 };
     test_f64, F64(Value::F64): f64 => |x| { x as f64 };
     test_i8, I8(Value::I8): i8 => |x| { x as i8 };

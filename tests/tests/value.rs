@@ -122,8 +122,6 @@ macro_rules! ints {
     (
         $( $n:expr ),*
      ) => {{
-        use core::convert::TryFrom;
-
         vec![
             $(
                 <u8>::try_from($n).ok().map(Value::from),
@@ -165,8 +163,6 @@ macro_rules! test_num {
             // arbitrary float...
             #[allow(clippy::approx_constant)]
             fn $name() {
-                use core::convert::TryFrom;
-
                 let mut valid = vec![];
                 let mut invalid = vec![
                     Value::from(true),
