@@ -1,7 +1,7 @@
 use std::{cell::RefCell, fmt::Write as _, thread};
 
 use proc_macro2::Span;
-use syn::{spanned::Spanned, Error, Fields, Ident, Lit, Meta};
+use syn::{punctuated::Punctuated, spanned::Spanned, Error, Fields, Ident, Meta};
 
 const ATTR_NAME: &str = "valuable";
 
@@ -84,8 +84,11 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
                     Meta::NameValue(m) => m,
                     _ => unreachable!(),
                 };
-                let lit = match &m.lit {
-                    Lit::Str(l) => l.clone(),
+                let lit = match &m.value {
+                    syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(l),
+                        ..
+                    }) => l.clone(),
                     _ => unreachable!(),
                 };
                 rename = Some((m.clone(), lit));
@@ -177,8 +180,11 @@ impl From<&Meta> for MetaStyle {
         match meta {
             Meta::Path(..) => MetaStyle::Ident,
             Meta::List(..) => MetaStyle::List,
-            Meta::NameValue(m) => match &m.lit {
-                Lit::Str(..) => MetaStyle::NameValue(MetaNameValueStyle::Str),
+            Meta::NameValue(m) => match &m.value {
+                syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Str(..),
+                    ..
+                }) => MetaStyle::NameValue(MetaNameValueStyle::Str),
                 _ => MetaStyle::NameValue(MetaNameValueStyle::Any),
             },
         }
@@ -340,50 +346,48 @@ fn filter_attrs<'a>(
     let mut counter = vec![0; ATTRS.len()];
     attrs
         .iter()
-        .filter(|attr| attr.path.is_ident(ATTR_NAME))
-        .filter_map(move |attr| match attr.parse_meta() {
-            Ok(Meta::List(l)) => Some(l.nested),
-            Ok(m) => {
+        .filter(|attr| attr.path().is_ident(ATTR_NAME))
+        .filter_map(move |attr| match &attr.meta {
+            Meta::List(list) => match list
+                .parse_args_with(Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated)
+            {
+                Ok(list) => Some(list),
+                Err(e) => {
+                    cx.error(e);
+                    None
+                }
+            },
+            m => {
                 cx.error(format_err!(m, "expected `#[{}(...)]`", ATTR_NAME));
-                None
-            }
-            Err(e) => {
-                cx.error(e);
                 None
             }
         })
         .flatten()
-        .filter_map(move |m| match m {
-            syn::NestedMeta::Lit(l) => {
-                cx.error(format_err!(l, "expected identifier, found literal"));
-                None
-            }
-            syn::NestedMeta::Meta(m) => match m.path().get_ident() {
-                Some(p) => match ATTRS.iter().position(|a| p == a.name) {
-                    Some(pos) => {
-                        counter[pos] += 1;
-                        if counter[pos] == 1 {
-                            Some((&ATTRS[pos], m))
-                        } else {
-                            cx.error(format_err!(
-                                &m,
-                                "duplicate #[{}({})] attribute",
-                                ATTR_NAME,
-                                p
-                            ));
-                            None
-                        }
-                    }
-                    None => {
-                        cx.error(format_err!(p, "unknown {} attribute `{}`", ATTR_NAME, p));
+        .filter_map(move |m| match m.path().get_ident() {
+            Some(p) => match ATTRS.iter().position(|a| p == a.name) {
+                Some(pos) => {
+                    counter[pos] += 1;
+                    if counter[pos] == 1 {
+                        Some((&ATTRS[pos], m))
+                    } else {
+                        cx.error(format_err!(
+                            &m,
+                            "duplicate #[{}({})] attribute",
+                            ATTR_NAME,
+                            p
+                        ));
                         None
                     }
-                },
+                }
                 None => {
-                    cx.error(format_err!(m, "expected identifier, found path"));
+                    cx.error(format_err!(p, "unknown {} attribute `{}`", ATTR_NAME, p));
                     None
                 }
             },
+            None => {
+                cx.error(format_err!(m, "expected identifier, found path"));
+                None
+            }
         })
         .filter(|(def, meta)| !def.early_check(cx, pos, meta))
         .collect()
