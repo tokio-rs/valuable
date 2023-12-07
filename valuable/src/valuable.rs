@@ -298,6 +298,41 @@ impl Valuable for alloc::string::String {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl<T: ?Sized + ToOwned + Valuable> Valuable for alloc::borrow::Cow<'_, T> {
+    fn as_value(&self) -> Value<'_> {
+        T::as_value(&**self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        T::visit(&**self, visit);
+    }
+}
+
+// TODO: cannot return value referencing temporary value returns a value referencing data owned by the current function
+// #[cfg(feature = "alloc")]
+// impl<T: Clone + Valuable> Valuable for alloc::borrow::Cow<'_, [T]> {
+//     fn as_value(&self) -> Value<'_> {
+//         Value::Listable(&&**self)
+//     }
+//
+//     fn visit(&self, visit: &mut dyn Visit) {
+//         visit.visit_value(self.as_value())
+//     }
+// }
+
+// str doesn't implement Valuable (&str does), so the above impl doesn't cover this.
+#[cfg(feature = "alloc")]
+impl Valuable for alloc::borrow::Cow<'_, str> {
+    fn as_value(&self) -> Value<'_> {
+        Value::String(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        visit.visit_value(self.as_value())
+    }
+}
+
 #[cfg(feature = "std")]
 impl Valuable for &std::path::Path {
     fn as_value(&self) -> Value<'_> {
