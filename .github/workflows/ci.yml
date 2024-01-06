@@ -13,7 +13,6 @@ on:
 env:
   RUSTFLAGS: -Dwarnings
   RUST_BACKTRACE: 1
-  minrust: '1.56'
 
 jobs:
   test:
@@ -29,9 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust
-        run: rustup update ${{ env.minrust }} && rustup default ${{ env.minrust }}
-      - run: cargo check --workspace --all-features
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+      - run: cargo hack check --workspace --all-features --ignore-private --rust-version
 
   no-std:
     strategy:
