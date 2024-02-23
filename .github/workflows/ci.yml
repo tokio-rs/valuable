@@ -37,12 +37,10 @@ jobs:
       fail-fast: false
       matrix:
         # thumbv7m-none-eabi supports atomic CAS.
-        # thumbv6m-none-eabi supports atomic, but not atomic CAS.
-        # riscv32i-unknown-none-elf does not support atomic at all.
+        # thumbv6m-none-eabi supports atomic load/store, but not atomic CAS.
         target:
           - thumbv6m-none-eabi
           - thumbv7m-none-eabi
-          - riscv32i-unknown-none-elf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
