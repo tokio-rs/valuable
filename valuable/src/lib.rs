@@ -124,7 +124,7 @@ mod enumerable;
 pub use enumerable::{EnumDef, Enumerable, Variant, VariantDef};
 
 mod field;
-pub use field::{Fields, NamedField};
+pub use field::{Field, Fields, NamedField};
 
 mod listable;
 pub use listable::Listable;

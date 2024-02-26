@@ -17,6 +17,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
     let name_literal = name.to_string();
     let visit_fields;
     let struct_def;
+    let get_branches: TokenStream;
     let mut named_fields_statics = None;
 
     match &data.fields {
@@ -31,6 +32,19 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                     #name_literal,
                     ::valuable::Fields::Named(#named_fields_static_name),
                 )
+            };
+
+            get_branches =
+                data.fields.iter().map(|field| {
+                    let field_name_ident = field.ident.as_ref();
+                    let field_name_str = field_name_ident.unwrap().to_string();
+                    quote! {
+                        ::valuable::Field::Named(field) if field.name() == #field_name_str => Some(::valuable::Valuable::as_value(&self.#field_name_ident)),
+                    }
+                }).collect();
+
+            quote! {
+                ::valuable::Field::Named(field) if field.name() == ""
             };
 
             let fields = data.fields.iter().map(|field| {
@@ -58,6 +72,14 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 )
             };
 
+            get_branches =
+                data.fields.iter().enumerate().map(|(i, _)| {
+                    let i = syn::Index::from(i);
+                    quote! {
+                        ::valuable::Field::Unnamed(f) if f == #i => Some(::valuable::Valuable::as_value(&self.#i)),
+                    }
+                }).collect();
+
             let indices = data.fields.iter().enumerate().map(|(i, field)| {
                 let index = syn::Index::from(i);
                 let tokens = quote! {
@@ -81,6 +103,13 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
         impl #impl_generics ::valuable::Structable for #name #ty_generics #where_clause {
             fn definition(&self) -> ::valuable::StructDef<'_> {
                 #struct_def
+            }
+
+            fn get(&self, field: ::valuable::Field<'_>) -> Option<::valuable::Value<'_>> {
+                match field {
+                    #get_branches
+                    _ => None,
+                }
             }
         }
     };

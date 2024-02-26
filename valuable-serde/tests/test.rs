@@ -407,6 +407,14 @@ fn test_dyn_struct() {
         fn definition(&self) -> StructDef<'_> {
             StructDef::new_dynamic("Named", Fields::Named(&[]))
         }
+
+        fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+            match field {
+                Field::Unnamed(0) => Some(Value::U32(1)),
+                Field::Unnamed(1) => Some(Value::I32(-1)),
+                _ => None,
+            }
+        }
     }
 
     struct Unnamed;
@@ -425,6 +433,14 @@ fn test_dyn_struct() {
     impl Structable for Unnamed {
         fn definition(&self) -> StructDef<'_> {
             StructDef::new_dynamic("Unnamed", Fields::Unnamed(2))
+        }
+
+        fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+            match field {
+                Field::Unnamed(0) => Some(Value::U32(1)),
+                Field::Unnamed(1) => Some(Value::I32(-1)),
+                _ => None,
+            }
         }
     }
 

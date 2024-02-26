@@ -109,6 +109,9 @@ pub trait Structable: Valuable {
     ///
     /// assert_eq!("MyStruct", my_struct.definition().name());
     fn definition(&self) -> StructDef<'_>;
+
+    /// Returns the value of the given field, if any.
+    fn get(&self, field: Field<'_>) -> Option<Value<'_>>;
 }
 
 /// A struct's name, fields, and other struct-level information.
@@ -178,7 +181,7 @@ pub enum StructDef<'a> {
     /// The struct stores field values in a `HashMap`.
     ///
     /// ```
-    /// use valuable::{Fields, NamedField, NamedValues, Structable, StructDef, Value, Valuable, Visit};
+    /// use valuable::{Field, Fields, NamedField, NamedValues, Structable, StructDef, Value, Valuable, Visit};
     /// use std::collections::HashMap;
     ///
     /// /// A dynamic struct
@@ -210,13 +213,20 @@ pub enum StructDef<'a> {
     ///     fn definition(&self) -> StructDef<'_> {
     ///         StructDef::new_dynamic(&self.name, Fields::Named(&[]))
     ///     }
+    ///
+    ///     fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+    ///         match field {
+    ///             Field::Named(field) => self.values.get(field.name()).map(|v| v.as_value()),
+    ///             _ => None,
+    ///         }
+    ///     }
     /// }
     /// ```
     ///
     /// Some fields are known statically.
     ///
     /// ```
-    /// use valuable::{Fields, NamedField, NamedValues, Structable, StructDef, Value, Valuable, Visit};
+    /// use valuable::{Field, Fields, NamedField, NamedValues, Structable, StructDef, Value, Valuable, Visit};
     /// use std::collections::HashMap;
     ///
     /// struct HalfStatic {
@@ -258,6 +268,17 @@ pub enum StructDef<'a> {
     ///         StructDef::new_dynamic(
     ///             "HalfStatic",
     ///             Fields::Named(FIELDS))
+    ///     }
+    ///
+    ///     fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+    ///         match field {
+    ///             Field::Named(field) if field.name() == "foo" => Some(self.foo.as_value()),
+    ///             Field::Named(field) if field.name() == "bar" => Some(self.bar.as_value()),
+    ///             Field::Named(field) => {
+    ///                 self.extra_values.get(field.name()).map(|v| v.as_value())
+    ///             },
+    ///             _ => None,
+    ///         }
     ///     }
     /// }
     /// ```
@@ -477,6 +498,10 @@ macro_rules! deref {
             impl<T: ?Sized + Structable> Structable for $ty {
                 fn definition(&self) -> StructDef<'_> {
                     T::definition(&**self)
+                }
+
+                fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+                    T::get(&**self, field)
                 }
             }
         )*

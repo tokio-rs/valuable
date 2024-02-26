@@ -16,6 +16,14 @@ impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
         StructDef::new_static("HelloWorld", Fields::Named(HELLO_WORLD_FIELDS))
     }
+
+    fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+        match field {
+            Field::Named(field) if field.name() == "hello" => Some(Value::String(self.hello)),
+            Field::Named(field) if field.name() == "world" => Some(Value::Structable(&self.world)),
+            _ => None,
+        }
+    }
 }
 
 impl Valuable for HelloWorld {
@@ -49,6 +57,13 @@ impl Valuable for World {
 impl Structable for World {
     fn definition(&self) -> StructDef<'_> {
         StructDef::new_static("World", Fields::Named(WORLD_FIELDS))
+    }
+
+    fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+        match field {
+            Field::Named(field) if field.name() == "answer" => Some(Value::Usize(self.answer)),
+            _ => None,
+        }
     }
 }
 
