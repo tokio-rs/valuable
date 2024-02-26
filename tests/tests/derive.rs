@@ -1,6 +1,6 @@
 #![cfg(feature = "derive")]
 
-use valuable::Valuable;
+use valuable::*;
 
 use std::collections::HashMap;
 use std::env;
@@ -63,6 +63,90 @@ fn test_derive_mut() {
         struct_: &'a mut S,
         enum_: &'a mut E,
     }
+}
+
+#[test]
+fn test_rename() {
+    #[derive(Valuable)]
+    #[valuable(rename = "A")]
+    struct S {
+        #[valuable(rename = "b")]
+        f: (),
+    }
+
+    #[derive(Valuable)]
+    #[valuable(rename = "C")]
+    enum E {
+        #[valuable(rename = "D")]
+        S {
+            #[valuable(rename = "e")]
+            f: (),
+        },
+        #[valuable(rename = "F")]
+        T(()),
+        #[valuable(rename = "G")]
+        U,
+    }
+
+    let s = Structable::definition(&S { f: () });
+    assert_eq!(s.name(), "A");
+    assert!(matches!(s.fields(), Fields::Named(f) if f[0].name() == "b"));
+    let e = Enumerable::definition(&E::S { f: () });
+    assert_eq!(e.name(), "C");
+    assert_eq!(e.variants()[0].name(), "D");
+    assert!(matches!(e.variants()[0].fields(), Fields::Named(f) if f[0].name() == "e"));
+    let e = Enumerable::definition(&E::T(()));
+    assert_eq!(e.variants()[1].name(), "F");
+    let e = Enumerable::definition(&E::U);
+    assert_eq!(e.variants()[2].name(), "G");
+}
+
+#[test]
+fn test_skip() {
+    #[derive(Valuable)]
+    struct S {
+        #[allow(dead_code)]
+        #[valuable(skip)]
+        f: (),
+    }
+
+    #[derive(Valuable)]
+    struct T(#[valuable(skip)] ());
+
+    #[derive(Valuable)]
+    enum E {
+        S {
+            #[valuable(skip)]
+            f: (),
+        },
+        #[allow(dead_code)]
+        T(#[valuable(skip)] ()),
+    }
+
+    let s = Structable::definition(&S { f: () });
+    assert!(matches!(s.fields(), Fields::Named(f) if f.is_empty()));
+    let _s = Structable::definition(&T(()));
+    // assert!(matches!(s.fields() if f.is_empty()));
+    let e = Enumerable::definition(&E::S { f: () });
+    assert_eq!(e.variants().len(), 2);
+    assert!(matches!(e.variants()[0].fields(), Fields::Named(f) if f.is_empty()));
+    // assert!(matches!(e.variants()[1].fields() if f.is_empty()));
+}
+
+#[test]
+fn test_transparent() {
+    #[derive(Valuable)]
+    #[valuable(transparent)]
+    struct S {
+        f: u8,
+    }
+
+    #[derive(Valuable)]
+    #[valuable(transparent)]
+    struct T(char);
+
+    assert!(matches!(Valuable::as_value(&S { f: 0 }), Value::U8(0)));
+    assert!(matches!(Valuable::as_value(&T('a')), Value::Char('a')));
 }
 
 #[rustversion::attr(not(stable), ignore)]

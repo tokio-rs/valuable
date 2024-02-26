@@ -1,11 +1,31 @@
-extern crate proc_macro;
+#![warn(rust_2018_idioms, unreachable_pub)]
 
+#[macro_use]
+mod error;
+
+mod attr;
 mod expand;
 
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
 /// Derive a `Valuable` implementation for a struct or enum.
+///
+/// # Attributes
+///
+/// ## `#[valuable(rename = "...")]`
+///
+/// Use the given name instead of its Rust name.
+///
+/// ## `#[valuable(transparent)]`
+///
+/// Delegate the trait implementation to the field.
+///
+/// This attribute can only be used on a struct that has a single field.
+///
+/// ## `#[valuable(skip)]`
+///
+/// Skip the field.
 ///
 /// # Examples
 ///
