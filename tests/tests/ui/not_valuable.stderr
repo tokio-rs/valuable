@@ -5,17 +5,17 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
   |          -------- required by a bound introduced by this call
 6 | struct Struct {
 7 |     f: Option<S>,
-  |        ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+  |        ^^^^^^^^^ the trait `Valuable` is not implemented for `S`, which is required by `Option<S>: Valuable`
   |
   = help: the following other types implement trait `Valuable`:
-            bool
-            char
-            isize
-            i8
-            i16
-            i32
-            i64
-            i128
+            &T
+            &[T]
+            &mut T
+            &std::path::Path
+            &str
+            ()
+            (T0, T1)
+            (T0, T1, T2)
           and $N others
   = note: required for `Option<S>` to implement `Valuable`
 
@@ -25,17 +25,17 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
 10 | #[derive(Valuable)]
    |          -------- required by a bound introduced by this call
 11 | struct Tuple(Option<S>);
-   |              ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+   |              ^^^^^^^^^ the trait `Valuable` is not implemented for `S`, which is required by `Option<S>: Valuable`
    |
    = help: the following other types implement trait `Valuable`:
-             bool
-             char
-             isize
-             i8
-             i16
-             i32
-             i64
-             i128
+             &T
+             &[T]
+             &mut T
+             &std::path::Path
+             &str
+             ()
+             (T0, T1)
+             (T0, T1, T2)
            and $N others
    = note: required for `Option<S>` to implement `Valuable`
 
@@ -46,17 +46,17 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    |          -------- required by a bound introduced by this call
 14 | enum Enum {
 15 |     Struct { f: Option<S> },
-   |                 ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+   |                 ^^^^^^^^^ the trait `Valuable` is not implemented for `S`, which is required by `&Option<S>: Valuable`
    |
    = help: the following other types implement trait `Valuable`:
-             bool
-             char
-             isize
-             i8
-             i16
-             i32
-             i64
-             i128
+             &T
+             &[T]
+             &mut T
+             &std::path::Path
+             &str
+             ()
+             (T0, T1)
+             (T0, T1, T2)
            and $N others
    = note: required for `Option<S>` to implement `Valuable`
    = note: 1 redundant requirement hidden
@@ -69,17 +69,17 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    |          -------- required by a bound introduced by this call
 ...
 16 |     Tuple(Option<S>),
-   |           ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
+   |           ^^^^^^^^^ the trait `Valuable` is not implemented for `S`, which is required by `&Option<S>: Valuable`
    |
    = help: the following other types implement trait `Valuable`:
-             bool
-             char
-             isize
-             i8
-             i16
-             i32
-             i64
-             i128
+             &T
+             &[T]
+             &mut T
+             &std::path::Path
+             &str
+             ()
+             (T0, T1)
+             (T0, T1, T2)
            and $N others
    = note: required for `Option<S>` to implement `Valuable`
    = note: 1 redundant requirement hidden
