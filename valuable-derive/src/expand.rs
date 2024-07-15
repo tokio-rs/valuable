@@ -118,15 +118,7 @@ fn derive_struct(
             }
         }
         syn::Fields::Unnamed(_) | syn::Fields::Unit => {
-            let len = data.fields.len();
-            struct_def = quote! {
-                ::valuable::StructDef::new_static(
-                    #name_literal,
-                    ::valuable::Fields::Unnamed(#len),
-                )
-            };
-
-            let indices = data
+            let indices: Vec<_> = data
                 .fields
                 .iter()
                 .enumerate()
@@ -137,7 +129,17 @@ fn derive_struct(
                         &self.#index
                     };
                     respan(tokens, &field.ty)
-                });
+                })
+                .collect();
+
+            let len = indices.len();
+            struct_def = quote! {
+                ::valuable::StructDef::new_static(
+                    #name_literal,
+                    ::valuable::Fields::Unnamed(#len),
+                )
+            };
+
             visit_fields = quote! {
                 visitor.visit_unnamed_fields(
                     &[
@@ -241,15 +243,20 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                     .iter()
                     .map(|field| field.ident.as_ref())
                     .collect();
-                let as_value = variant.fields.iter().map(|field| {
-                    let f = field.ident.as_ref();
-                    let tokens = quote! {
-                        // HACK(taiki-e): This `&` is not actually needed to calling as_value,
-                        // but is needed to emulate multi-token span on stable Rust.
-                        &#f
-                    };
-                    respan(tokens, &field.ty)
-                });
+                let as_value = variant
+                    .fields
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, _)| !field_attrs[variant_index][*i].skip())
+                    .map(|(_, field)| {
+                        let f = field.ident.as_ref();
+                        let tokens = quote! {
+                            // HACK(taiki-e): This `&` is not actually needed to calling as_value,
+                            // but is needed to emulate multi-token span on stable Rust.
+                            &#f
+                        };
+                        respan(tokens, &field.ty)
+                    });
                 visit_variants.push(quote! {
                     Self::#variant_name { #(#fields),* } => {
                         visitor.visit_named_fields(
@@ -264,14 +271,6 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                 });
             }
             syn::Fields::Unnamed(_) => {
-                let len = variant.fields.len();
-                variant_defs.push(quote! {
-                    ::valuable::VariantDef::new(
-                        #variant_name_literal,
-                        ::valuable::Fields::Unnamed(#len),
-                    ),
-                });
-
                 variant_fn.push(quote! {
                     Self::#variant_name(..) => {
                         ::valuable::Variant::Static(&#variants_static_name[#variant_index])
@@ -281,17 +280,29 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                 let bindings: Vec<_> = (0..variant.fields.len())
                     .map(|i| format_ident!("__binding_{}", i))
                     .collect();
-                let as_value = bindings
+                let as_value: Vec<_> = bindings
                     .iter()
                     .zip(&variant.fields)
-                    .map(|(binding, field)| {
+                    .enumerate()
+                    .filter(|(i, _)| !field_attrs[variant_index][*i].skip())
+                    .map(|(_, (binding, field))| {
                         let tokens = quote! {
                             // HACK(taiki-e): This `&` is not actually needed to calling as_value,
                             // but is needed to emulate multi-token span on stable Rust.
                             &#binding
                         };
                         respan(tokens, &field.ty)
-                    });
+                    })
+                    .collect();
+
+                let len = as_value.len();
+                variant_defs.push(quote! {
+                    ::valuable::VariantDef::new(
+                        #variant_name_literal,
+                        ::valuable::Fields::Unnamed(#len),
+                    ),
+                });
+
                 visit_variants.push(quote! {
                     Self::#variant_name(#(#bindings),*) => {
                         visitor.visit_unnamed_fields(

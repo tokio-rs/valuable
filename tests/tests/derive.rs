@@ -104,34 +104,34 @@ fn test_rename() {
 
 #[test]
 fn test_skip() {
+    struct NotValuable;
+
     #[derive(Valuable)]
     struct S {
-        #[allow(dead_code)]
         #[valuable(skip)]
-        f: (),
+        f: NotValuable,
     }
 
     #[derive(Valuable)]
-    struct T(#[valuable(skip)] ());
+    struct T(#[valuable(skip)] NotValuable);
 
     #[derive(Valuable)]
     enum E {
         S {
             #[valuable(skip)]
-            f: (),
+            _f: NotValuable,
         },
-        #[allow(dead_code)]
-        T(#[valuable(skip)] ()),
+        T(#[valuable(skip)] NotValuable),
     }
 
-    let s = Structable::definition(&S { f: () });
+    let s = Structable::definition(&S { f: NotValuable });
     assert!(matches!(s.fields(), Fields::Named(f) if f.is_empty()));
-    let _s = Structable::definition(&T(()));
-    // assert!(matches!(s.fields() if f.is_empty()));
-    let e = Enumerable::definition(&E::S { f: () });
+    let s = Structable::definition(&T(NotValuable));
+    assert!(matches!(s.fields(), Fields::Unnamed(f) if *f == 0));
+    let e = Enumerable::definition(&E::S { _f: NotValuable });
     assert_eq!(e.variants().len(), 2);
     assert!(matches!(e.variants()[0].fields(), Fields::Named(f) if f.is_empty()));
-    // assert!(matches!(e.variants()[1].fields() if f.is_empty()));
+    assert!(matches!(e.variants()[1].fields(), Fields::Unnamed(f) if *f == 0));
 }
 
 #[test]
