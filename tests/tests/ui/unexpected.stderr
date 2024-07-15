@@ -1,0 +1,63 @@
+error: expected string literal
+ --> tests/ui/unexpected.rs:5:25
+  |
+5 |     #[valuable(rename = b)]
+  |                         ^
+
+error: expected string literal
+  --> tests/ui/unexpected.rs:10:25
+   |
+10 |     #[valuable(rename = 'b')]
+   |                         ^^^
+
+error: #[valuable(transparent)] may only be used on structs
+  --> tests/ui/unexpected.rs:16:16
+   |
+16 |     #[valuable(transparent)]
+   |                ^^^^^^^^^^^
+
+error: #[valuable(transparent)] may only be used on structs
+  --> tests/ui/unexpected.rs:20:12
+   |
+20 | #[valuable(transparent)]
+   |            ^^^^^^^^^^^
+
+error: #[valuable(transparent)] struct needs exactly one field, but has 2
+  --> tests/ui/unexpected.rs:25:1
+   |
+25 | / #[valuable(transparent)]
+26 | | struct Transparent3 {
+27 | |     f1: (),
+28 | |     f2: (),
+29 | | }
+   | |_^
+
+error: #[valuable(transparent)] may not be used together with #[valuable(rename)]
+  --> tests/ui/unexpected.rs:31:25
+   |
+31 | #[valuable(transparent, rename = "a")]
+   |                         ^^^^^^
+
+error: #[valuable(skip)] may only be used on fields
+  --> tests/ui/unexpected.rs:37:12
+   |
+37 | #[valuable(skip)]
+   |            ^^^^
+
+error: #[valuable(skip)] may only be used on fields
+  --> tests/ui/unexpected.rs:42:12
+   |
+42 | #[valuable(skip)]
+   |            ^^^^
+
+error: #[valuable(skip)] may only be used on fields
+  --> tests/ui/unexpected.rs:44:16
+   |
+44 |     #[valuable(skip)]
+   |                ^^^^
+
+error: #[valuable(skip)] may not be used together with #[valuable(rename)]
+  --> tests/ui/unexpected.rs:49:22
+   |
+49 |     #[valuable(skip, rename = "a")]
+   |                      ^^^^^^
