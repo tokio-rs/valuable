@@ -76,8 +76,9 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
     for (def, meta) in &attrs {
         macro_rules! lit_str {
             ($field:ident) => {{
-                let Meta::NameValue(m) = meta else {
-                    unreachable!()
+                let m = match meta {
+                    Meta::NameValue(m) => m,
+                    _ => unreachable!(),
                 };
                 let lit = match &m.value {
                     syn::Expr::Lit(syn::ExprLit {
