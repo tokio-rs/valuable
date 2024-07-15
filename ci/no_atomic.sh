@@ -13,8 +13,9 @@ file="valuable/no_atomic.rs"
 no_atomic_cas=()
 no_atomic_64=()
 no_atomic=()
-for target in $(rustc --print target-list); do
-    target_spec=$(rustc --print target-spec-json -Z unstable-options --target "${target}")
+for target_spec in $(RUSTC_BOOTSTRAP=1 rustc +stable -Z unstable-options --print all-target-specs-json | jq -c '. | to_entries | .[]'); do
+    target=$(jq <<<"${target_spec}" -r '.key')
+    target_spec=$(jq <<<"${target_spec}" -c '.value')
     res=$(jq <<<"${target_spec}" -r 'select(."atomic-cas" == false)')
     [[ -z "${res}" ]] || no_atomic_cas+=("${target}")
     max_atomic_width=$(jq <<<"${target_spec}" -r '."max-atomic-width"')

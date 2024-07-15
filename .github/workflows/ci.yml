@@ -13,13 +13,20 @@ on:
 env:
   RUSTFLAGS: -Dwarnings
   RUST_BACKTRACE: 1
-  minrust: '1.56'
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Rust
         run: rustup update stable
       - run: cargo test --all-features --workspace
@@ -28,27 +35,23 @@ jobs:
   minrust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ env.minrust }}
-          override: true
-      - run: cargo check --workspace --all-features
+      - uses: actions/checkout@v4
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+      - run: cargo hack check --workspace --all-features --ignore-private --rust-version
 
   no-std:
     strategy:
       fail-fast: false
       matrix:
         # thumbv7m-none-eabi supports atomic CAS.
-        # thumbv6m-none-eabi supports atomic, but not atomic CAS.
-        # riscv32i-unknown-none-elf does not support atomic at all.
+        # thumbv6m-none-eabi supports atomic load/store, but not atomic CAS.
         target:
           - thumbv6m-none-eabi
           - thumbv7m-none-eabi
-          - riscv32i-unknown-none-elf
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Rust
         run: rustup update stable
       - name: Install cargo-hack
@@ -62,7 +65,7 @@ jobs:
   features:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Rust
         run: rustup update stable
       - name: Install cargo-hack
@@ -73,9 +76,9 @@ jobs:
   codegen:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Rust
-        run: rustup update nightly && rustup default nightly
+        run: rustup update stable
       - run: ci/no_atomic.sh
       - run: git add -N . && git diff --exit-code
         if: github.repository_owner != 'tokio-rs' || github.event_name != 'schedule'
@@ -90,7 +93,7 @@ jobs:
               echo "::set-output name=success::false"
           fi
         if: github.repository_owner == 'tokio-rs' && github.event_name == 'schedule'
-      - uses: peter-evans/create-pull-request@v3
+      - uses: peter-evans/create-pull-request@v6
         with:
           title: Update no_atomic.rs
           body: |
@@ -105,15 +108,15 @@ jobs:
   fmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Rust
         run: rustup update stable
-      - run: cargo fmt --all -- --check
+      - run: cargo fmt --all --check
 
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Rust
         run: rustup update nightly && rustup default nightly
       - run: cargo doc --no-deps --all-features

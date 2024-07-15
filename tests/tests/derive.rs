@@ -1,4 +1,5 @@
 #![cfg(feature = "derive")]
+#![allow(dead_code)]
 
 use valuable::*;
 
