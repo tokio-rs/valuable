@@ -147,6 +147,20 @@ macro_rules! slice {
                 fn visit(&self, visit: &mut dyn Visit) {
                     T::visit_slice(self, visit);
                 }
+
+                fn visit_pointer(&self, pointer: pointer::Pointer<'_>, visit: &mut dyn Visit) {
+                    if pointer.path().is_empty() {
+                        visit.visit_value(self.as_value());
+                        return;
+                    }
+                    if let pointer::Segment::Index(i) = pointer.path()[0] {
+                        if let Some(i) = i.as_usize() {
+                            if let Some(value) = self.get(i) {
+                                value.visit_pointer(pointer.step(), visit);
+                            }
+                        }
+                    }
+                }
             }
 
             $(#[$attrs])*
@@ -225,6 +239,20 @@ impl<T: Valuable> Valuable for alloc::collections::VecDeque<T> {
         let (first, second) = self.as_slices();
         T::visit_slice(first, visit);
         T::visit_slice(second, visit);
+    }
+
+    fn visit_pointer(&self, pointer: pointer::Pointer<'_>, visit: &mut dyn Visit) {
+        if pointer.path().is_empty() {
+            visit.visit_value(self.as_value());
+            return;
+        }
+        if let pointer::Segment::Index(i) = pointer.path()[0] {
+            if let Some(i) = i.as_usize() {
+                if let Some(value) = self.get(i) {
+                    value.visit_pointer(pointer.step(), visit);
+                }
+            }
+        }
     }
 }
 

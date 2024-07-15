@@ -16,6 +16,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
     let name = &input.ident;
     let name_literal = name.to_string();
     let visit_fields;
+    let visit_pointer;
     let struct_def;
     let mut named_fields_statics = None;
 
@@ -33,13 +34,17 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 )
             };
 
-            let fields = data.fields.iter().map(|field| {
-                let f = field.ident.as_ref();
-                let tokens = quote! {
-                    &self.#f
-                };
-                respan(tokens, &field.ty)
-            });
+            let fields: Vec<_> = data
+                .fields
+                .iter()
+                .map(|field| {
+                    let f = field.ident.as_ref();
+                    let tokens = quote! {
+                        &self.#f
+                    };
+                    respan(tokens, &field.ty)
+                })
+                .collect();
             visit_fields = quote! {
                 visitor.visit_named_fields(&::valuable::NamedValues::new(
                     #named_fields_static_name,
@@ -47,7 +52,21 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                         #(::valuable::Valuable::as_value(#fields),)*
                     ],
                 ));
-            }
+            };
+            let field_name_literals = data
+                .fields
+                .iter()
+                .map(|field| field.ident.as_ref().unwrap().to_string());
+            visit_pointer = quote! {
+                if let ::valuable::pointer::Segment::Field(f) = pointer.path()[0] {
+                    match f {
+                        #(#field_name_literals => {
+                            ::valuable::Valuable::visit_pointer(#fields, pointer.step(), visit)
+                        })*
+                        _ => {}
+                    }
+                }
+            };
         }
         syn::Fields::Unnamed(_) | syn::Fields::Unit => {
             let len = data.fields.len();
@@ -58,19 +77,39 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 )
             };
 
-            let indices = data.fields.iter().enumerate().map(|(i, field)| {
-                let index = syn::Index::from(i);
-                let tokens = quote! {
-                    &self.#index
-                };
-                respan(tokens, &field.ty)
-            });
+            let indices: Vec<_> = data
+                .fields
+                .iter()
+                .enumerate()
+                .map(|(i, field)| {
+                    let index = syn::Index::from(i);
+                    let tokens = quote! {
+                        &self.#index
+                    };
+                    respan(tokens, &field.ty)
+                })
+                .collect();
             visit_fields = quote! {
                 visitor.visit_unnamed_fields(
                     &[
                         #(::valuable::Valuable::as_value(#indices),)*
                     ],
                 );
+            };
+            let field_indices = data
+                .fields
+                .iter()
+                .enumerate()
+                .map(|(i, _)| syn::Index::from(i));
+            visit_pointer = quote! {
+                if let ::valuable::pointer::Segment::TupleIndex(i) = pointer.path()[0] {
+                    match i {
+                        #(#field_indices => {
+                            ::valuable::Valuable::visit_pointer(#indices, pointer.step(), visit)
+                        })*
+                        _ => {}
+                    }
+                }
             };
         }
     }
@@ -93,6 +132,18 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
 
             fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
                 #visit_fields
+            }
+
+            fn visit_pointer(
+                &self,
+                pointer: ::valuable::pointer::Pointer<'_>,
+                visit: &mut dyn ::valuable::Visit,
+            ) {
+                if pointer.path().is_empty() {
+                    visit.visit_value(::valuable::Valuable::as_value(self));
+                    return;
+                }
+                #visit_pointer
             }
         }
     };
@@ -309,13 +360,14 @@ fn named_fields_static(name: &Ident, fields: &syn::Fields) -> TokenStream {
 fn allowed_lints() -> TokenStream {
     quote! {
         #[allow(non_upper_case_globals)]
+        #[allow(clippy::collapsible_match)]
         #[allow(clippy::unknown_clippy_lints)]
         #[allow(clippy::used_underscore_binding)]
         #[allow(clippy::indexing_slicing)]
     }
 }
 
-fn respan(tokens: TokenStream, span: &impl ToTokens) -> TokenStream {
+pub(crate) fn respan(tokens: TokenStream, span: &impl ToTokens) -> TokenStream {
     let mut iter = span.to_token_stream().into_iter();
     // `Span` on stable Rust has a limitation that only points to the first
     // token, not the whole tokens. We can work around this limitation by

@@ -135,6 +135,8 @@ pub use mappable::Mappable;
 mod named_values;
 pub use named_values::NamedValues;
 
+pub mod pointer;
+
 mod slice;
 pub use slice::Slice;
 
@@ -154,4 +156,4 @@ mod visit;
 pub use visit::{visit, Visit};
 
 #[cfg(feature = "derive")]
-pub use valuable_derive::Valuable;
+pub use valuable_derive::{visit_pointer, Valuable};
