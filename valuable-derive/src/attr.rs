@@ -76,9 +76,14 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
     for (def, meta) in &attrs {
         macro_rules! lit_str {
             ($field:ident) => {{
-                let Meta::NameValue(m) = meta else { unreachable!() };
+                let Meta::NameValue(m) = meta else {
+                    unreachable!()
+                };
                 let lit = match &m.value {
-                    syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(l), .. }) => l,
+                    syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(l),
+                        ..
+                    }) => l,
                     l => {
                         cx.error(format_err!(l, "expected string literal"));
                         continue;
