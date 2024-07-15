@@ -1,42 +1,42 @@
-error: expected `#[valuable(rename = "...")]`, found `#[valuable(rename = ...)]`
- --> tests/ui/unexpected.rs:5:16
+error: expected string literal
+ --> tests/ui/unexpected.rs:5:25
   |
 5 |     #[valuable(rename = b)]
-  |                ^^^^^^^^^^
+  |                         ^
+
+error: expected string literal
+  --> tests/ui/unexpected.rs:10:25
+   |
+10 |     #[valuable(rename = 'b')]
+   |                         ^^^
 
 error: #[valuable(transparent)] may only be used on structs
-  --> tests/ui/unexpected.rs:11:16
+  --> tests/ui/unexpected.rs:16:16
    |
-11 |     #[valuable(transparent)]
+16 |     #[valuable(transparent)]
    |                ^^^^^^^^^^^
 
 error: #[valuable(transparent)] may only be used on structs
-  --> tests/ui/unexpected.rs:15:12
+  --> tests/ui/unexpected.rs:20:12
    |
-15 | #[valuable(transparent)]
+20 | #[valuable(transparent)]
    |            ^^^^^^^^^^^
 
 error: #[valuable(transparent)] struct needs exactly one field, but has 2
-  --> tests/ui/unexpected.rs:20:1
+  --> tests/ui/unexpected.rs:25:1
    |
-20 | / #[valuable(transparent)]
-21 | | struct Transparent3 {
-22 | |     f1: (),
-23 | |     f2: (),
-24 | | }
+25 | / #[valuable(transparent)]
+26 | | struct Transparent3 {
+27 | |     f1: (),
+28 | |     f2: (),
+29 | | }
    | |_^
 
 error: #[valuable(transparent)] may not be used together with #[valuable(rename)]
-  --> tests/ui/unexpected.rs:26:25
+  --> tests/ui/unexpected.rs:31:25
    |
-26 | #[valuable(transparent, rename = "a")]
+31 | #[valuable(transparent, rename = "a")]
    |                         ^^^^^^
-
-error: #[valuable(skip)] may only be used on fields
-  --> tests/ui/unexpected.rs:32:12
-   |
-32 | #[valuable(skip)]
-   |            ^^^^
 
 error: #[valuable(skip)] may only be used on fields
   --> tests/ui/unexpected.rs:37:12
@@ -45,13 +45,19 @@ error: #[valuable(skip)] may only be used on fields
    |            ^^^^
 
 error: #[valuable(skip)] may only be used on fields
-  --> tests/ui/unexpected.rs:39:16
+  --> tests/ui/unexpected.rs:42:12
    |
-39 |     #[valuable(skip)]
+42 | #[valuable(skip)]
+   |            ^^^^
+
+error: #[valuable(skip)] may only be used on fields
+  --> tests/ui/unexpected.rs:44:16
+   |
+44 |     #[valuable(skip)]
    |                ^^^^
 
 error: #[valuable(skip)] may not be used together with #[valuable(rename)]
-  --> tests/ui/unexpected.rs:44:22
+  --> tests/ui/unexpected.rs:49:22
    |
-44 |     #[valuable(skip, rename = "a")]
+49 |     #[valuable(skip, rename = "a")]
    |                      ^^^^^^

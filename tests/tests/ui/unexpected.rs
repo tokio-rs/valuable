@@ -5,6 +5,11 @@ struct Rename1 {
     #[valuable(rename = b)]
     f: (),
 }
+#[derive(Valuable)]
+struct Rename2 {
+    #[valuable(rename = 'b')]
+    f: (),
+}
 
 #[derive(Valuable)]
 struct Transparent1 {

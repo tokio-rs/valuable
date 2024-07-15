@@ -17,7 +17,7 @@ static ATTRS: &[AttrDef] = &[
             Position::Variant,
             Position::NamedField,
         ],
-        style: &[MetaStyle::NameValue(MetaNameValueStyle::Str)],
+        style: &[MetaStyle::NameValue],
     },
     // #[valuable(transparent)]
     AttrDef {
@@ -74,25 +74,26 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
 
     let attrs = filter_attrs(cx, attrs, pos);
     for (def, meta) in &attrs {
+        macro_rules! lit_str {
+            ($field:ident) => {{
+                let Meta::NameValue(m) = meta else { unreachable!() };
+                let lit = match &m.value {
+                    syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(l), .. }) => l,
+                    l => {
+                        cx.error(format_err!(l, "expected string literal"));
+                        continue;
+                    }
+                };
+                $field = Some((m.clone(), lit.clone()));
+            }};
+        }
+
         if def.late_check(cx, &attrs) {
             continue;
         }
         match def.name {
             // #[valuable(rename = "...")]
-            "rename" => {
-                let m = match meta {
-                    Meta::NameValue(m) => m,
-                    _ => unreachable!(),
-                };
-                let lit = match &m.value {
-                    syn::Expr::Lit(syn::ExprLit {
-                        lit: syn::Lit::Str(l),
-                        ..
-                    }) => l.clone(),
-                    _ => unreachable!(),
-                };
-                rename = Some((m.clone(), lit));
-            }
+            "rename" => lit_str!(rename),
             // #[valuable(transparent)]
             "transparent" => transparent = Some(meta.span()),
             // #[valuable(skip)]
@@ -151,17 +152,9 @@ pub(crate) enum MetaStyle {
     // #[attr(<name>)]
     Ident,
     // #[attr(<name> = ...)]
-    NameValue(MetaNameValueStyle),
+    NameValue,
     // #[attr(<name>(...))]
     List,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum MetaNameValueStyle {
-    // #[attr(<name> = "...")]
-    Str,
-    // #[attr(<name> = ...)]
-    Any,
 }
 
 impl MetaStyle {
@@ -169,8 +162,7 @@ impl MetaStyle {
         match self {
             MetaStyle::Ident => name.to_owned(),
             MetaStyle::List => format!("{}(...)", name),
-            MetaStyle::NameValue(MetaNameValueStyle::Str) => format!("{} = \"...\"", name),
-            MetaStyle::NameValue(MetaNameValueStyle::Any) => format!("{} = ...", name),
+            MetaStyle::NameValue => format!("{} = ...", name),
         }
     }
 }
@@ -180,13 +172,7 @@ impl From<&Meta> for MetaStyle {
         match meta {
             Meta::Path(..) => MetaStyle::Ident,
             Meta::List(..) => MetaStyle::List,
-            Meta::NameValue(m) => match &m.value {
-                syn::Expr::Lit(syn::ExprLit {
-                    lit: syn::Lit::Str(..),
-                    ..
-                }) => MetaStyle::NameValue(MetaNameValueStyle::Str),
-                _ => MetaStyle::NameValue(MetaNameValueStyle::Any),
-            },
+            Meta::NameValue(..) => MetaStyle::NameValue,
         }
     }
 }
