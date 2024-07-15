@@ -103,7 +103,7 @@ fn test_rename() {
 }
 
 #[test]
-fn test_skip() {
+fn test_skip_empty() {
     struct NotValuable;
 
     #[derive(Valuable)]
@@ -119,7 +119,7 @@ fn test_skip() {
     enum E {
         S {
             #[valuable(skip)]
-            _f: NotValuable,
+            f: NotValuable,
         },
         T(#[valuable(skip)] NotValuable),
     }
@@ -128,10 +128,54 @@ fn test_skip() {
     assert!(matches!(s.fields(), Fields::Named(f) if f.is_empty()));
     let s = Structable::definition(&T(NotValuable));
     assert!(matches!(s.fields(), Fields::Unnamed(f) if *f == 0));
-    let e = Enumerable::definition(&E::S { _f: NotValuable });
+    let e = Enumerable::definition(&E::S { f: NotValuable });
     assert_eq!(e.variants().len(), 2);
     assert!(matches!(e.variants()[0].fields(), Fields::Named(f) if f.is_empty()));
     assert!(matches!(e.variants()[1].fields(), Fields::Unnamed(f) if *f == 0));
+}
+
+#[test]
+fn test_skip() {
+    struct NotValuable;
+
+    #[derive(Valuable)]
+    struct S {
+        f1: (),
+        #[valuable(skip)]
+        f2: NotValuable,
+        f3: (),
+    }
+
+    #[derive(Valuable)]
+    struct T((), #[valuable(skip)] NotValuable, ());
+
+    #[derive(Valuable)]
+    enum E {
+        S {
+            f1: (),
+            #[valuable(skip)]
+            f2: NotValuable,
+            f3: (),
+        },
+        T((), #[valuable(skip)] NotValuable, ()),
+    }
+
+    let s = Structable::definition(&S {
+        f1: (),
+        f2: NotValuable,
+        f3: (),
+    });
+    assert!(matches!(s.fields(), Fields::Named(f) if f.len() == 2));
+    let s = Structable::definition(&T((), NotValuable, ()));
+    assert!(matches!(s.fields(), Fields::Unnamed(f) if *f == 2));
+    let e = Enumerable::definition(&E::S {
+        f1: (),
+        f2: NotValuable,
+        f3: (),
+    });
+    assert_eq!(e.variants().len(), 2);
+    assert!(matches!(e.variants()[0].fields(), Fields::Named(f) if f.len() == 2));
+    assert!(matches!(e.variants()[1].fields(), Fields::Unnamed(f) if *f == 2));
 }
 
 #[test]

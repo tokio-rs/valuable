@@ -238,27 +238,30 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                     }
                 });
 
-                let fields: Vec<_> = variant
-                    .fields
-                    .iter()
-                    .map(|field| field.ident.as_ref())
-                    .collect();
-                let as_value = variant
+                let mut fields = Vec::with_capacity(variant.fields.len());
+                let mut as_value = Vec::with_capacity(variant.fields.len());
+                for (_, field) in variant
                     .fields
                     .iter()
                     .enumerate()
                     .filter(|(i, _)| !field_attrs[variant_index][*i].skip())
-                    .map(|(_, field)| {
-                        let f = field.ident.as_ref();
-                        let tokens = quote! {
-                            // HACK(taiki-e): This `&` is not actually needed to calling as_value,
-                            // but is needed to emulate multi-token span on stable Rust.
-                            &#f
-                        };
-                        respan(tokens, &field.ty)
-                    });
+                {
+                    let f = field.ident.as_ref();
+                    fields.push(f);
+                    let tokens = quote! {
+                        // HACK(taiki-e): This `&` is not actually needed to calling as_value,
+                        // but is needed to emulate multi-token span on stable Rust.
+                        &#f
+                    };
+                    as_value.push(respan(tokens, &field.ty));
+                }
+                let skipped = if fields.len() == variant.fields.len() {
+                    quote! {}
+                } else {
+                    quote!(..)
+                };
                 visit_variants.push(quote! {
-                    Self::#variant_name { #(#fields),* } => {
+                    Self::#variant_name { #(#fields,)* #skipped } => {
                         visitor.visit_named_fields(
                             &::valuable::NamedValues::new(
                                 #named_fields_static_name,
