@@ -2,10 +2,10 @@
 name = "valuable-serde"
 version = "0.1.0"
 authors = ["Taiki Endo <te316e89@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "`serde::Serialize` implementation for `Valuable` types."
-rust-version = "1.51.0"
+rust-version = "1.56"
 readme = "README.md"
 repository = "https://github.com/tokio-rs/valuable"
 categories = [

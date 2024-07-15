@@ -1,9 +1,9 @@
 [package]
 name = "valuable-derive"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 license = "MIT"
-rust-version = "1.51.0"
+rust-version = "1.56"
 description = "Macros for the `valuable` crate."
 repository = "https://github.com/tokio-rs/valuable"
 categories = [
@@ -20,9 +20,9 @@ keywords = [
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0"
+proc-macro2 = "1.0.60"
 quote = "1.0"
-syn = { version = "1.0.60", features = ["full", "extra-traits"] }
+syn = { version = "2.0", features = ["full", "extra-traits"] }
 
 [dev-dependencies]
 valuable = { path = "../valuable", features = ["derive"] }

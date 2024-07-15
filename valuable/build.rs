@@ -8,6 +8,9 @@ include!("no_atomic.rs");
 // opening a GitHub issue if your build environment requires some way to enable
 // these cfgs other than by executing our build script.
 fn main() {
+    println!("cargo:rerun-if-changed=no_atomic.rs");
+    println!("cargo:rustc-check-cfg=cfg(valuable_no_atomic_cas,valuable_no_atomic,valuable_no_atomic_64)");
+
     let target = match env::var("TARGET") {
         Ok(target) => target,
         Err(e) => {
@@ -34,6 +37,4 @@ fn main() {
     } else {
         // Otherwise, assuming `"max-atomic-width" == 64`.
     }
-
-    println!("cargo:rerun-if-changed=no_atomic.rs");
 }
