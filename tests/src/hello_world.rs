@@ -24,4 +24,13 @@ impl Structable for HelloWorld {
     fn definition(&self) -> StructDef<'_> {
         StructDef::new_static("HelloWorld", Fields::Named(HELLO_WORLD_FIELDS))
     }
+
+    fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+        if let Field::Named(field) = field {
+            if field.name() == HELLO_WORLD_FIELDS[0].name() {
+                return Some(Value::U32(self.id));
+            }
+        }
+        None
+    }
 }

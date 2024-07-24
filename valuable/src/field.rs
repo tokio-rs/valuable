@@ -10,6 +10,16 @@ pub enum Fields<'a> {
     Unnamed(usize),
 }
 
+/// A field, either named or positional, in a `Structable`.
+#[derive(Debug)]
+pub enum Field<'a> {
+    /// Named field.
+    Named(NamedField<'a>),
+
+    /// Unnamed (positional) field.
+    Unnamed(usize),
+}
+
 /// A named field
 #[derive(Debug, Clone, Copy)]
 pub struct NamedField<'a>(&'a str);

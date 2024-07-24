@@ -41,6 +41,15 @@ fn test_manual_static_impl() {
         fn definition(&self) -> StructDef<'_> {
             StructDef::new_static("MyStruct", Fields::Named(MY_STRUCT_FIELDS))
         }
+
+        fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+            match field {
+                Field::Named(field) if field.name() == "num" => Some(Value::U32(self.num)),
+                Field::Named(field) if field.name() == "list" => Some(Value::Listable(&self.list)),
+                Field::Named(field) if field.name() == "sub" => Some(Value::Structable(&self.sub)),
+                _ => None,
+            }
+        }
     }
 
     impl Valuable for SubStruct {
@@ -59,6 +68,13 @@ fn test_manual_static_impl() {
     impl Structable for SubStruct {
         fn definition(&self) -> StructDef<'_> {
             StructDef::new_static("SubStruct", Fields::Named(SUB_STRUCT_FIELDS))
+        }
+
+        fn get(&self, field: Field<'_>) -> Option<Value<'_>> {
+            match field {
+                Field::Named(field) if field.name() == "sub" => Some(Value::String(&self.message)),
+                _ => None,
+            }
         }
     }
 
@@ -117,6 +133,14 @@ fn test_manual_dyn_impl() {
     impl Structable for MyStruct {
         fn definition(&self) -> StructDef<'_> {
             StructDef::new_dynamic("MyStruct", Fields::Named(&[]))
+        }
+
+        fn get(&self, field: Field) -> Option<Value<'_>> {
+            match field {
+                Field::Named(field) if field.name() == "foo" => Some(Value::U32(1)),
+                Field::Named(field) if field.name() == "bar" => Some(Value::String("two")),
+                _ => None,
+            }
         }
     }
 
