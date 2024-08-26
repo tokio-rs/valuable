@@ -40,13 +40,13 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    = note: required for `Option<S>` to implement `Valuable`
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
-  --> tests/ui/not_valuable.rs:15:17
+  --> tests/ui/not_valuable.rs:15:25
    |
 13 | #[derive(Valuable)]
    |          -------- required by a bound introduced by this call
 14 | enum Enum {
 15 |     Struct { f: Option<S> },
-   |                 ^^^^^^^^^ the trait `Valuable` is not implemented for `S`, which is required by `&Option<S>: Valuable`
+   |                         ^ the trait `Valuable` is not implemented for `S`, which is required by `&Option<S>: Valuable`
    |
    = help: the following other types implement trait `Valuable`:
              &T
@@ -63,13 +63,13 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    = note: required for `&Option<S>` to implement `Valuable`
 
 error[E0277]: the trait bound `S: Valuable` is not satisfied
-  --> tests/ui/not_valuable.rs:16:11
+  --> tests/ui/not_valuable.rs:16:19
    |
 13 | #[derive(Valuable)]
    |          -------- required by a bound introduced by this call
 ...
 16 |     Tuple(Option<S>),
-   |           ^^^^^^^^^ the trait `Valuable` is not implemented for `S`, which is required by `&Option<S>: Valuable`
+   |                   ^ the trait `Valuable` is not implemented for `S`, which is required by `&Option<S>: Valuable`
    |
    = help: the following other types implement trait `Valuable`:
              &T
