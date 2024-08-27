@@ -42,12 +42,20 @@ static ATTRS: &[AttrDef] = &[
         ],
         style: &[MetaStyle::Ident],
     },
+    // #[valuable(format)]
+    AttrDef {
+        name: "format",
+        conflicts_with: &["skip", "rename"],
+        position: &[Position::NamedField, Position::UnnamedField],
+        style: &[MetaStyle::NameValue],
+    },
 ];
 
 pub(crate) struct Attrs {
     rename: Option<(syn::MetaNameValue, syn::LitStr)>,
     transparent: Option<Span>,
     skip: Option<Span>,
+    format: Option<(syn::MetaNameValue, syn::LitStr)>,
 }
 
 impl Attrs {
@@ -65,12 +73,17 @@ impl Attrs {
     pub(crate) fn skip(&self) -> bool {
         self.skip.is_some()
     }
+
+    pub(crate) fn format(&self) -> Option<syn::LitStr> {
+        self.format.as_ref().map(|(_, format)| format).cloned()
+    }
 }
 
 pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position) -> Attrs {
     let mut rename = None;
     let mut transparent = None;
     let mut skip = None;
+    let mut format = None;
 
     let attrs = filter_attrs(cx, attrs, pos);
     for (def, meta) in &attrs {
@@ -104,7 +117,8 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
             "transparent" => transparent = Some(meta.span()),
             // #[valuable(skip)]
             "skip" => skip = Some(meta.span()),
-
+            // #[valuable(format = "{}")]
+            "format" => lit_str!(format),
             _ => unreachable!("{}", def.name),
         }
     }
@@ -113,6 +127,7 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
         rename,
         transparent,
         skip,
+        format,
     }
 }
 
