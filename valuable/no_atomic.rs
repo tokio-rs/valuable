@@ -14,6 +14,7 @@ const NO_ATOMIC_CAS: &[&str] = &[
     "thumbv4t-none-eabi",
     "thumbv5te-none-eabi",
     "thumbv6m-none-eabi",
+    "xtensa-esp32s2-none-elf",
 ];
 
 const NO_ATOMIC_64: &[&str] = &[
@@ -72,6 +73,12 @@ const NO_ATOMIC_64: &[&str] = &[
     "thumbv8m.base-none-eabi",
     "thumbv8m.main-none-eabi",
     "thumbv8m.main-none-eabihf",
+    "xtensa-esp32-espidf",
+    "xtensa-esp32-none-elf",
+    "xtensa-esp32s2-espidf",
+    "xtensa-esp32s2-none-elf",
+    "xtensa-esp32s3-espidf",
+    "xtensa-esp32s3-none-elf",
 ];
 
 const NO_ATOMIC: &[&str] = &[
