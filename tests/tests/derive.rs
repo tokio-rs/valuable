@@ -205,3 +205,29 @@ fn ui() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/ui/*.rs");
 }
+
+#[test]
+fn test_format_not_valuable() {
+    #[derive(Debug)]
+    struct NotValuable;
+
+    #[derive(Valuable)]
+    struct S {
+        f1: (),
+        #[valuable(format = "{:?}")]
+        f2: NotValuable,
+        f3: (),
+    }
+
+    #[derive(Valuable)]
+    struct T((), #[valuable(format = "{:?}")] NotValuable, ());
+
+    let s = Structable::definition(&S {
+        f1: (),
+        f2: NotValuable,
+        f3: (),
+    });
+    assert!(matches!(s.fields(), Fields::Named(f) if f.len() == 3));
+    let s = Structable::definition(&T((), NotValuable, ()));
+    assert!(matches!(s.fields(), Fields::Unnamed(f) if *f == 3));
+}
