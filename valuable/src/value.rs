@@ -1,4 +1,4 @@
-use crate::{Enumerable, Listable, Mappable, Structable, Tuplable, Valuable, Visit};
+use crate::{Enumerable, Listable, Mappable, Renderable, Structable, Tuplable, Valuable, Visit};
 
 use core::fmt;
 
@@ -404,6 +404,27 @@ value! {
     /// let v = Value::Tuplable(&my_tuple);
     /// ```
     Tuplable(&'a dyn Tuplable),
+
+    /// A value that can be rendered to a string
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Value, Renderable};
+    ///
+    /// #[derive(Debug)]
+    /// struct NotValuable{
+    ///     inner: u32
+    /// };
+    ///
+    /// let nv = NotValuable {
+    ///     inner: 42
+    /// };
+    ///
+    /// let v = Value::Renderable(Renderable::Debug(&nv));
+    /// ```
+    ///
+    Renderable(Renderable<'a>),
 }
 
 impl Valuable for Value<'_> {

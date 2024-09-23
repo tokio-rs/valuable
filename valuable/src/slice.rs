@@ -326,6 +326,20 @@ slice! {
     /// ```
     Isize(isize),
 
+    /// A slice containing `Renderable` values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use valuable::{Slice, Renderable};
+    ///
+    /// let v = Slice::Renderable(&[
+    ///     Renderable::Debug(&"foo"),
+    ///     Renderable::Display(&"bar")
+    /// ]);
+    /// ```
+    Renderable(Renderable<'a>),
+
     /// A slice containing `str` values.
     ///
     /// # Examples
