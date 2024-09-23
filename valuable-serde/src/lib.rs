@@ -273,7 +273,7 @@ where
                 #[cfg(not(feature = "alloc"))]
                 {
                     // Can't serialize a renderable without allocating
-                    Ok(S::Ok)
+                    serializer.serialize_none()
                 }
             }
 
