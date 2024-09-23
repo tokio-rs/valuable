@@ -5,7 +5,7 @@ use crate::{Slice, Valuable, Value};
 /// A [`Valuable`] sub-type for using ordinarily non-`valuable` types by
 /// rendering them to a string with [`Debug`] or [`Display`].
 ///
-/// This is most useful when defining a [`Structable`] value that includes
+/// This is most useful when defining a [`Structable`](crate::Structable) value that includes
 /// fields of types where [`Valuable`] cannot be implemented like types
 /// contained in external crates.
 ///
@@ -170,7 +170,7 @@ impl<'a> Renderable<'a> {
     /// ```
     #[inline]
     pub fn render(&self, target: &mut dyn Write) -> fmt::Result {
-        write!(target, "{self:?}")
+        write!(target, "{:?}", self)
     }
 
     /// Render this [`Renderable`] to the given [`Write`] target, but force the
@@ -201,9 +201,9 @@ impl<'a> Renderable<'a> {
     #[inline]
     pub fn render_with_prettiness(&self, target: &mut dyn Write, pretty: bool) -> fmt::Result {
         if pretty {
-            write!(target, "{self:#?}")
+            write!(target, "{:#?}", self)
         } else {
-            write!(target, "{self:?}")
+            write!(target, "{:?}", self)
         }
     }
 
@@ -229,7 +229,7 @@ impl<'a> Renderable<'a> {
     #[cfg(feature = "alloc")]
     #[inline]
     pub fn render_to_string(&self) -> alloc::string::String {
-        format!("{self:?}")
+        alloc::format!("{:?}", self)
     }
 
     /// Render this [`Renderable`] to an owned [`String`], but force the
@@ -261,9 +261,9 @@ impl<'a> Renderable<'a> {
     #[inline]
     pub fn render_to_string_with_prettiness(&self, pretty: bool) -> alloc::string::String {
         if pretty {
-            format!("{self:#?}")
+            alloc::format!("{:#?}", self)
         } else {
-            format!("{self:?}")
+            alloc::format!("{:?}", self)
         }
     }
 }
