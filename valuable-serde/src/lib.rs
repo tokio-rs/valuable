@@ -265,6 +265,13 @@ where
             Value::Path(p) => Serialize::serialize(p, serializer),
             #[cfg(feature = "std")]
             Value::Error(e) => SerializeError(e).serialize(serializer),
+            #[cfg(feature = "alloc")]
+            Value::Renderable(r) => serializer.serialize_str(&r.render_to_string()),
+            #[cfg(not(feature = "alloc"))]
+            Value::Renderable(_) => {
+                // Can't serialize a renderable without allocating
+                serializer.serialize_none()
+            }
 
             v => unimplemented!("{:?}", v),
         }
