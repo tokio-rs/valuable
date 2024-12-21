@@ -56,6 +56,7 @@ fn derive_struct(
         );
         let access = respan(quote! { &self.#access }, &field.ty);
         let valuable_impl = quote! {
+            #[automatically_derived]
             impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
                 fn as_value(&self) -> ::valuable::Value<'_> {
                     ::valuable::Valuable::as_value(#access)
@@ -151,6 +152,7 @@ fn derive_struct(
     }
 
     let structable_impl = quote! {
+        #[automatically_derived]
         impl #impl_generics ::valuable::Structable for #name #ty_generics #where_clause {
             fn definition(&self) -> ::valuable::StructDef<'_> {
                 #struct_def
@@ -159,6 +161,7 @@ fn derive_struct(
     };
 
     let valuable_impl = quote! {
+        #[automatically_derived]
         impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
             fn as_value(&self) -> ::valuable::Value<'_> {
                 ::valuable::Value::Structable(self)
@@ -349,6 +352,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
 
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let enumerable_impl = quote! {
+        #[automatically_derived]
         impl #impl_generics ::valuable::Enumerable for #name #ty_generics #where_clause {
             fn definition(&self) -> ::valuable::EnumDef<'_> {
                 ::valuable::EnumDef::new_static(
@@ -366,6 +370,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
     };
 
     let valuable_impl = quote! {
+        #[automatically_derived]
         impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
             fn as_value(&self) -> ::valuable::Value<'_> {
                 ::valuable::Value::Enumerable(self)
