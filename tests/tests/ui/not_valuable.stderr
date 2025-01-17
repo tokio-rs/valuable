@@ -5,7 +5,7 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
   |          -------- required by a bound introduced by this call
 6 | struct Struct {
 7 |     f: Option<S>,
-  |        ^^^^^^^^^ the trait `Valuable` is not implemented for `S`, which is required by `Option<S>: Valuable`
+  |        ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
   |
   = help: the following other types implement trait `Valuable`:
             &T
@@ -25,7 +25,7 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
 10 | #[derive(Valuable)]
    |          -------- required by a bound introduced by this call
 11 | struct Tuple(Option<S>);
-   |              ^^^^^^^^^ the trait `Valuable` is not implemented for `S`, which is required by `Option<S>: Valuable`
+   |              ^^^^^^^^^ the trait `Valuable` is not implemented for `S`
    |
    = help: the following other types implement trait `Valuable`:
              &T
@@ -46,7 +46,7 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    |          -------- required by a bound introduced by this call
 14 | enum Enum {
 15 |     Struct { f: Option<S> },
-   |                         ^ the trait `Valuable` is not implemented for `S`, which is required by `&Option<S>: Valuable`
+   |                         ^ the trait `Valuable` is not implemented for `S`
    |
    = help: the following other types implement trait `Valuable`:
              &T
@@ -69,7 +69,7 @@ error[E0277]: the trait bound `S: Valuable` is not satisfied
    |          -------- required by a bound introduced by this call
 ...
 16 |     Tuple(Option<S>),
-   |                   ^ the trait `Valuable` is not implemented for `S`, which is required by `&Option<S>: Valuable`
+   |                   ^ the trait `Valuable` is not implemented for `S`
    |
    = help: the following other types implement trait `Valuable`:
              &T
