@@ -1,4 +1,4 @@
-# 0.1.1 (2025-01-09)
+# 0.1.1 (2025-01-17)
 
 - Make `Valuable` implementation for `HashMap` more generic (#112)
 - Bump MSRV to 1.56 (#118)
