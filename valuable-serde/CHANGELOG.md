@@ -1,4 +1,4 @@
-# 0.1.1 (2025-01-09)
+# 0.1.1 (2025-01-17)
 
 - Serialize `dyn Error` Values as a struct with fields for sources (#92)
 
