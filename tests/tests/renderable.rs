@@ -6,7 +6,7 @@ struct NotTuplable<'a> {
     i: usize,
 }
 
-impl<'a> core::fmt::Display for NotTuplable<'a> {
+impl core::fmt::Display for NotTuplable<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -25,12 +25,12 @@ fn test_renderable_struct_from_debug() {
     let v = r.as_value();
 
     // Rendering should produce the debug output for the struct
-    assert_eq!(r.render_to_string(), format!("{s:?}"));
+    assert_eq!(r.render_to_string(), format!("{:?}", s));
 
     // Writing the value itself as `Debug` should print the same debug output
     // as the struct
-    assert_eq!(format!("{v:?}"), format!("{s:?}"));
-    assert_eq!(format!("{v:#?}"), format!("{s:#?}"));
+    assert_eq!(format!("{:?}", v), format!("{:?}", s));
+    assert_eq!(format!("{:#?}", v), format!("{:#?}", s));
 }
 
 #[test]
@@ -42,14 +42,14 @@ fn test_renderable_struct_from_display() {
     let v = r.as_value();
 
     // Rendering should produce the display output for the struct
-    assert_eq!(r.render_to_string(), format!("{s}"));
+    assert_eq!(r.render_to_string(), s.to_string());
 
     // Just to make sure, the display output should be different for the debug
     // output
-    assert_ne!(r.render_to_string(), format!("{s:?}"));
+    assert_ne!(r.render_to_string(), format!("{:?}", s));
 
     // Writing the value itself as `Debug` should print the same display output
     // as the struct
-    assert_eq!(format!("{v:?}"), format!("{s}"));
-    assert_eq!(format!("{v:#?}"), format!("{s:#}"));
+    assert_eq!(format!("{:?}", v), format!("{}", s));
+    assert_eq!(format!("{:#?}", v), format!("{:#}", s));
 }
