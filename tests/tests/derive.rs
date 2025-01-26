@@ -5,6 +5,7 @@ use valuable::*;
 
 use std::collections::HashMap;
 use std::env;
+use std::fmt::{Debug, Display};
 
 #[test]
 fn test_derive_struct() {
@@ -204,4 +205,73 @@ fn ui() {
 
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/ui/*.rs");
+}
+
+struct NotValuable;
+
+impl Display for NotValuable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Display NotValuable")
+    }
+}
+
+impl Debug for NotValuable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Debug NotValuable")
+    }
+}
+
+#[test]
+fn test_rendering_not_valuable_named() {
+    #[derive(Valuable)]
+    struct S {
+        #[valuable(debug)]
+        debug_struct: NotValuable,
+        #[valuable(display)]
+        display_struct: NotValuable,
+    }
+
+    let s = S {
+        debug_struct: NotValuable,
+        display_struct: NotValuable,
+    };
+
+    let v_s = Structable::definition(&s);
+
+    let fields = match v_s.fields() {
+        Fields::Named(fields) => fields,
+        _ => unreachable!(),
+    };
+    assert_eq!(fields.len(), 2);
+    assert_eq!(
+        fields.iter().map(|f| f.name()).collect::<Vec<_>>(),
+        ["debug_struct", "display_struct"]
+    );
+
+    let v = Valuable::as_value(&s);
+    assert_eq!(
+        format!("{:?}", v),
+        "S { debug_struct: Debug NotValuable, display_struct: Display NotValuable }"
+    );
+}
+
+#[test]
+fn test_rendering_not_valuable_unnamed() {
+    #[derive(Valuable)]
+    struct S(
+        #[valuable(debug)] NotValuable,
+        #[valuable(display)] NotValuable,
+    );
+
+    let s = S(NotValuable, NotValuable);
+
+    let v_s = Structable::definition(&s);
+
+    assert!(matches!(v_s.fields(), Fields::Unnamed(2)));
+
+    let v = Valuable::as_value(&s);
+    assert_eq!(
+        format!("{:?}", v),
+        "S(Debug NotValuable, Display NotValuable)"
+    );
 }
