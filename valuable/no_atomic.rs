@@ -17,7 +17,6 @@ const NO_ATOMIC_CAS: &[&str] = &[
     "thumbv4t-none-eabi",
     "thumbv5te-none-eabi",
     "thumbv6m-none-eabi",
-    "thumbv6m-nuttx-eabi",
     "xtensa-esp32s2-none-elf",
 ];
 
@@ -35,9 +34,12 @@ const NO_ATOMIC_64: &[&str] = &[
     "hexagon-unknown-linux-musl",
     "hexagon-unknown-none-elf",
     "m68k-unknown-linux-gnu",
+    "m68k-unknown-none-elf",
+    "mips-mti-none-elf",
     "mips-unknown-linux-gnu",
     "mips-unknown-linux-musl",
     "mips-unknown-linux-uclibc",
+    "mipsel-mti-none-elf",
     "mipsel-sony-psp",
     "mipsel-unknown-linux-gnu",
     "mipsel-unknown-linux-musl",
