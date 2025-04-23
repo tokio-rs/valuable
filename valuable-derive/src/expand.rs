@@ -102,11 +102,22 @@ fn derive_struct(
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| !field_attrs[*i].skip())
-                .map(|(_, field)| {
+                .map(|(i, field)| {
                     let f = field.ident.as_ref();
-                    let tokens = quote! {
-                        &self.#f
+                    let tokens = if field_attrs[i].debug {
+                        quote! {
+                            &valuable::Renderable::Debug(&self.#f)
+                        }
+                    } else if field_attrs[i].display {
+                        quote! {
+                            &valuable::Renderable::Display(&self.#f)
+                        }
+                    } else {
+                        quote! {
+                            &self.#f
+                        }
                     };
+
                     respan(tokens, &field.ty)
                 });
             visit_fields = quote! {
@@ -126,9 +137,20 @@ fn derive_struct(
                 .filter(|(i, _)| !field_attrs[*i].skip())
                 .map(|(i, field)| {
                     let index = syn::Index::from(i);
-                    let tokens = quote! {
-                        &self.#index
+                    let tokens = if field_attrs[i].debug {
+                        quote! {
+                            &valuable::Renderable::Debug(&self.#index)
+                        }
+                    } else if field_attrs[i].display {
+                        quote! {
+                            &valuable::Renderable::Display(&self.#index)
+                        }
+                    } else {
+                        quote! {
+                            &self.#index
+                        }
                     };
+
                     respan(tokens, &field.ty)
                 })
                 .collect();
