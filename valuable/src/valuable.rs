@@ -299,7 +299,7 @@ impl Valuable for alloc::string::String {
 }
 
 #[cfg(feature = "std")]
-impl Valuable for &std::path::Path {
+impl Valuable for std::path::Path {
     fn as_value(&self) -> Value<'_> {
         Value::Path(self)
     }
