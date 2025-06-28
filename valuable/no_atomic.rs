@@ -4,7 +4,7 @@
 const NO_ATOMIC_CAS: &[&str] = &[
     "armv4t-none-eabi",
     "armv5te-none-eabi",
-    "avr-unknown-gnu-atmega328",
+    "avr-none",
     "bpfeb-unknown-none",
     "bpfel-unknown-none",
     "msp430-none-elf",
@@ -103,7 +103,7 @@ const NO_ATOMIC_64: &[&str] = &[
 ];
 
 const NO_ATOMIC: &[&str] = &[
-    "avr-unknown-gnu-atmega328",
+    "avr-none",
     "bpfeb-unknown-none",
     "bpfel-unknown-none",
     "mipsel-sony-psx",
