@@ -135,6 +135,9 @@ pub use mappable::Mappable;
 mod named_values;
 pub use named_values::NamedValues;
 
+mod renderable;
+pub use renderable::Renderable;
+
 mod slice;
 pub use slice::Slice;
 

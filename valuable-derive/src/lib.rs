@@ -27,6 +27,16 @@ use syn::parse_macro_input;
 ///
 /// Skip the field.
 ///
+/// ## `#[valuable(debug)]`
+///
+/// Include the debug representation of a field instead of interpreting it as
+/// a complete `Valuable`.
+///
+/// ## `#[valuable(display)]`
+///
+/// Include the display representation of a field instead of interpreting it as
+/// a complete `Valuable`.
+///
 /// # Examples
 ///
 /// ```
