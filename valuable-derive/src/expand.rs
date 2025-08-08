@@ -97,43 +97,114 @@ fn derive_struct(
                 )
             };
 
-            let fields = data
+            let field_assignments: Vec<_> = data
                 .fields
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| !field_attrs[*i].skip())
-                .map(|(_, field)| {
+                .enumerate()
+                .map(|(value_idx, (field_idx, field))| {
                     let f = field.ident.as_ref();
-                    let tokens = quote! {
-                        &self.#f
-                    };
-                    respan(tokens, &field.ty)
-                });
-            visit_fields = quote! {
-                visitor.visit_named_fields(&::valuable::NamedValues::new(
-                    #named_fields_static_name,
-                    &[
-                        #(::valuable::Valuable::as_value(#fields),)*
-                    ],
-                ));
-            }
-        }
-        syn::Fields::Unnamed(_) | syn::Fields::Unit => {
-            let indices: Vec<_> = data
-                .fields
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| !field_attrs[*i].skip())
-                .map(|(i, field)| {
-                    let index = syn::Index::from(i);
-                    let tokens = quote! {
-                        &self.#index
-                    };
-                    respan(tokens, &field.ty)
+                    let value_var = format_ident!("value_{}", value_idx);
+
+                    if let Some(with_expr) = field_attrs[field_idx].with() {
+                        quote! {
+                            let #value_var = #with_expr(&self.#f);
+                        }
+                    } else {
+                        quote! {
+                            let #value_var = {
+                                use ::valuable::Valuable;
+                                self.#f.as_value()
+                            };
+                        }
+                    }
                 })
                 .collect();
 
-            let len = indices.len();
+            let field_values: Vec<_> = data
+                .fields
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !field_attrs[*i].skip())
+                .enumerate()
+                .map(|(value_idx, (field_idx, _field))| {
+                    let value_var = format_ident!("value_{}", value_idx);
+
+                    if field_attrs[field_idx].with().is_some() {
+                        quote! {
+                            {
+                                use ::valuable::Valuable;
+                                #value_var.as_value()
+                            }
+                        }
+                    } else {
+                        quote! { #value_var }
+                    }
+                })
+                .collect();
+
+            visit_fields = quote! {
+                {
+                    #(#field_assignments)*
+                    let values = [#(#field_values),*];
+                    visitor.visit_named_fields(&::valuable::NamedValues::new(
+                        #named_fields_static_name,
+                        &values,
+                    ));
+                }
+            }
+        }
+        syn::Fields::Unnamed(_) | syn::Fields::Unit => {
+            let field_assignments: Vec<_> = data
+                .fields
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !field_attrs[*i].skip())
+                .enumerate()
+                .map(|(value_idx, (field_idx, field))| {
+                    let index = syn::Index::from(field_idx);
+                    let value_var = format_ident!("value_{}", value_idx);
+
+                    if let Some(with_expr) = field_attrs[field_idx].with() {
+                        quote! {
+                            let #value_var = #with_expr(&self.#index);
+                        }
+                    } else {
+                        let tokens = quote! {
+                            let #value_var = {
+                                use ::valuable::Valuable;
+                                self.#index.as_value()
+                            };
+                        };
+                        respan(tokens, &field.ty)
+                    }
+                })
+                .collect();
+
+            let field_values: Vec<_> = data
+                .fields
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !field_attrs[*i].skip())
+                .enumerate()
+                .map(|(value_idx, (field_idx, _field))| {
+                    let value_var = format_ident!("value_{}", value_idx);
+
+                    if field_attrs[field_idx].with().is_some() {
+                        quote! {
+                            {
+                                use ::valuable::Valuable;
+                                #value_var.as_value()
+                            }
+                        }
+                    } else {
+                        quote! { #value_var }
+                    }
+                })
+                .collect();
+
+            let len = field_assignments.len();
             struct_def = quote! {
                 ::valuable::StructDef::new_static(
                     #name_literal,
@@ -142,11 +213,11 @@ fn derive_struct(
             };
 
             visit_fields = quote! {
-                visitor.visit_unnamed_fields(
-                    &[
-                        #(::valuable::Valuable::as_value(#indices),)*
-                    ],
-                );
+                {
+                    #(#field_assignments)*
+                    let values = [#(#field_values),*];
+                    visitor.visit_unnamed_fields(&values);
+                }
             };
         }
     }
@@ -242,35 +313,55 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                 });
 
                 let mut fields = Vec::with_capacity(variant.fields.len());
-                let mut as_value = Vec::with_capacity(variant.fields.len());
-                for (_, field) in variant
+                let mut field_assignments = Vec::new();
+                let mut field_values = Vec::new();
+
+                for (value_idx, (field_idx, field)) in variant
                     .fields
                     .iter()
                     .enumerate()
                     .filter(|(i, _)| !field_attrs[variant_index][*i].skip())
+                    .enumerate()
                 {
                     let f = field.ident.as_ref();
                     fields.push(f);
-                    let tokens = quote! {
-                        // HACK(taiki-e): This `&` is not actually needed to calling as_value,
-                        // but is needed to emulate multi-token span on stable Rust.
-                        &#f
-                    };
-                    as_value.push(respan(tokens, &field.ty));
+                    let value_var = format_ident!("value_{}", value_idx);
+
+                    if let Some(with_expr) = field_attrs[variant_index][field_idx].with() {
+                        field_assignments.push(quote! {
+                            let #value_var = #with_expr(#f);
+                        });
+                        field_values.push(quote! {
+                            {
+                                use ::valuable::Valuable;
+                                #value_var.as_value()
+                            }
+                        });
+                    } else {
+                        field_assignments.push(quote! {
+                            let #value_var = {
+                                use ::valuable::Valuable;
+                                #f.as_value()
+                            };
+                        });
+                        field_values.push(quote! { #value_var });
+                    }
                 }
+
                 let skipped = if fields.len() == variant.fields.len() {
                     quote! {}
                 } else {
                     quote!(..)
                 };
+
                 visit_variants.push(quote! {
                     Self::#variant_name { #(#fields,)* #skipped } => {
+                        #(#field_assignments)*
+                        let values = [#(#field_values),*];
                         visitor.visit_named_fields(
                             &::valuable::NamedValues::new(
                                 #named_fields_static_name,
-                                &[
-                                    #(::valuable::Valuable::as_value(#as_value),)*
-                                ],
+                                &values,
                             ),
                         );
                     }
@@ -286,22 +377,42 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                 let bindings: Vec<_> = (0..variant.fields.len())
                     .map(|i| format_ident!("__binding_{}", i))
                     .collect();
-                let as_value: Vec<_> = bindings
+
+                let mut field_assignments = Vec::new();
+                let mut field_values = Vec::new();
+
+                for (value_idx, (field_idx, (binding, field))) in bindings
                     .iter()
                     .zip(&variant.fields)
                     .enumerate()
                     .filter(|(i, _)| !field_attrs[variant_index][*i].skip())
-                    .map(|(_, (binding, field))| {
-                        let tokens = quote! {
-                            // HACK(taiki-e): This `&` is not actually needed to calling as_value,
-                            // but is needed to emulate multi-token span on stable Rust.
-                            &#binding
-                        };
-                        respan(tokens, &field.ty)
-                    })
-                    .collect();
+                    .enumerate()
+                {
+                    let value_var = format_ident!("value_{}", value_idx);
 
-                let len = as_value.len();
+                    if let Some(with_expr) = field_attrs[variant_index][field_idx].with() {
+                        field_assignments.push(quote! {
+                            let #value_var = #with_expr(#binding);
+                        });
+                        field_values.push(quote! {
+                            {
+                                use ::valuable::Valuable;
+                                #value_var.as_value()
+                            }
+                        });
+                    } else {
+                        let tokens = quote! {
+                            let #value_var = {
+                                use ::valuable::Valuable;
+                                #binding.as_value()
+                            };
+                        };
+                        field_assignments.push(respan(tokens, &field.ty));
+                        field_values.push(quote! { #value_var });
+                    }
+                }
+
+                let len = field_assignments.len();
                 variant_defs.push(quote! {
                     ::valuable::VariantDef::new(
                         #variant_name_literal,
@@ -311,11 +422,9 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
 
                 visit_variants.push(quote! {
                     Self::#variant_name(#(#bindings),*) => {
-                        visitor.visit_unnamed_fields(
-                            &[
-                                #(::valuable::Valuable::as_value(#as_value),)*
-                            ],
-                        );
+                        #(#field_assignments)*
+                        let values = [#(#field_values),*];
+                        visitor.visit_unnamed_fields(&values);
                     }
                 });
             }
