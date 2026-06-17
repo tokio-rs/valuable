@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Error, Ident, Result};
 
-use crate::attr::{parse_attrs, Attrs, Context, Position};
+use crate::attr::{parse_attrs, Attrs, Context, Mask, Position};
 
 pub(crate) fn derive_valuable(input: &mut syn::DeriveInput) -> TokenStream {
     let cx = Context::default();
@@ -97,43 +97,42 @@ fn derive_struct(
                 )
             };
 
-            let fields = data
+            let as_values: Vec<_> = data
                 .fields
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| !field_attrs[*i].skip())
-                .map(|(_, field)| {
+                .map(|(i, field)| {
                     let f = field.ident.as_ref();
-                    let tokens = quote! {
-                        &self.#f
-                    };
-                    respan(tokens, &field.ty)
-                });
+                    let field_ref = quote! { &self.#f };
+                    let field_ref = respan(field_ref, &field.ty);
+                    field_as_value(field_ref, &field_attrs[i])
+                })
+                .collect();
             visit_fields = quote! {
                 visitor.visit_named_fields(&::valuable::NamedValues::new(
                     #named_fields_static_name,
                     &[
-                        #(::valuable::Valuable::as_value(#fields),)*
+                        #(#as_values,)*
                     ],
                 ));
             }
         }
         syn::Fields::Unnamed(_) | syn::Fields::Unit => {
-            let indices: Vec<_> = data
+            let as_values: Vec<_> = data
                 .fields
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| !field_attrs[*i].skip())
                 .map(|(i, field)| {
                     let index = syn::Index::from(i);
-                    let tokens = quote! {
-                        &self.#index
-                    };
-                    respan(tokens, &field.ty)
+                    let field_ref = quote! { &self.#index };
+                    let field_ref = respan(field_ref, &field.ty);
+                    field_as_value(field_ref, &field_attrs[i])
                 })
                 .collect();
 
-            let len = indices.len();
+            let len = as_values.len();
             struct_def = quote! {
                 ::valuable::StructDef::new_static(
                     #name_literal,
@@ -144,7 +143,7 @@ fn derive_struct(
             visit_fields = quote! {
                 visitor.visit_unnamed_fields(
                     &[
-                        #(::valuable::Valuable::as_value(#indices),)*
+                        #(#as_values,)*
                     ],
                 );
             };
@@ -243,7 +242,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
 
                 let mut fields = Vec::with_capacity(variant.fields.len());
                 let mut as_value = Vec::with_capacity(variant.fields.len());
-                for (_, field) in variant
+                for (i, field) in variant
                     .fields
                     .iter()
                     .enumerate()
@@ -251,12 +250,13 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                 {
                     let f = field.ident.as_ref();
                     fields.push(f);
-                    let tokens = quote! {
+                    let field_ref = quote! {
                         // HACK(taiki-e): This `&` is not actually needed to calling as_value,
                         // but is needed to emulate multi-token span on stable Rust.
                         &#f
                     };
-                    as_value.push(respan(tokens, &field.ty));
+                    let field_ref = respan(field_ref, &field.ty);
+                    as_value.push(field_as_value(field_ref, &field_attrs[variant_index][i]));
                 }
                 let skipped = if fields.len() == variant.fields.len() {
                     quote! {}
@@ -269,7 +269,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                             &::valuable::NamedValues::new(
                                 #named_fields_static_name,
                                 &[
-                                    #(::valuable::Valuable::as_value(#as_value),)*
+                                    #(#as_value,)*
                                 ],
                             ),
                         );
@@ -291,13 +291,14 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                     .zip(&variant.fields)
                     .enumerate()
                     .filter(|(i, _)| !field_attrs[variant_index][*i].skip())
-                    .map(|(_, (binding, field))| {
-                        let tokens = quote! {
+                    .map(|(i, (binding, field))| {
+                        let field_ref = quote! {
                             // HACK(taiki-e): This `&` is not actually needed to calling as_value,
                             // but is needed to emulate multi-token span on stable Rust.
                             &#binding
                         };
-                        respan(tokens, &field.ty)
+                        let field_ref = respan(field_ref, &field.ty);
+                        field_as_value(field_ref, &field_attrs[variant_index][i])
                     })
                     .collect();
 
@@ -313,7 +314,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                     Self::#variant_name(#(#bindings),*) => {
                         visitor.visit_unnamed_fields(
                             &[
-                                #(::valuable::Valuable::as_value(#as_value),)*
+                                #(#as_value,)*
                             ],
                         );
                     }
@@ -394,6 +395,21 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
             #valuable_impl
         };
     })
+}
+
+/// Generates the `as_value` call for a field, applying mask if present.
+fn field_as_value(field_ref: TokenStream, attrs: &Attrs) -> TokenStream {
+    match attrs.mask() {
+        Some(Mask::Default) => quote! {
+            ::valuable::Valuable::as_value(&"<redacted>")
+        },
+        Some(Mask::Custom(path)) => quote! {
+            ::valuable::Valuable::as_value(&#path(#field_ref))
+        },
+        None => quote! {
+            ::valuable::Valuable::as_value(#field_ref)
+        },
+    }
 }
 
 // `static <name>: &[NamedField<'static>] = &[ ... ];`

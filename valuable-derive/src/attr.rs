@@ -33,7 +33,7 @@ static ATTRS: &[AttrDef] = &[
     // #[valuable(skip)]
     AttrDef {
         name: "skip",
-        conflicts_with: &["rename"],
+        conflicts_with: &["rename", "mask"],
         position: &[
             // TODO: How do we implement Enumerable::variant and Valuable::as_value if a variant is skipped?
             // Position::Variant,
@@ -42,12 +42,28 @@ static ATTRS: &[AttrDef] = &[
         ],
         style: &[MetaStyle::Ident],
     },
+    // #[valuable(mask)] or #[valuable(mask = "...")]
+    AttrDef {
+        name: "mask",
+        conflicts_with: &["skip"],
+        position: &[Position::NamedField, Position::UnnamedField],
+        style: &[MetaStyle::Ident, MetaStyle::NameValue],
+    },
 ];
+
+#[derive(Debug)]
+pub(crate) enum Mask {
+    /// `#[valuable(mask)]` — use default mask string `"***"`
+    Default,
+    /// `#[valuable(mask = "path::to::fn")]` — use custom mask function
+    Custom(syn::Path),
+}
 
 pub(crate) struct Attrs {
     rename: Option<(syn::MetaNameValue, syn::LitStr)>,
     transparent: Option<Span>,
     skip: Option<Span>,
+    mask: Option<Mask>,
 }
 
 impl Attrs {
@@ -65,12 +81,17 @@ impl Attrs {
     pub(crate) fn skip(&self) -> bool {
         self.skip.is_some()
     }
+
+    pub(crate) fn mask(&self) -> Option<&Mask> {
+        self.mask.as_ref()
+    }
 }
 
 pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position) -> Attrs {
     let mut rename = None;
     let mut transparent = None;
     let mut skip = None;
+    let mut mask = None;
 
     let attrs = filter_attrs(cx, attrs, pos);
     for (def, meta) in &attrs {
@@ -104,6 +125,34 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
             "transparent" => transparent = Some(meta.span()),
             // #[valuable(skip)]
             "skip" => skip = Some(meta.span()),
+            // #[valuable(mask)] or #[valuable(mask = "...")]
+            "mask" => match meta {
+                Meta::Path(_) => {
+                    mask = Some(Mask::Default);
+                }
+                Meta::NameValue(m) => {
+                    let lit = match &m.value {
+                        syn::Expr::Lit(syn::ExprLit {
+                            lit: syn::Lit::Str(l),
+                            ..
+                        }) => l,
+                        l => {
+                            cx.error(format_err!(l, "expected string literal"));
+                            continue;
+                        }
+                    };
+                    match lit.parse::<syn::Path>() {
+                        Ok(path) => {
+                            mask = Some(Mask::Custom(path));
+                        }
+                        Err(e) => {
+                            cx.error(format_err!(lit, "expected valid path: {}", e));
+                            continue;
+                        }
+                    }
+                }
+                _ => unreachable!(),
+            },
 
             _ => unreachable!("{}", def.name),
         }
@@ -113,6 +162,7 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
         rename,
         transparent,
         skip,
+        mask,
     }
 }
 

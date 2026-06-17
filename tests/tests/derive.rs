@@ -194,6 +194,86 @@ fn test_transparent() {
     assert!(matches!(Valuable::as_value(&T('a')), Value::Char('a')));
 }
 
+#[test]
+fn test_mask_default_struct() {
+    #[derive(Valuable)]
+    struct User {
+        name: &'static str,
+        #[valuable(mask)]
+        password: &'static str,
+    }
+
+    #[derive(Valuable)]
+    struct Tuple(#[valuable(mask)] &'static str);
+
+    let v = User {
+        name: "alice",
+        password: "secret123",
+    };
+    assert_eq!(
+        format!("{:?}", v.as_value()),
+        r#"User { name: "alice", password: "<redacted>" }"#
+    );
+
+    let v = Tuple("hidden");
+    assert_eq!(format!("{:?}", v.as_value()), r#"Tuple("<redacted>")"#);
+}
+
+#[test]
+fn test_mask_custom_fn_struct() {
+    fn mask_email(email: &&str) -> String {
+        if let Some(at) = email.find('@') {
+            format!("{}...{}", &email[..1], &email[at..])
+        } else {
+            "***".to_string()
+        }
+    }
+
+    #[derive(Valuable)]
+    struct Contact {
+        name: &'static str,
+        #[valuable(mask = "mask_email")]
+        email: &'static str,
+    }
+
+    let v = Contact {
+        name: "bob",
+        email: "bob@example.com",
+    };
+    assert_eq!(
+        format!("{:?}", v.as_value()),
+        r#"Contact { name: "bob", email: "b...@example.com" }"#
+    );
+}
+
+#[test]
+fn test_mask_enum() {
+    #[derive(Valuable)]
+    enum Event {
+        Login {
+            user: &'static str,
+            #[valuable(mask)]
+            token: &'static str,
+        },
+        Data(#[valuable(mask)] &'static str),
+    }
+
+    let v = Event::Login {
+        user: "alice",
+        token: "abc123",
+    };
+    assert_eq!(
+        format!("{:?}", v.as_value()),
+        r#"Event::Login { user: "alice", token: "<redacted>" }"#
+    );
+
+    let v = Event::Data("sensitive");
+    assert_eq!(
+        format!("{:?}", v.as_value()),
+        r#"Event::Data("<redacted>")"#
+    );
+}
+
 #[rustversion::attr(not(stable), ignore)]
 #[test]
 fn ui() {
