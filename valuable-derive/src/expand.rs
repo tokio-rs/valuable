@@ -1,8 +1,15 @@
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{Error, Ident, Result};
+use syn::{Error, Ident, Path, Result};
 
 use crate::attr::{parse_attrs, Attrs, Context, Position};
+
+fn crate_path(attrs: &Attrs) -> Path {
+    attrs
+        .crate_path()
+        .cloned()
+        .unwrap_or_else(|| syn::parse_quote!(::valuable))
+}
 
 pub(crate) fn derive_valuable(input: &mut syn::DeriveInput) -> TokenStream {
     let cx = Context::default();
@@ -44,6 +51,7 @@ fn derive_struct(
 
     let name = &input.ident;
     let name_literal = struct_attrs.rename(name);
+    let valuable = crate_path(&struct_attrs);
 
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let allowed_lints = allowed_lints();
@@ -57,13 +65,13 @@ fn derive_struct(
         let access = respan(quote! { &self.#access }, &field.ty);
         let valuable_impl = quote! {
             #[automatically_derived]
-            impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
-                fn as_value(&self) -> ::valuable::Value<'_> {
-                    ::valuable::Valuable::as_value(#access)
+            impl #impl_generics #valuable::Valuable for #name #ty_generics #where_clause {
+                fn as_value(&self) -> #valuable::Value<'_> {
+                    #valuable::Valuable::as_value(#access)
                 }
 
-                fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
-                    ::valuable::Valuable::visit(#access, visitor);
+                fn visit(&self, visitor: &mut dyn #valuable::Visit) {
+                    #valuable::Valuable::visit(#access, visitor);
                 }
             }
         };
@@ -88,12 +96,13 @@ fn derive_struct(
                 &named_fields_static_name,
                 &data.fields,
                 &field_attrs,
+                &valuable,
             ));
 
             struct_def = quote! {
-                ::valuable::StructDef::new_static(
+                #valuable::StructDef::new_static(
                     #name_literal,
-                    ::valuable::Fields::Named(#named_fields_static_name),
+                    #valuable::Fields::Named(#named_fields_static_name),
                 )
             };
 
@@ -110,10 +119,10 @@ fn derive_struct(
                     respan(tokens, &field.ty)
                 });
             visit_fields = quote! {
-                visitor.visit_named_fields(&::valuable::NamedValues::new(
+                visitor.visit_named_fields(&#valuable::NamedValues::new(
                     #named_fields_static_name,
                     &[
-                        #(::valuable::Valuable::as_value(#fields),)*
+                        #(#valuable::Valuable::as_value(#fields),)*
                     ],
                 ));
             }
@@ -135,16 +144,16 @@ fn derive_struct(
 
             let len = indices.len();
             struct_def = quote! {
-                ::valuable::StructDef::new_static(
+                #valuable::StructDef::new_static(
                     #name_literal,
-                    ::valuable::Fields::Unnamed(#len),
+                    #valuable::Fields::Unnamed(#len),
                 )
             };
 
             visit_fields = quote! {
                 visitor.visit_unnamed_fields(
                     &[
-                        #(::valuable::Valuable::as_value(#indices),)*
+                        #(#valuable::Valuable::as_value(#indices),)*
                     ],
                 );
             };
@@ -153,8 +162,8 @@ fn derive_struct(
 
     let structable_impl = quote! {
         #[automatically_derived]
-        impl #impl_generics ::valuable::Structable for #name #ty_generics #where_clause {
-            fn definition(&self) -> ::valuable::StructDef<'_> {
+        impl #impl_generics #valuable::Structable for #name #ty_generics #where_clause {
+            fn definition(&self) -> #valuable::StructDef<'_> {
                 #struct_def
             }
         }
@@ -162,12 +171,12 @@ fn derive_struct(
 
     let valuable_impl = quote! {
         #[automatically_derived]
-        impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
-            fn as_value(&self) -> ::valuable::Value<'_> {
-                ::valuable::Value::Structable(self)
+        impl #impl_generics #valuable::Valuable for #name #ty_generics #where_clause {
+            fn as_value(&self) -> #valuable::Value<'_> {
+                #valuable::Value::Structable(self)
             }
 
-            fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
+            fn visit(&self, visitor: &mut dyn #valuable::Visit) {
                 #visit_fields
             }
         }
@@ -204,6 +213,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
 
     let name = &input.ident;
     let name_literal = enum_attrs.rename(name);
+    let valuable = crate_path(&enum_attrs);
 
     // <enum>_VARIANTS
     let variants_static_name = format_ident!("{}_VARIANTS", input.ident);
@@ -226,18 +236,19 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                     &named_fields_static_name,
                     &variant.fields,
                     &field_attrs[variant_index],
+                    &valuable,
                 ));
 
                 variant_defs.push(quote! {
-                    ::valuable::VariantDef::new(
+                    #valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::Fields::Named(#named_fields_static_name),
+                        #valuable::Fields::Named(#named_fields_static_name),
                     ),
                 });
 
                 variant_fn.push(quote! {
                     Self::#variant_name { .. } => {
-                        ::valuable::Variant::Static(&#variants_static_name[#variant_index])
+                        #valuable::Variant::Static(&#variants_static_name[#variant_index])
                     }
                 });
 
@@ -266,10 +277,10 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                 visit_variants.push(quote! {
                     Self::#variant_name { #(#fields,)* #skipped } => {
                         visitor.visit_named_fields(
-                            &::valuable::NamedValues::new(
+                            &#valuable::NamedValues::new(
                                 #named_fields_static_name,
                                 &[
-                                    #(::valuable::Valuable::as_value(#as_value),)*
+                                    #(#valuable::Valuable::as_value(#as_value),)*
                                 ],
                             ),
                         );
@@ -279,7 +290,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
             syn::Fields::Unnamed(_) => {
                 variant_fn.push(quote! {
                     Self::#variant_name(..) => {
-                        ::valuable::Variant::Static(&#variants_static_name[#variant_index])
+                        #valuable::Variant::Static(&#variants_static_name[#variant_index])
                     }
                 });
 
@@ -303,9 +314,9 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
 
                 let len = as_value.len();
                 variant_defs.push(quote! {
-                    ::valuable::VariantDef::new(
+                    #valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::Fields::Unnamed(#len),
+                        #valuable::Fields::Unnamed(#len),
                     ),
                 });
 
@@ -313,7 +324,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
                     Self::#variant_name(#(#bindings),*) => {
                         visitor.visit_unnamed_fields(
                             &[
-                                #(::valuable::Valuable::as_value(#as_value),)*
+                                #(#valuable::Valuable::as_value(#as_value),)*
                             ],
                         );
                     }
@@ -321,15 +332,15 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
             }
             syn::Fields::Unit => {
                 variant_defs.push(quote! {
-                    ::valuable::VariantDef::new(
+                    #valuable::VariantDef::new(
                         #variant_name_literal,
-                        ::valuable::Fields::Unnamed(0),
+                        #valuable::Fields::Unnamed(0),
                     ),
                 });
 
                 variant_fn.push(quote! {
                     Self::#variant_name => {
-                        ::valuable::Variant::Static(&#variants_static_name[#variant_index])
+                        #valuable::Variant::Static(&#variants_static_name[#variant_index])
                     }
                 });
 
@@ -345,7 +356,7 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
     }
 
     let variants_static = quote! {
-        static #variants_static_name: &[::valuable::VariantDef<'static>] = &[
+        static #variants_static_name: &[#valuable::VariantDef<'static>] = &[
             #(#variant_defs)*
         ];
     };
@@ -353,15 +364,15 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let enumerable_impl = quote! {
         #[automatically_derived]
-        impl #impl_generics ::valuable::Enumerable for #name #ty_generics #where_clause {
-            fn definition(&self) -> ::valuable::EnumDef<'_> {
-                ::valuable::EnumDef::new_static(
+        impl #impl_generics #valuable::Enumerable for #name #ty_generics #where_clause {
+            fn definition(&self) -> #valuable::EnumDef<'_> {
+                #valuable::EnumDef::new_static(
                     #name_literal,
                     #variants_static_name,
                 )
             }
 
-            fn variant(&self) -> ::valuable::Variant<'_> {
+            fn variant(&self) -> #valuable::Variant<'_> {
                 match self {
                     #(#variant_fn)*
                 }
@@ -371,12 +382,12 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
 
     let valuable_impl = quote! {
         #[automatically_derived]
-        impl #impl_generics ::valuable::Valuable for #name #ty_generics #where_clause {
-            fn as_value(&self) -> ::valuable::Value<'_> {
-                ::valuable::Value::Enumerable(self)
+        impl #impl_generics #valuable::Valuable for #name #ty_generics #where_clause {
+            fn as_value(&self) -> #valuable::Value<'_> {
+                #valuable::Value::Enumerable(self)
             }
 
-            fn visit(&self, visitor: &mut dyn ::valuable::Visit) {
+            fn visit(&self, visitor: &mut dyn #valuable::Visit) {
                 match self {
                     #(#visit_variants)*
                 }
@@ -397,7 +408,12 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
 }
 
 // `static <name>: &[NamedField<'static>] = &[ ... ];`
-fn named_fields_static(name: &Ident, fields: &syn::Fields, field_attrs: &[Attrs]) -> TokenStream {
+fn named_fields_static(
+    name: &Ident,
+    fields: &syn::Fields,
+    field_attrs: &[Attrs],
+    valuable: &Path,
+) -> TokenStream {
     debug_assert!(matches!(fields, syn::Fields::Named(..)));
     let named_fields = fields
         .iter()
@@ -406,11 +422,11 @@ fn named_fields_static(name: &Ident, fields: &syn::Fields, field_attrs: &[Attrs]
         .map(|(i, field)| {
             let field_name_literal = field_attrs[i].rename(field.ident.as_ref().unwrap());
             quote! {
-                ::valuable::NamedField::new(#field_name_literal),
+                #valuable::NamedField::new(#field_name_literal),
             }
         });
     quote! {
-        static #name: &[::valuable::NamedField<'static>] = &[
+        static #name: &[#valuable::NamedField<'static>] = &[
             #(#named_fields)*
         ];
     }

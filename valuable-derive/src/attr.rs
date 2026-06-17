@@ -42,12 +42,20 @@ static ATTRS: &[AttrDef] = &[
         ],
         style: &[MetaStyle::Ident],
     },
+    // #[valuable(crate = "...")]
+    AttrDef {
+        name: "crate",
+        conflicts_with: &[],
+        position: &[Position::Struct, Position::Enum],
+        style: &[MetaStyle::NameValue],
+    },
 ];
 
 pub(crate) struct Attrs {
     rename: Option<(syn::MetaNameValue, syn::LitStr)>,
     transparent: Option<Span>,
     skip: Option<Span>,
+    crate_path: Option<(syn::MetaNameValue, syn::Path)>,
 }
 
 impl Attrs {
@@ -65,12 +73,17 @@ impl Attrs {
     pub(crate) fn skip(&self) -> bool {
         self.skip.is_some()
     }
+
+    pub(crate) fn crate_path(&self) -> Option<&syn::Path> {
+        self.crate_path.as_ref().map(|(_, p)| p)
+    }
 }
 
 pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position) -> Attrs {
     let mut rename = None;
     let mut transparent = None;
     let mut skip = None;
+    let mut crate_path = None;
 
     let attrs = filter_attrs(cx, attrs, pos);
     for (def, meta) in &attrs {
@@ -94,6 +107,34 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
             }};
         }
 
+        macro_rules! lit_str_path {
+            ($field:ident) => {{
+                let m = match meta {
+                    Meta::NameValue(m) => m,
+                    _ => unreachable!(),
+                };
+                let lit = match &m.value {
+                    syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(l),
+                        ..
+                    }) => l,
+                    l => {
+                        cx.error(format_err!(l, "expected string literal"));
+                        continue;
+                    }
+                };
+                match lit.parse::<syn::Path>() {
+                    Ok(path) => {
+                        $field = Some((m.clone(), path));
+                    }
+                    Err(e) => {
+                        cx.error(format_err!(lit, "expected valid path: {}", e));
+                        continue;
+                    }
+                }
+            }};
+        }
+
         if def.late_check(cx, &attrs) {
             continue;
         }
@@ -104,6 +145,8 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
             "transparent" => transparent = Some(meta.span()),
             // #[valuable(skip)]
             "skip" => skip = Some(meta.span()),
+            // #[valuable(crate = "...")]
+            "crate" => lit_str_path!(crate_path),
 
             _ => unreachable!("{}", def.name),
         }
@@ -113,6 +156,7 @@ pub(crate) fn parse_attrs(cx: &Context, attrs: &[syn::Attribute], pos: Position)
         rename,
         transparent,
         skip,
+        crate_path,
     }
 }
 
