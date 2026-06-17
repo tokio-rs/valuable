@@ -27,6 +27,15 @@ use syn::parse_macro_input;
 ///
 /// Skip the field.
 ///
+/// ## `#[valuable(mask)]`
+///
+/// Mask the field value with `"<redacted>"` to hide sensitive data.
+///
+/// ## `#[valuable(mask = "...")]`
+///
+/// Mask the field value using a custom function. The function receives
+/// a reference to the field and should return a value that implements `Valuable`.
+///
 /// # Examples
 ///
 /// ```
@@ -41,6 +50,14 @@ use syn::parse_macro_input;
 /// enum Message {
 ///     HelloWorld,
 ///     Custom(String),
+/// }
+///
+/// // Mask sensitive fields
+/// #[derive(Valuable)]
+/// struct User {
+///     name: String,
+///     #[valuable(mask)]
+///     password: String,
 /// }
 /// ```
 #[proc_macro_derive(Valuable, attributes(valuable))]
