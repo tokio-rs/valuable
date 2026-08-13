@@ -107,15 +107,7 @@
 //! [`valuable_serde::Serializable`]: https://docs.rs/valuable-serde/latest/valuable_serde/struct.Serializable.html
 //! [`serde::ser::Serializer`]:  https://docs.rs/serde/latest/serde/ser/trait.Serializer.html
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg, doc_cfg_hide))]
-#![cfg_attr(
-    docsrs,
-    doc(cfg_hide(
-        not(valuable_no_atomic_cas),
-        not(valuable_no_atomic),
-        not(valuable_no_atomic_64)
-    ))
-)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

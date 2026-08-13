@@ -14,6 +14,7 @@ const NO_ATOMIC_CAS: &[&str] = &[
     "riscv32i-unknown-none-elf",
     "riscv32im-unknown-none-elf",
     "riscv32imc-unknown-none-elf",
+    "riscv64im-unknown-none-elf",
     "thumbv4t-none-eabi",
     "thumbv5te-none-eabi",
     "thumbv6m-none-eabi",
@@ -22,9 +23,7 @@ const NO_ATOMIC_CAS: &[&str] = &[
 
 const NO_ATOMIC_64: &[&str] = &[
     "arm-linux-androideabi",
-    "armv4t-none-eabi",
     "armv4t-unknown-linux-gnueabi",
-    "armv5te-none-eabi",
     "armv5te-unknown-linux-gnueabi",
     "armv5te-unknown-linux-musleabi",
     "armv5te-unknown-linux-uclibceabi",
@@ -33,6 +32,9 @@ const NO_ATOMIC_64: &[&str] = &[
     "csky-unknown-linux-gnuabiv2hf",
     "hexagon-unknown-linux-musl",
     "hexagon-unknown-none-elf",
+    "hexagon-unknown-qurt",
+    "loongarch32-unknown-none",
+    "loongarch32-unknown-none-softfloat",
     "m68k-unknown-linux-gnu",
     "m68k-unknown-none-elf",
     "mips-mti-none-elf",
@@ -49,6 +51,7 @@ const NO_ATOMIC_64: &[&str] = &[
     "mipsisa32r6-unknown-linux-gnu",
     "mipsisa32r6el-unknown-linux-gnu",
     "powerpc-unknown-freebsd",
+    "powerpc-unknown-helenos",
     "powerpc-unknown-linux-gnu",
     "powerpc-unknown-linux-gnuspe",
     "powerpc-unknown-linux-musl",
@@ -78,8 +81,7 @@ const NO_ATOMIC_64: &[&str] = &[
     "riscv32imc-unknown-nuttx-elf",
     "sparc-unknown-linux-gnu",
     "sparc-unknown-none-elf",
-    "thumbv4t-none-eabi",
-    "thumbv5te-none-eabi",
+    "thumbv6-none-eabi",
     "thumbv6m-none-eabi",
     "thumbv6m-nuttx-eabi",
     "thumbv7em-none-eabi",
@@ -103,9 +105,13 @@ const NO_ATOMIC_64: &[&str] = &[
 ];
 
 const NO_ATOMIC: &[&str] = &[
+    "armv4t-none-eabi",
+    "armv5te-none-eabi",
     "avr-none",
     "bpfeb-unknown-none",
     "bpfel-unknown-none",
     "mipsel-sony-psx",
     "msp430-none-elf",
+    "thumbv4t-none-eabi",
+    "thumbv5te-none-eabi",
 ];

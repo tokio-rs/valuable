@@ -194,6 +194,44 @@ fn test_transparent() {
     assert!(matches!(Valuable::as_value(&T('a')), Value::Char('a')));
 }
 
+#[test]
+fn test_derive_generic() {
+    #[derive(Valuable)]
+    struct GenericStruct<T> {
+        value: T,
+    }
+
+    #[derive(Valuable)]
+    struct MultiGeneric<T, U> {
+        first: T,
+        second: U,
+    }
+
+    #[derive(Valuable)]
+    enum GenericEnum<T> {
+        Value(T),
+        Empty,
+    }
+
+    let s = GenericStruct { value: 42u32 };
+    assert_eq!(format!("{:?}", s.as_value()), "GenericStruct { value: 42 }");
+
+    let m = MultiGeneric {
+        first: 1u8,
+        second: "hello",
+    };
+    assert_eq!(
+        format!("{:?}", m.as_value()),
+        r#"MultiGeneric { first: 1, second: "hello" }"#
+    );
+
+    let e = GenericEnum::Value(true);
+    assert_eq!(format!("{:?}", e.as_value()), "GenericEnum::Value(true)");
+
+    let e: GenericEnum<u32> = GenericEnum::Empty;
+    assert_eq!(format!("{:?}", e.as_value()), "GenericEnum::Empty");
+}
+
 #[rustversion::attr(not(stable), ignore)]
 #[test]
 fn ui() {

@@ -45,7 +45,15 @@ fn derive_struct(
     let name = &input.ident;
     let name_literal = struct_attrs.rename(name);
 
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let mut generics = input.generics.clone();
+    for type_param in input.generics.type_params() {
+        let ident = &type_param.ident;
+        generics
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote!(#ident: ::valuable::Valuable));
+    }
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let allowed_lints = allowed_lints();
 
     if struct_attrs.transparent() {
@@ -350,7 +358,15 @@ fn derive_enum(cx: Context, input: &syn::DeriveInput, data: &syn::DataEnum) -> R
         ];
     };
 
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let mut generics = input.generics.clone();
+    for type_param in input.generics.type_params() {
+        let ident = &type_param.ident;
+        generics
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote!(#ident: ::valuable::Valuable));
+    }
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let enumerable_impl = quote! {
         #[automatically_derived]
         impl #impl_generics ::valuable::Enumerable for #name #ty_generics #where_clause {
