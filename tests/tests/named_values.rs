@@ -34,6 +34,24 @@ fn test_get() {
 }
 
 #[test]
+fn test_get_empty() {
+    let f = [NamedField::new("a")];
+    let v = NamedValues::new(&[], &[]);
+
+    assert!(v.get(&f[0]).is_none());
+}
+
+#[test]
+fn test_get_field_before_fields() {
+    let f = [NamedField::new("a"), NamedField::new("b")];
+    let v = NamedValues::new(&f[1..], &[Value::I32(2)]);
+
+    // `f[0]` lives below the start of the slice backing `v`.
+    assert!(v.get(&f[0]).is_none());
+    assert!(matches!(v.get(&f[1]), Some(Value::I32(v)) if *v == 2));
+}
+
+#[test]
 fn test_get_by_name() {
     let f = [NamedField::new("a"), NamedField::new("b")];
     let v = NamedValues::new(&f, &[Value::I32(1), Value::I32(2)]);
