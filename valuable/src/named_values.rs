@@ -72,9 +72,17 @@ impl<'a> NamedValues<'a> {
     pub fn get(&self, field: &NamedField<'_>) -> Option<&Value<'_>> {
         use core::mem;
 
-        let idx = (field as *const _ as usize - &self.fields[0] as *const _ as usize)
-            / mem::size_of::<NamedField<'_>>();
-        self.values.get(idx)
+        let size = mem::size_of::<NamedField<'_>>();
+        let start = self.fields.as_ptr() as usize;
+        let addr = field as *const NamedField<'_> as usize;
+
+        // A reference that does not point into `self.fields` has no value, even
+        // when `self.fields` is empty or the address is below its start.
+        if addr < start || (addr - start) % size != 0 {
+            return None;
+        }
+
+        self.values.get((addr - start) / size)
     }
 
     /// Get a value using string.
