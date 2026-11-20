@@ -130,8 +130,7 @@ where
             Value::String(s) => serializer.serialize_str(s),
             Value::Unit => serializer.serialize_unit(),
             Value::Listable(l) => {
-                let size_hint = l.size_hint();
-                let mut ser = serializer.serialize_seq(Some(size_hint.1.unwrap_or(size_hint.0)))?;
+                let mut ser = serializer.serialize_seq(exact_len(l.size_hint()))?;
                 let mut visitor = VisitList::<S>::Serializer(&mut ser);
                 l.visit(&mut visitor);
                 if let VisitList::Error(e) = visitor {
@@ -140,8 +139,7 @@ where
                 ser.end()
             }
             Value::Mappable(m) => {
-                let size_hint = m.size_hint();
-                let mut ser = serializer.serialize_map(size_hint.1)?;
+                let mut ser = serializer.serialize_map(exact_len(m.size_hint()))?;
                 let mut visitor = VisitMap::<S>::Serializer(&mut ser);
                 m.visit(&mut visitor);
                 if let VisitMap::Error(e) = visitor {
@@ -250,7 +248,7 @@ where
                     TupleDef::Dynamic {
                         fields: size_hint, ..
                     } => {
-                        let mut ser = serializer.serialize_seq(size_hint.1)?;
+                        let mut ser = serializer.serialize_seq(exact_len(size_hint))?;
                         let mut visitor = VisitDynamic::<S>::UnnamedFields(&mut ser);
                         t.visit(&mut visitor);
                         if let VisitDynamic::Error(e) = visitor {
@@ -268,6 +266,18 @@ where
 
             v => unimplemented!("{:?}", v),
         }
+    }
+}
+
+/// Returns the length to pass to serde when it is known exactly.
+///
+/// Serde formats such as bincode trust the length given to `serialize_seq` and
+/// `serialize_map`, so an upper bound that is not the real length must not be
+/// reported as one.
+fn exact_len(size_hint: (usize, Option<usize>)) -> Option<usize> {
+    match size_hint {
+        (lower, Some(upper)) if lower == upper => Some(upper),
+        _ => None,
     }
 }
 

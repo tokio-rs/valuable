@@ -590,3 +590,69 @@ fn test_errors() {
         ]
     );
 }
+
+// A collection that can only give a rough size hint, like an iterator adapter.
+struct Roughly(&'static [u8]);
+
+impl Valuable for Roughly {
+    fn as_value(&self) -> Value<'_> {
+        Value::Listable(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        for v in self.0 {
+            visit.visit_value(v.as_value());
+        }
+    }
+}
+
+impl Listable for Roughly {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, None)
+    }
+}
+
+struct RoughMap(&'static [(u8, u8)]);
+
+impl Valuable for RoughMap {
+    fn as_value(&self) -> Value<'_> {
+        Value::Mappable(self)
+    }
+
+    fn visit(&self, visit: &mut dyn Visit) {
+        for (k, v) in self.0 {
+            visit.visit_entry(k.as_value(), v.as_value());
+        }
+    }
+}
+
+impl Mappable for RoughMap {
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (1, Some(4))
+    }
+}
+
+#[test]
+fn test_inexact_size_hint_is_not_reported_as_len() {
+    assert_ser_tokens(
+        &Serializable::new(Roughly(&[1, 2, 3])),
+        &[
+            Token::Seq { len: None },
+            Token::U8(1),
+            Token::U8(2),
+            Token::U8(3),
+            Token::SeqEnd,
+        ],
+    );
+    assert_ser_tokens(
+        &Serializable::new(RoughMap(&[(1, 2), (3, 4)])),
+        &[
+            Token::Map { len: None },
+            Token::U8(1),
+            Token::U8(2),
+            Token::U8(3),
+            Token::U8(4),
+            Token::MapEnd,
+        ],
+    );
+}
