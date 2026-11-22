@@ -38,7 +38,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install cargo-hack
         uses: taiki-e/install-action@cargo-hack
-      - run: cargo hack check --workspace --all-features --ignore-private --rust-version
+      - name: Install Rust 1.56
+        run: rustup toolchain install 1.56 --profile minimal
+      # Resolve dependencies with the MSRV toolchain, then hold back the few
+      # crates whose newest releases need a newer compiler than 1.56. The
+      # published MSRV and the dependency requirements are not affected.
+      - name: Generate a lockfile that builds on 1.56
+        run: |
+          rustup run 1.56 cargo generate-lockfile
+          rustup run 1.56 cargo update -p unicode-ident --precise 1.0.22
+          rustup run 1.56 cargo update -p proc-macro2 --precise 1.0.101
+          rustup run 1.56 cargo update -p quote --precise 1.0.40
+      - run: cargo hack check --workspace --all-features --ignore-private --rust-version --locked
 
   no-std:
     strategy:
