@@ -13,14 +13,14 @@ help: the trait `Valuable` is not implemented for `S`
 3 | struct S;
   | ^^^^^^^^
   = help: the following other types implement trait `Valuable`:
-            &T
-            &[T]
-            &mut T
-            &std::path::Path
-            &str
             ()
+            (T0,)
             (T0, T1)
             (T0, T1, T2)
+            (T0, T1, T2, T3)
+            (T0, T1, T2, T3, T4)
+            (T0, T1, T2, T3, T4, T5)
+            (T0, T1, T2, T3, T4, T5, T6)
           and $N others
   = note: required for `Option<S>` to implement `Valuable`
 
@@ -38,14 +38,14 @@ help: the trait `Valuable` is not implemented for `S`
  3 | struct S;
    | ^^^^^^^^
    = help: the following other types implement trait `Valuable`:
-             &T
-             &[T]
-             &mut T
-             &std::path::Path
-             &str
              ()
+             (T0,)
              (T0, T1)
              (T0, T1, T2)
+             (T0, T1, T2, T3)
+             (T0, T1, T2, T3, T4)
+             (T0, T1, T2, T3, T4, T5)
+             (T0, T1, T2, T3, T4, T5, T6)
            and $N others
    = note: required for `Option<S>` to implement `Valuable`
 
@@ -64,14 +64,14 @@ help: the trait `Valuable` is not implemented for `S`
  3 | struct S;
    | ^^^^^^^^
    = help: the following other types implement trait `Valuable`:
-             &T
-             &[T]
-             &mut T
-             &std::path::Path
-             &str
              ()
+             (T0,)
              (T0, T1)
              (T0, T1, T2)
+             (T0, T1, T2, T3)
+             (T0, T1, T2, T3, T4)
+             (T0, T1, T2, T3, T4, T5)
+             (T0, T1, T2, T3, T4, T5, T6)
            and $N others
    = note: required for `Option<S>` to implement `Valuable`
    = note: 1 redundant requirement hidden
@@ -92,14 +92,14 @@ help: the trait `Valuable` is not implemented for `S`
  3 | struct S;
    | ^^^^^^^^
    = help: the following other types implement trait `Valuable`:
-             &T
-             &[T]
-             &mut T
-             &std::path::Path
-             &str
              ()
+             (T0,)
              (T0, T1)
              (T0, T1, T2)
+             (T0, T1, T2, T3)
+             (T0, T1, T2, T3, T4)
+             (T0, T1, T2, T3, T4, T5)
+             (T0, T1, T2, T3, T4, T5, T6)
            and $N others
    = note: required for `Option<S>` to implement `Valuable`
    = note: 1 redundant requirement hidden
